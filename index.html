@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stellar Odyssey Player Setup</title>
+    <title>恒星奥德赛加点配置模拟器</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 2em; background: #181c24; color: #e6eaf3; }
+        body { font-family: Tahoma, Arial, sans-serif; margin: 2em; background: #181c24; color: #e6eaf3; }
         .form-section { max-width: 1100px; margin-left: 0; margin-right: auto; display: flex; flex-direction: row; gap: 2em; }
         
         /* Tab styles */
@@ -433,21 +433,21 @@
                     const block = document.createElement('div');
                     block.className = 'clone-modifiers-block';
                     block.innerHTML = `
-                        <div class="clone-label">Clone ${i+1}</div>
+                        <div class="clone-label">克隆体 ${i+1}</div>
                         <div class="clone-field-group">
-                            <label>Crit. Chance</label>
+                            <label>暴击率</label>
                             <button type="button" class="minus-btn" data-clone="${i}" data-field="crit">-</button>
                             <input type="number" step="0.1" min="0" max="100" value="${cloneModifiers[i].crit}" class="clone-input" data-clone="${i}" data-field="crit">%
                             <button type="button" class="plus-btn" data-clone="${i}" data-field="crit">+</button>
                         </div>
                         <div class="clone-field-group">
-                            <label>Crit. Damage</label>
+                            <label>暴击伤害</label>
                             <button type="button" class="minus-btn" data-clone="${i}" data-field="critdmg">-</button>
                             <input type="number" step="0.1" min="0" max="100" value="${cloneModifiers[i].critdmg}" class="clone-input" data-clone="${i}" data-field="critdmg">%
                             <button type="button" class="plus-btn" data-clone="${i}" data-field="critdmg">+</button>
                         </div>
                         <div class="clone-field-group">
-                            <label>Dual Shot</label>
+                            <label>双重射击</label>
                             <button type="button" class="minus-btn" data-clone="${i}" data-field="dual">-</button>
                             <input type="number" step="0.1" min="0" max="100" value="${cloneModifiers[i].dual}" class="clone-input" data-clone="${i}" data-field="dual">%
                             <button type="button" class="plus-btn" data-clone="${i}" data-field="dual">+</button>
@@ -621,11 +621,11 @@
                 const creditsPerDay = battle.get_revenue('daily', win_chance, income_boost, reputation);
                 const expPerHour = battle.get_experience('hourly', win_chance, reputation);
                 const expPerDay = battle.get_experience('daily', win_chance, reputation);
-                battleResultDiv.innerHTML = `<b>Win chance:</b> ${(win_chance * 100).toFixed(2)}%<br>` +
-                    `<b>Credits per hour:</b> ${millify(creditsPerHour)}/h<br>` +
-                    `<b>Credits per day:</b> ${millify(creditsPerDay)}/day<br>` +
-                    `<b>Experience per hour:</b> ${millify(expPerHour)}/h<br>` +
-                    `<b>Experience per day:</b> ${millify(expPerDay)}/day`;
+                battleResultDiv.innerHTML = `<b>胜率：</b> ${(win_chance * 100).toFixed(2)}%<br>` +
+                    `<b>货币／小时：</b> ${millify(creditsPerHour)}／小时<br>` +
+                    `<b>货币／天:</b> ${millify(creditsPerDay)}／天<br>` +
+                    `<b>经验／小时:</b> ${millify(expPerHour)}／小时<br>` +
+                    `<b>经验／天:</b> ${millify(expPerDay)}／天`;
             });
 
             // Optimizer logic
@@ -1012,24 +1012,24 @@
             importBtn.addEventListener('click', async () => {
                 const apiKey = apiKeyInput.value.trim();
                 if (!apiKey) {
-                    alert('Please enter your API key');
+                    alert('请输入你的 API key');
                     return;
                 }
 
                 try {
                     importBtn.disabled = true;
-                    importBtn.textContent = 'Importing...';
+                    importBtn.textContent = '导入中...';
 
                     const userData = await fetchUserData(apiKey);
                     updateFormWithUserData(userData);
                     
                     importBtn.disabled = false;
-                    importBtn.textContent = 'Import';
+                    importBtn.textContent = '导入';
                 } catch (error) {
                     alert(error.message);
                     
                     importBtn.disabled = false;
-                    importBtn.textContent = 'Import';
+                    importBtn.textContent = '导入';
                 }
             });
    
@@ -1037,17 +1037,17 @@
     </script>
 </head>
 <body>
-    <div style="font-size: 1.7em; font-weight: 600; margin-bottom: 1.2em; letter-spacing: 0.01em;">Stellar Odyssey Simulator and Optimizer</div>
+    <div style="font-size: 1.7em; font-weight: 600; margin-bottom: 1.2em; letter-spacing: 0.01em;">恒星奥德赛模拟优化器</div>
     
     <!-- Tab content sections -->
     <div id="battling-tab" class="tab-content active">
         <form id="playerForm" class="form-section" autocomplete="off" style="display: flex; flex-direction: row; gap: 2em;">
             <div style="flex: 3;">
                 <div class="player-block" style="width: 420px; min-width: 420px; max-width: 420px;">
-                    <div class="block-label">Player</div>
+                    <div class="block-label">玩家</div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="power">Power:</label>
+                            <label for="power">威力（力量）：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="power">-</button>
                                 <input type="number" id="power" name="power" value="0" min="0">
@@ -1055,7 +1055,7 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="precision">Precision:</label>
+                            <label for="precision">精准：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="precision">-</button>
                                 <input type="number" id="precision" name="precision" value="0" min="0">
@@ -1065,7 +1065,7 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="evasion">Evasion:</label>
+                            <label for="evasion">闪避：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="evasion">-</button>
                                 <input type="number" id="evasion" name="evasion" value="0" min="0">
@@ -1073,7 +1073,7 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="hull">Hull:</label>
+                            <label for="hull">船体：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="hull">-</button>
                                 <input type="number" id="hull" name="hull" value="0" min="0">
@@ -1083,7 +1083,7 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="weapon_dmg">Weapon Damage:</label>
+                            <label for="weapon_dmg">武器伤害：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="weapon_dmg">-</button>
                                 <input type="number" id="weapon_dmg" name="weapon_dmg" value="0" min="0">
@@ -1091,7 +1091,7 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="shield_def">Shield Defense:</label>
+                            <label for="shield_def">护盾防御：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="shield_def">-</button>
                                 <input type="number" id="shield_def" name="shield_def" value="0" min="0">
@@ -1101,59 +1101,59 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="weapon_ele1">Weapon Modification 1:</label>
+                            <label for="weapon_ele1">武器改造1：</label>
                             <select id="weapon_ele1" name="weapon_ele1">
-                                <option value="">None</option>
-                                <option value="Chemical">Chemical</option>
-                                <option value="Electromagnetic">Electromagnetic</option>
-                                <option value="Energy">Energy</option>
-                                <option value="Explosive">Explosive</option>
-                                <option value="Incendiary">Incendiary</option>
-                                <option value="Kinetic">Kinetic</option>
+                                <option value="">无</option>
+                                <option value="Chemical">化学</option>
+                                <option value="Electromagnetic">电磁</option>
+                                <option value="Energy">能量</option>
+                                <option value="Explosive">爆炸</option>
+                                <option value="Incendiary">燃烧</option>
+                                <option value="Kinetic">动能</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="weapon_ele2">Weapon Modification 2:</label>
+                            <label for="weapon_ele2">武器改造2：</label>
                             <select id="weapon_ele2" name="weapon_ele2">
-                                <option value="">None</option>
-                                <option value="Chemical">Chemical</option>
-                                <option value="Electromagnetic">Electromagnetic</option>
-                                <option value="Energy">Energy</option>
-                                <option value="Explosive">Explosive</option>
-                                <option value="Incendiary">Incendiary</option>
-                                <option value="Kinetic">Kinetic</option>
+                                <option value="">无</option>
+                                <option value="Chemical">化学</option>
+                                <option value="Electromagnetic">电磁</option>
+                                <option value="Energy">能量</option>
+                                <option value="Explosive">爆炸</option>
+                                <option value="Incendiary">燃烧</option>
+                                <option value="Kinetic">动能</option>
                             </select>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="shield_ele1">Shield Modification 1:</label>
+                            <label for="shield_ele1">护盾改造1：</label>
                             <select id="shield_ele1" name="shield_ele1">
-                                <option value="">None</option>
-                                <option value="Chemical">Chemical</option>
-                                <option value="Electromagnetic">Electromagnetic</option>
-                                <option value="Energy">Energy</option>
-                                <option value="Explosive">Explosive</option>
-                                <option value="Incendiary">Incendiary</option>
-                                <option value="Kinetic">Kinetic</option>
+                                <option value="">无</option>
+                                <option value="Chemical">化学</option>
+                                <option value="Electromagnetic">电磁</option>
+                                <option value="Energy">能量</option>
+                                <option value="Explosive">爆炸</option>
+                                <option value="Incendiary">燃烧</option>
+                                <option value="Kinetic">动能</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="shield_ele2">Shield Modification 2:</label>
+                            <label for="shield_ele2">护盾改造2：</label>
                             <select id="shield_ele2" name="shield_ele2">
-                                <option value="">None</option>
-                                <option value="Chemical">Chemical</option>
-                                <option value="Electromagnetic">Electromagnetic</option>
-                                <option value="Energy">Energy</option>
-                                <option value="Explosive">Explosive</option>
-                                <option value="Incendiary">Incendiary</option>
-                                <option value="Kinetic">Kinetic</option>
+                                <option value="">无</option>
+                                <option value="Chemical">化学</option>
+                                <option value="Electromagnetic">电磁</option>
+                                <option value="Energy">能量</option>
+                                <option value="Explosive">爆炸</option>
+                                <option value="Incendiary">燃烧</option>
+                                <option value="Kinetic">动能</option>
                             </select>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="n_clones">Number of Clones:</label>
+                            <label for="n_clones">克隆数量：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="n_clones">-</button>
                                 <input type="number" id="n_clones" name="n_clones" value="1" min="1" max="10">
@@ -1163,29 +1163,29 @@
                         <div class="form-group" style="align-items: flex-start; justify-content: flex-end;">
                             <label for="vip_status" style="margin-bottom: 0;">
                                 <input type="checkbox" id="vip_status" name="vip_status">
-                                VIP Status
+                                VIP 属性
                             </label>
                         </div>
                     </div>
                 </div>
                 <div class="mob-block" style="width: 420px; min-width: 420px; max-width: 420px;">
-                    <div class="block-label">Mob</div>
+                    <div class="block-label">敌人</div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="mob_name">Mob Name:</label>
+                            <label for="mob_name">敌人名称：</label>
                             <select id="mob_name" name="mob_name">
-                                <option value="Brutes">Brutes</option>
-                                <option value="Dusters">Dusters</option>
-                                <option value="Machiners">Machiners</option>
-                                <option value="Toxoids">Toxoids</option>
-                                <option value="Scorchers">Scorchers</option>
-                                <option value="Glacials">Glacials</option>
-                                <option value="Specters">Specters</option>
-                                <option value="Miners">Miners</option>
+                                <option value="Brutes">蛮兵</option>
+                                <option value="Dusters">尘暴兵</option>
+                                <option value="Machiners">机械师</option>
+                                <option value="Toxoids">毒蚀体</option>
+                                <option value="Scorchers">灼烧者</option>
+                                <option value="Glacials">冰川族</option>
+                                <option value="Specters">幽灵</option>
+                                <option value="Miners">矿工</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="mob_level">Level:</label>
+                            <label for="mob_level">等级：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="mob_level">-</button>
                                 <input type="number" id="mob_level" name="mob_level" value="1" min="1">
@@ -1195,10 +1195,10 @@
                     </div>
                 </div>
                 <div class="mob-block" style="width: 420px; min-width: 420px; max-width: 420px;">
-                    <div class="block-label">Squadron Buffs</div>
+                    <div class="block-label">舰队BUFF</div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="income_boost">Space station:</label>
+                            <label for="income_boost">空间站：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="income_boost">-</button>
                                 <input type="number" id="income_boost" name="income_boost" value="0" min="0" max="100" step="0.1" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
@@ -1207,7 +1207,7 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="reputation">Reputation:</label>
+                            <label for="reputation">声望：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="reputation">-</button>
                                 <input type="number" id="reputation" name="reputation" value="0" min="0" max="100" step="0.1" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
@@ -1222,56 +1222,56 @@
                 <div style="position: relative; width: fit-content;">
                     <div style="position: absolute; left: 180px; top: -2.1em; z-index: 2;">
                         <label style="font-size: 1.08em; display: flex; align-items: center; color: #e6eaf3; background: #23283a; padding: 0.1em 0.7em 0.1em 0.5em; border-radius: 5px; box-shadow: 0 2px 8px 0 rgba(0,0,0,0.04);">
-                            <input type="checkbox" id="modifyAllClones" style="margin-right: 0.5em;"> Modify all clones together
+                            <input type="checkbox" id="modifyAllClones" style="margin-right: 0.5em;"> 同时修改所有克隆
                         </label>
                     </div>
                     <div id="cloneModifiersSection" class="clone-modifiers-section"></div>
                 </div>
                 <div style="display: flex; flex-direction: column; align-items: flex-start; margin-left: 7.5em;">
-                    <div class="api-block" style="margin-top: 0; margin-left: 5px; min-height: 110px; max-height: 110px; width: 450px; min-width: 450px; max-width: 450px; background: #23283a; border-radius: 6px; border: 1px solid #2c3242; padding: 0.7em 1.2em 0.5em 1.2em; box-sizing: border-box;">
-                        <div class="block-label">Import data
+                    <div class="api-block" style="margin-top: 0; margin-left: 5px; min-height: 110px; max-height: 180px; width: 600px; min-width: 450px; max-width: 600px; background: #23283a; border-radius: 6px; border: 1px solid #2c3242; padding: 0.7em 1.2em 0.5em 1.2em; box-sizing: border-box;">
+                        <div class="block-label">导入数据
                             <span style="color: #4fa3ff; margin-left: 5px; cursor: help;" title="Import your player, mob and clone stats using your API key. This will automatically fill in all your current stats. Your API key is located in Settings">ⓘ</span>
                         </div>
                         <div class="form-row">
                             <div class="form-group" style="flex: 1;">
-                                <label for="api_key">API Key:</label>
+                                <label for="api_key">API Key（游戏设置API Key里Generate后粘贴）：</label>
                                 <input type="text" id="api_key" name="api_key" style="width: 150%; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.2em;">
                             </div>
                             <div class="form-group" style="align-items: flex-start; justify-content: flex-start; margin-left: 110px;">
-                                <button id="importBtn" type="button">Import</button>
+                                <button id="importBtn" type="button">导入</button>
                             </div>
                         </div>
                     </div>
-                    <div class="battle-block" style="margin-top: 1.0em; margin-left: 5px; min-height: 210px; max-height: 210px;width: 350px; min-width: 350px; max-width: 350px">
-                        <div class="block-label">Battle Simulation
+                    <div class="battle-block" style="margin-top: 1.0em; margin-left: 5px; min-height: 230px; max-height: 250px;width: 350px; min-width: 350px; max-width: 350px">
+                        <div class="block-label">战斗模拟器
                             <span style="color: #4fa3ff; margin-left: 5px; cursor: help;" title="Run a battle simulation with the current configuration. The simulation will execute the specified number of battles (up to 1,000,000) to calculate win probability and resource gains.">ⓘ</span>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="n_fights">Number of fights:</label>
+                                <label for="n_fights">模拟战斗次数：</label>
                                 <input type="number" id="n_fights" name="n_fights" value="10000" min="1" max="1000000" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
                             </div>
                             <div class="form-group" style="align-items: flex-start; justify-content: flex-start; margin-left: -30px;">
-                                <button id="simulateBtn" type="button">Simulate</button>
+                                <button id="simulateBtn" type="button">开始模拟</button>
                             </div>
                         </div>
                     </div>
                     <div class="optimizer-block" style="margin-top: 1.5em; margin-left: 5px; width: 600px; min-width: 600px; max-width: 600px; min-height: 210px;">
-                        <div class="block-label">Optimizer
+                        <div class="block-label">优化模拟
                             <span style="color: #4fa3ff; margin-left: 5px; cursor: help;" title="Find the optimal stat distribution for your current configuration. The optimizer will test various stat combinations using the specified number of simulations (up to 1,000,000). Higher values provide more accurate results but significantly increase computation time and may temporarily freeze the interface. Consider starting with a lower number and increasing it if needed.">ⓘ</span>
                         </div>
                         <div style="display: flex; align-items: center; margin-bottom: 1em;">
-                            <span style="margin-right: 10px;">Optimize against:</span>
+                            <span style="margin-right: 10px;">针对性优化:</span>
                             <label style="margin-right: 15px; display: flex; align-items: center;">
-                                <input type="radio" name="optimize_target" value="credits" checked style="margin-right: 5px;"> Credits
+                                <input type="radio" name="optimize_target" value="credits" checked style="margin-right: 5px;"> 货币
                             </label>
                             <label style="display: flex; align-items: center;">
-                                <input type="radio" name="optimize_target" value="exp" style="margin-right: 5px;"> Experience
+                                <input type="radio" name="optimize_target" value="exp" style="margin-right: 5px;"> 经验
                             </label>
                         </div>
                         <div class="form-row" style="margin-bottom: 1em;">
                             <div class="form-group">
-                                <label for="optimizer_htk">HTK:
+                                <label for="optimizer_htk">击杀所需命中数（HTK）:
                                     <span style="color: #4fa3ff; margin-left: 5px; cursor: help;" title="Hits to kill: The number of hits needed to defeat the mob">ⓘ</span>
                                 </label>
                                 <div class="input-group">
@@ -1281,7 +1281,7 @@
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label for="optimizer_htd">HTD:
+                                <label for="optimizer_htd">死亡所需被击数（HTD）:
                                     <span style="color: #4fa3ff; margin-left: 5px; cursor: help;" title="Hits to die: The number of hits the mob needs to defeat your clones">ⓘ</span>
                                 </label>
                                 <div class="input-group">
@@ -1293,13 +1293,13 @@
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="optimizer_n_fights">Number of fights:</label>
+                                <label for="optimizer_n_fights">模拟战斗次数：</label>
                                 <input type="number" id="optimizer_n_fights" name="optimizer_n_fights" value="5000" min="1" max="1000000" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
                             </div>
                             <div class="form-group" style="display: flex; flex-direction: row; align-items: center; margin-left: -250px;">
-                                <button id="optimizerBtn" type="button" style="margin-right: 10px;">Simple Optimize</button>
-                                <button id="longOptimizerBtn" type="button" style="margin-right: 10px;" title="Optimize by searching through multiple values of HTK and HTD. It is not advised to use more than 5000 fights">Long Optimize</button>
-                                <button id="importOptimizedBtn" type="button" style="display: none;">Import</button>
+                                <button id="optimizerBtn" type="button" style="margin-right: 10px;">简单计算优化</button>
+                                <button id="longOptimizerBtn" type="button" style="margin-right: 10px;" title="Optimize by searching through multiple values of HTK and HTD. It is not advised to use more than 5000 fights">复杂计算优化</button>
+                                <button id="importOptimizedBtn" type="button" style="display: none;">导入数据</button>
                             </div>
                         </div>
                         <div id="optimizerProgress" style="height: 50px; margin: 1em 0;">
@@ -1310,17 +1310,17 @@
                         </div>
                         <div id="optimizerResult" style="display: flex; flex-direction: row; gap: 2em; margin-top: 1em;">
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.2em 1.2em; width: 140px; font-size: 1em;">
-                                <div><b>Power</b><br><span id="opt_power">-</span></div>
-                                <div><b>Precision</b><br><span id="opt_precision">-</span></div>
-                                <div><b>Evasion</b><br><span id="opt_evasion">-</span></div>
-                                <div><b>Hull</b><br><span id="opt_hull">-</span></div>
+                                <div><b>力量</b><br><span id="opt_power">-</span></div>
+                                <div><b>精准</b><br><span id="opt_precision">-</span></div>
+                                <div><b>闪避</b><br><span id="opt_evasion">-</span></div>
+                                <div><b>船体</b><br><span id="opt_hull">-</span></div>
                             </div>
                             <div style="font-size: 0.98em;">
-                                <div><b>Win chance:</b> <span id="opt_win_chance">-</span></div>
-                                <div><b>Credits per hour:</b> <span id="opt_credits_hour">-</span></div>
-                                <div><b>Credits per day:</b> <span id="opt_credits_day">-</span></div>
-                                <div><b>Experience per hour:</b> <span id="opt_exp_hour">-</span></div>
-                                <div><b>Experience per day:</b> <span id="opt_exp_day">-</span></div>
+                                <div><b>胜率：</b> <span id="opt_win_chance">-</span></div>
+                                <div><b>货币／小时：</b> <span id="opt_credits_hour">-</span></div>
+                                <div><b>货币／天：</b> <span id="opt_credits_day">-</span></div>
+                                <div><b>经验／小时：</b> <span id="opt_exp_hour">-</span></div>
+                                <div><b>经验／天：</b> <span id="opt_exp_day">-</span></div>
                             </div>
                         </div>
                     </div>
