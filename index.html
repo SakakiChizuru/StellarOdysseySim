@@ -616,16 +616,26 @@
                 const income_boost = parseFloat(form.income_boost?.value || 0) / 100;
                 const reputation = parseFloat(form.reputation?.value || 0) / 100;
 
+                // 2025-06-04 : Get VIP bonus status
+                const vipbonus = player.vip_status ? 0.1 : 0;
+
                 // Print result
                 const creditsPerHour = battle.get_revenue('hourly', win_chance, income_boost, reputation);
                 const creditsPerDay = battle.get_revenue('daily', win_chance, income_boost, reputation);
                 const expPerHour = battle.get_experience('hourly', win_chance, reputation);
                 const expPerDay = battle.get_experience('daily', win_chance, reputation);
+
+                // 2025-06-04 : Calculate VIP bonuses if applicable
+                const vipCPH = vip_status ? creditsPerHour * (1 + vipbonus) : null;
+                const vipCPD = vip_status ? creditsPerDay * (1 + vipbonus) : null;
+                const vipEPH = vip_status ? expPerHour * (1 + vipbonus) : null;
+                const vipEPD = vip_status ? expPerDay * (1 + vipbonus) : null;
+
                 battleResultDiv.innerHTML = `<b>胜率：</b> ${(win_chance * 100).toFixed(2)}%<br>` +
-                    `<b>货币／小时：</b> ${millify(creditsPerHour)}／小时<br>` +
-                    `<b>货币／天:</b> ${millify(creditsPerDay)}／天<br>` +
-                    `<b>经验／小时:</b> ${millify(expPerHour)}／小时<br>` +
-                    `<b>经验／天:</b> ${millify(expPerDay)}／天`;
+                    `<b>货币／小时：</b> ${millify(creditsPerHour)}／小时${vipCPH ? ` (VIP: ${millify(vipCPH)}／小时)` : ''}<br>` +
+                    `<b>货币／天:</b> ${millify(creditsPerDay)}／天${vipCPD ? ` (VIP: ${millify(vipCPD)}／天)` : ''}<br>` +
+                    `<b>经验／小时:</b> ${millify(expPerHour)}／小时${vipEPH ? ` (VIP: ${millify(vipCPH)}／小时)` : ''}<br>` +
+                    `<b>经验／天:</b> ${millify(expPerDay)}／天${vipEPD ? ` (VIP: ${millify(vipCPD)}／天)` : ''}`;
             });
 
             // Optimizer logic
@@ -1251,7 +1261,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="battle-block" style="margin-top: 1.0em; margin-left: 5px; min-height: 230px; max-height: 250px;width: 350px; min-width: 350px; max-width: 350px">
+                    <div class="battle-block" style="margin-top: 1.0em; margin-left: 5px; min-height: 230px; max-height: 250px;width: 500px; min-width: 350px; max-width: 500px">
                         <div class="block-label">战斗模拟器
                             <span style="color: #4fa3ff; margin-left: 5px; cursor: help;" title="Run a battle simulation with the current configuration. The simulation will execute the specified number of battles (up to 1,000,000) to calculate win probability and resource gains.">ⓘ</span>
                         </div>
