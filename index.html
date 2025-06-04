@@ -790,10 +790,10 @@
                     
                     // Update the results
                     document.getElementById('opt_win_chance').textContent = `${(result.winChance * 100).toFixed(2)}%`;
-                    document.getElementById('opt_credits_hour').textContent = `${millify(creditsPerHour)}/h`;
-                    document.getElementById('opt_credits_day').textContent = `${millify(creditsPerDay)}/day`;
-                    document.getElementById('opt_exp_hour').textContent = `${millify(expPerHour)}/h`;
-                    document.getElementById('opt_exp_day').textContent = `${millify(expPerDay)}/day`;
+                    document.getElementById('opt_credits_hour').textContent = `${millify(creditsPerHour)}／小时`;
+                    document.getElementById('opt_credits_day').textContent = `${millify(creditsPerDay)}／天`;
+                    document.getElementById('opt_exp_hour').textContent = `${millify(expPerHour)}／小时`;
+                    document.getElementById('opt_exp_day').textContent = `${millify(expPerDay)}／天`;
 
                     // Add Import button next to Optimize
                     let importBtn = document.getElementById('importOptimizedBtn');
