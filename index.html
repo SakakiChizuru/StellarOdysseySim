@@ -616,26 +616,17 @@
                 const income_boost = parseFloat(form.income_boost?.value || 0) / 100;
                 const reputation = parseFloat(form.reputation?.value || 0) / 100;
 
-                // 2025-06-04 : Get VIP bonus status
-                const vipbonus = player.vip_status ? 0.1 : 0;
-
                 // Print result
                 const creditsPerHour = battle.get_revenue('hourly', win_chance, income_boost, reputation);
                 const creditsPerDay = battle.get_revenue('daily', win_chance, income_boost, reputation);
                 const expPerHour = battle.get_experience('hourly', win_chance, reputation);
                 const expPerDay = battle.get_experience('daily', win_chance, reputation);
 
-                // 2025-06-04 : Calculate VIP bonuses if applicable
-                const vipCPH = vip_status ? creditsPerHour * (1 + vipbonus) : null;
-                const vipCPD = vip_status ? creditsPerDay * (1 + vipbonus) : null;
-                const vipEPH = vip_status ? expPerHour * (1 + vipbonus) : null;
-                const vipEPD = vip_status ? expPerDay * (1 + vipbonus) : null;
-
                 battleResultDiv.innerHTML = `<b>胜率：</b> ${(win_chance * 100).toFixed(2)}%<br>` +
-                    `<b>货币／小时：</b> ${millify(creditsPerHour)}／小时${vipCPH ? ` (VIP: ${millify(vipCPH)}／小时)` : ''}<br>` +
-                    `<b>货币／天:</b> ${millify(creditsPerDay)}／天${vipCPD ? ` (VIP: ${millify(vipCPD)}／天)` : ''}<br>` +
-                    `<b>经验／小时:</b> ${millify(expPerHour)}／小时${vipEPH ? ` (VIP: ${millify(vipCPH)}／小时)` : ''}<br>` +
-                    `<b>经验／天:</b> ${millify(expPerDay)}／天${vipEPD ? ` (VIP: ${millify(vipCPD)}／天)` : ''}`;
+                    `<b>货币／小时：</b> ${millify(creditsPerHour)}／小时<br>` +
+                    `<b>货币／天:</b> ${millify(creditsPerDay)}／天<br>` +
+                    `<b>经验／小时:</b> ${millify(expPerHour)}／小时<br>` +
+                    `<b>经验／天:</b> ${millify(expPerDay)}／天}`;
             });
 
             // Optimizer logic
@@ -787,19 +778,11 @@
                     const income_boost = parseFloat(form.income_boost?.value || 0) / 100;
                     const reputation = parseFloat(form.reputation?.value || 0) / 100;
 
-                    // 2025-06-04 : Get VIP bonus status
-                    const vipbonus = player.vip_status ? 0.1 : 0;
-
                     const creditsPerHour = battle.get_revenue('hourly', result.winChance, income_boost, reputation);
                     const creditsPerDay = battle.get_revenue('daily', result.winChance, income_boost, reputation);
                     const expPerHour = battle.get_experience('hourly', result.winChance, reputation);
                     const expPerDay = battle.get_experience('daily', result.winChance, reputation);
                     
-                    const vipCPH = vip_status ? creditsPerHour * (1 + vipbonus) : null;
-                    const vipCPD = vip_status ? creditsPerDay * (1 + vipbonus) : null;
-                    const vipEPH = vip_status ? expPerHour * (1 + vipbonus) : null;
-                    const vipEPD = vip_status ? expPerDay * (1 + vipbonus) : null;
-
                     // Update the stats
                     document.getElementById('opt_power').textContent = power;
                     document.getElementById('opt_precision').textContent = precision;
@@ -807,12 +790,11 @@
                     document.getElementById('opt_hull').textContent = hull;
                     
                     // Update the results
-                    // 2025-06-04 : With vip bonus if applicable
                     document.getElementById('opt_win_chance').textContent = `${(result.winChance * 100).toFixed(2)}%`;
-                    document.getElementById('opt_credits_hour').textContent = `${millify(creditsPerHour)}／小时${vipCPH ? ` (VIP: ${millify(vipCPH)}／小时)` : ''}`;
-                    document.getElementById('opt_credits_day').textContent = `${millify(creditsPerDay)}／天${vipCPD ? ` (VIP: ${millify(vipCPD)}／天)` : ''}`;
-                    document.getElementById('opt_exp_hour').textContent = `${millify(expPerHour)}／小时${vipEPH ? ` (VIP: ${millify(vipEPH)}／小时)` : ''}`;
-                    document.getElementById('opt_exp_day').textContent = `${millify(expPerDay)}／天${vipEPD ? ` (VIP: ${millify(vipEPD)}／天)` : ''}`;
+                    document.getElementById('opt_credits_hour').textContent = `${millify(creditsPerHour)}／小时`;
+                    document.getElementById('opt_credits_day').textContent = `${millify(creditsPerDay)}／天`;
+                    document.getElementById('opt_exp_hour').textContent = `${millify(expPerHour)}／小时`;
+                    document.getElementById('opt_exp_day').textContent = `${millify(expPerDay)}／天`;
 
                     // Add Import button next to Optimize
                     let importBtn = document.getElementById('importOptimizedBtn');
