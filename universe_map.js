@@ -95,7 +95,7 @@ class UniverseMap {
         // Update the systems count text
         const systemsCountElement = document.getElementById('systemsCount');
         if (systemsCountElement) {
-            systemsCountElement.textContent = `There are currently ${this.systems.length} publicly discovered systems`;
+            systemsCountElement.textContent = `目前有 ${this.systems.length} 个公开的星系`;
         }
         this.draw();
     }
@@ -130,9 +130,9 @@ class UniverseMap {
                 }
             }
             
-            distanceElement.textContent = `You currently have travelled ${totalDistance.toFixed(2)} ly`;
+            distanceElement.textContent = `你当前已旅行 ${totalDistance.toFixed(2)} 光年`;
         } else if (distanceElement) {
-            distanceElement.textContent = 'You currently have travelled 0 ly';
+            distanceElement.textContent = "你当前已旅行0光年";
         }
         this.draw();
     }
@@ -634,7 +634,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadButton.addEventListener('click', async () => {
             const apiKey = apiKeyInput.value.trim();
             if (!apiKey) {
-                alert('Please enter your API key');
+                alert('请输入你的API key');
                 return;
             }
 
@@ -643,7 +643,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 loadButton.disabled = true;
-                loadButton.textContent = 'Loading...';
+                loadButton.textContent = '载入中...';
 
                 // Load systems
                 const systemsResponse = await fetch('https://api.stellarodyssey.app/api/public/systems', {
@@ -682,11 +682,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 loadButton.disabled = false;
-                loadButton.textContent = 'Load Systems';
+                loadButton.textContent = '载入星图';
             } catch (error) {
-                alert('Failed to load data: ' + error.message);
+                alert('读取数据失败: ' + error.message);
                 loadButton.disabled = false;
-                loadButton.textContent = 'Load Systems';
+                loadButton.textContent = '载入星图';
             }
         });
     }

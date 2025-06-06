@@ -1338,18 +1338,18 @@
         <div class="form-section" style="display: flex; flex-direction: row; gap: 2em;">
             <div class="optimizer-block" style="margin-top: 1.0em; margin-left: 5px; width: 500px; min-width: 500px; max-width: 500px; min-height: 210px; position: relative;">
                 <div style="position: absolute; top: 0.5em; right: 1em; text-align: left; font-size: 0.75em; color: #b0b6c6; line-height: 1.2;">
-                    For a more precise resources<br>
-                    calculator, see this <a href="https://docs.google.com/spreadsheets/d/1DCpkdBsHL_dqa_Fv13k3M1iKVuBCa4vXbfTjToQ64G8/edit?gid=1892479921#gid=1892479921" target="_blank" style="color: #4fa3ff; text-decoration: none;">Google Sheet</a>
+                    如需更精确的资源计算<br>
+                    请访问: <a href="https://docs.google.com/spreadsheets/d/1DCpkdBsHL_dqa_Fv13k3M1iKVuBCa4vXbfTjToQ64G8/edit?gid=1892479921#gid=1892479921" target="_blank" style="color: #4fa3ff; text-decoration: none;">Google表单</a>
                 </div>
-                <div class="block-label">Resources Calculator
-                    <span style="color: #4fa3ff; margin-left: 5px; cursor: help;" title="Calculate resource gathering rates and time to reach specific goals based on your current setup.
-• 'Resources' and 'Rare resources' per action refer to what you are currently gathering on your current planet
-• 'Additional dodge' and 'Additional rare resource drop' depend only on Laser and Sensor modifications
-• 'Avg. maneuverability' is the average Maneuverability across all your drones">ⓘ</span>
+                <div class="block-label">资源计算器
+                    <span style="color: #4fa3ff; margin-left: 5px; cursor: help;" title="根据当前设置计算资源收集率和达到特定目标所需的时间。
+•‘“资源”和“稀有资源”指的是你当前在当前星球上在每个行动中收集的物品。
+•‘“额外闪避”和“额外稀有资源掉落”仅取决于激光和探测器的改造
+•‘“平均机动性”是指所有无人机的平均机动性能。">ⓘ</span>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="resources_per_action">Resources per action:</label>
+                        <label for="resources_per_action">资源／行动：</label>
                         <div class="input-group">
                             <button type="button" class="minus-btn" data-target="resources_per_action">-</button>
                             <input type="number" id="resources_per_action" name="resources_per_action" value="0" min="0" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
@@ -1357,7 +1357,7 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="rare_resources_per_action">Rare res per action:</label>
+                        <label for="rare_resources_per_action">稀有资源／行动：</label>
                         <div class="input-group">
                             <button type="button" class="minus-btn" data-target="rare_resources_per_action">-</button>
                             <input type="number" id="rare_resources_per_action" name="rare_resources_per_action" value="0" min="0" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
@@ -1367,7 +1367,7 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="number_of_drones">Number of drones:</label>
+                        <label for="number_of_drones">无人机数量：</label>
                         <div class="input-group">
                             <button type="button" class="minus-btn" data-target="number_of_drones">-</button>
                             <input type="number" id="number_of_drones" name="number_of_drones" value="1" min="1" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
@@ -1375,7 +1375,7 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="dodge_percentage">Additional dodge:</label>
+                        <label for="dodge_percentage">额外闪避（装备）：</label>
                         <div class="input-group">
                             <button type="button" class="minus-btn" data-target="dodge_percentage">-</button>
                             <input type="number" id="dodge_percentage" name="dodge_percentage" value="0" min="0" max="100" step="0.1" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
@@ -1386,7 +1386,7 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="rare_drop_increase">Additional rare res drop:</label>
+                        <label for="rare_drop_increase">额外稀有资源掉落（装备）：</label>
                         <div class="input-group">
                             <button type="button" class="minus-btn" data-target="rare_drop_increase">-</button>
                             <input type="number" id="rare_drop_increase" name="rare_drop_increase" value="0" min="0" max="100" step="0.1" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
@@ -1395,7 +1395,7 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="maneuverability">Avg. maneuverability:</label>
+                        <label for="maneuverability">平均机动性（无人机升级）：</label>
                         <div class="input-group">
                             <button type="button" class="minus-btn" data-target="maneuverability">-</button>
                             <input type="number" id="maneuverability" name="maneuverability" value="0" min="0" max="100" step="0.1" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
@@ -1406,15 +1406,15 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group" style="align-items: flex-start; justify-content: flex-start; margin-left: 0;">
-                        <button id="calculateResourcesBtn" type="button">Calculate</button>
+                        <button id="calculateResourcesBtn" type="button">计算</button>
                     </div>
                 </div>
                 <div id="resourcesResult" style="display: flex; flex-direction: row; gap: 2em; margin-top: 1em;">
                     <div style="font-size: 0.98em;">
-                        <div><b>Resources per hour:</b> <span id="resources_per_hour">-</span></div>
-                        <div><b>Rare resources per hour:</b> <span id="rare_resources_per_hour">-</span></div>
-                        <div><b>Hours necessary to gather 32M resources:</b> <span id="hours_to_32m">-</span></div>
-                        <div><b>Hours necessary to gather 800k rare resources:</b> <span id="days_to_800k">-</span></div>
+                        <div><b>资源／小时：</b> <span id="resources_per_hour">-</span></div>
+                        <div><b>稀有资源／小时：</b> <span id="rare_resources_per_hour">-</span></div>
+                        <div><b>收集32M资源所需时间：</b> <span id="hours_to_32m">-</span></div>
+                        <div><b>收集800k稀有资源所需时间：</b> <span id="days_to_800k">-</span></div>
                     </div>
                 </div>
             </div>
@@ -1425,26 +1425,26 @@
         <div style="display: flex; flex-direction: row; padding: 2em; gap: 2em; height: 720px;">
             <div style="display: flex; flex-direction: column; gap: 1em; min-width: 400px; max-width: 400px; margin-top: 37vh; transform: translateY(-50%);">
                 <div style="background: #23283a; border-radius: 6px; border: 1px solid #2c3242; padding: 1.2em; box-sizing: border-box;">
-                    <div style="font-size: 1.22em; font-weight: 700; margin-bottom: 1em; color: #f3f6fa; letter-spacing: 0.01em;">Discovered Universe</div>
+                    <div style="font-size: 1.22em; font-weight: 700; margin-bottom: 1em; color: #f3f6fa; letter-spacing: 0.01em;">已发现星系</div>
                     <div style="display: flex; flex-direction: column; gap: 1em;">
                         <div>
                             <label for="systems_api_key" style="display: block; margin-bottom: 0.5em; color: #e6eaf3;">API Key:</label>
                             <input type="text" id="systems_api_key" style="width: 100%; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.5em; border-radius: 4px; box-sizing: border-box;">
                         </div>
-                        <div style="color: #e6eaf3; font-size: 0.9em; margin-bottom: 0.0em;" id="systemsCount">There are currently 0 publicly discovered systems</div>
-                        <div style="color: #e6eaf3; font-size: 0.9em; margin-bottom: 1.0em;" id="totalDistance">You have currently travelled a total of 0 ly</div>
+                        <div style="color: #e6eaf3; font-size: 0.9em; margin-bottom: 0.0em;" id="systemsCount">目前尚无公开发现的星系</div>
+                        <div style="color: #e6eaf3; font-size: 0.9em; margin-bottom: 1.0em;" id="totalDistance">你当前已旅行0光年</div>
                         <div style="display: flex; flex-direction: column; gap: 0.5em;">
                             <label style="display: flex; align-items: center; gap: 0.5em; color: #e6eaf3; cursor: pointer;">
                                 <input type="checkbox" id="show_public_systems" style="margin: 0;">
-                                Show public systems
+                                显示公开星系（关闭时仅显示你发现的星系）
                             </label>
                             <label style="display: flex; align-items: center; gap: 0.5em; color: #e6eaf3; cursor: pointer;">
                                 <input type="checkbox" id="show_current_position" style="margin: 0;">
-                                Show current position
+                                显示当前位置（坐标）
                             </label>
                             <label style="display: flex; align-items: center; gap: 0.5em; color: #e6eaf3; cursor: pointer;">
                                 <input type="checkbox" id="show_player_journey" style="margin: 0;">
-                                Show player journey
+                                显示玩家旅行路径
                             </label>
                         </div>
                         <button id="loadSystemsBtn" type="button" style="background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.5em 1em; border-radius: 4px; cursor: pointer; width: 100%;">Load Systems</button>
@@ -1461,28 +1461,28 @@
         <div class="form-section" style="display: flex; flex-direction: row; gap: 2em;">
             <div class="optimizer-block" style="margin-top: 1.0em; margin-left: 5px; width: 500px; min-width: 500px; max-width: 500px; min-height: 210px; max-height: 600px;">
                 <div class="block-label">
-                    System Occurrence Probability
+                    星系概率计算器
                     <span style="color: #4fa3ff; margin-left: 5px; cursor: help;" title="Calculate the probability of observing a system with specific characteristics. This tool uses complex probability calculations involving multiple parameters (nodes, categories, qualities) and their interactions. Due to the mathematical complexity of these calculations, some results may require further refinement. The current implementation is being continuously improved for accuracy.">ⓘ</span>
                     <span style="color: #ff4f4f; margin-left: 5px; font-size: 0.8em; font-weight: normal;">beta</span>
                 </div>
                 <div class="form-row" style="margin-bottom: 1em;">
                     <div class="form-group">
-                        <label for="inhabited_system" style="color: #e6eaf3;">System status:</label>
+                        <label for="inhabited_system" style="color: #e6eaf3;">星系状态：</label>
                         <select id="inhabited_system" name="inhabited_system" style="width: 12em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.2em; border-radius: 4px;">
-                            <option value="any">Any</option>
-                            <option value="inhabited">System is inhabited</option>
-                            <option value="uninhabited">System is not inhabited</option>
+                            <option value="any">任意</option>
+                            <option value="inhabited">星系有人居住</option>
+                            <option value="uninhabited">星系无人居住</option>
                         </select>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="n_nodes">Number of nodes:</label>
+                        <label for="n_nodes">节点数量：</label>
                         <div class="input-group">
                             <select id="n_nodes_type" name="n_nodes_type" style="width: 6em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; margin-right: 0.5em;">
-                                <option value="exactly">Exactly</option>
-                                <option value="at least">At Least</option>
-                                <option value="any">Any</option>
+                                <option value="exactly">精确</option>
+                                <option value="at least">至少</option>
+                                <option value="any">任意</option>
                             </select>
                             <input type="number" id="n_nodes" name="n_nodes" value="1" min="1" max="5" style="width: 3.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
                         </div>
@@ -1490,12 +1490,12 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="n_gatherable">Number of gathering nodes:</label>
+                        <label for="n_gatherable">采集节点数量：</label>
                         <div class="input-group">
                             <select id="n_gatherable_type" name="n_gatherable_type" style="width: 6em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; margin-right: 0.5em;">
-                                <option value="exactly">Exactly</option>
-                                <option value="at least">At Least</option>
-                                <option value="any">Any</option>
+                                <option value="exactly">精确</option>
+                                <option value="at least">至少</option>
+                                <option value="any">任意</option>
                             </select>
                             <input type="number" id="n_gatherable" name="n_gatherable" value="1" min="0" max="5" style="width: 3.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
                         </div>
@@ -1503,12 +1503,12 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="n_categories">Number of different categories:</label>
+                        <label for="n_categories">不同类别数量：</label>
                         <div class="input-group">
                             <select id="n_categories_type" name="n_categories_type" style="width: 6em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; margin-right: 0.5em;">
-                                <option value="exactly">Exactly</option>
-                                <option value="at least">At Least</option>
-                                <option value="any">Any</option>
+                                <option value="exactly">精确</option>
+                                <option value="at least">至少</option>
+                                <option value="any">任意</option>
                             </select>
                             <input type="number" id="n_categories" name="n_categories" value="1" min="1" max="4" style="width: 3.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
                         </div>
@@ -1516,9 +1516,9 @@
                 </div>
                 <div id="quality-selections" style="margin-top: 0.5em; display: flex; flex-direction: column; gap: 0.3em;">
                     <div class="form-row" style="display: flex; align-items: center; gap: 0.5em; margin-bottom: 0;">
-                        <label style="color: #e6eaf3; min-width: 180px;">Gathering node 1 quality:</label>
+                        <label style="color: #e6eaf3; min-width: 180px;">采集节点 1 品质:</label>
                         <select style="width: 8em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.2em; border-radius: 4px;">
-                            <option value="any">Any</option>
+                            <option value="any">任意</option>
                             <option value="1-30">1-30</option>
                             <option value="31-70">31-70</option>
                             <option value="71-90">71-90</option>
@@ -1527,10 +1527,10 @@
                     </div>
                 </div>
                 <div style="margin-top: 1em; display: flex; flex-direction: column; align-items: flex-start; gap: 0.5em;">
-                    <button id="calculateProbabilityBtn" type="button" style="background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.5em 1em; border-radius: 4px; cursor: pointer;">Calculate probability</button>
+                    <button id="calculateProbabilityBtn" type="button" style="background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.5em 1em; border-radius: 4px; cursor: pointer;">计算概率</button>
                     <div id="probabilityResult" style="color: #e6eaf3; font-size: 1.1em;">
-                        <div>Probability: <span id="probability_value"></span></div>
-                        <div>Estimated number of systems in the universe: <span id="estimated_systems"></span></div>
+                        <div>概率：<span id="probability_value"></span></div>
+                        <div>预计宇宙中的星系数量: <span id="estimated_systems"></span></div>
                     </div>
                 </div>
             </div>
@@ -1539,15 +1539,16 @@
 
     <!-- Tab bar -->
     <div class="tab-container">
-        <div class="tab active" data-tab="battling-tab">Battling</div>
-        <div class="tab" data-tab="gathering-tab">Gathering</div>
-        <div class="tab" data-tab="universe-map-tab">Universe Map</div>
-        <div class="tab" data-tab="probabilities-tab">Probabilities</div>
+        <div class="tab active" data-tab="battling-tab">战斗</div>
+        <div class="tab" data-tab="gathering-tab">采集</div>
+        <div class="tab" data-tab="universe-map-tab">星图</div>
+        <div class="tab" data-tab="probabilities-tab">概率</div>
     </div>
 
     <div id="playerResult"></div>
     <footer>
         <span>Proudly made by anfneub</span>
+        <span style="margin-left: 2.5em;" >中文化: <font color="#e02020">SakakiChizuru</font></span>
         <span style="margin-left: 2.5em;" id="lastUpdated"></span>
         <span style="margin-left: 2.5em;">Space Odyssey Version 1.1.6 2025-05-30</span>
         <span style="margin-left: 2.5em; cursor: pointer; color: #4fa3ff; text-decoration: underline;" id="changelogLink">Changelog</span>
@@ -1696,7 +1697,7 @@
                     selectionDiv.style.gap = '0.5em';
                     
                     const label = document.createElement('label');
-                    label.textContent = `Gathering node ${i + 1} quality:`;
+                    label.textContent = `采集节点 ${i + 1} 质量：`;
                     label.style.color = '#e6eaf3';
                     label.style.minWidth = '180px';
                     
@@ -1711,7 +1712,7 @@
                     // Add "Any" option
                     const anyOption = document.createElement('option');
                     anyOption.value = 'any';
-                    anyOption.textContent = 'Any';
+                    anyOption.textContent = '任意';
                     select.appendChild(anyOption);
                     
                     // Add quality range options
