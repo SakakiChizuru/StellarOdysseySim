@@ -1,11 +1,12 @@
 import { Element } from './dataclasses.js';
 
 class Player {
-    constructor({ power, precision, evasion, hull, weapon_dmg, shield_def, n_clones, vip_status, weapon_ele1 = null, weapon_ele2 = null, shield_ele1 = null, shield_ele2 = null }) {
+    constructor({ power, precision, evasion, hull, weapon_dmg, shield_def, n_clones, vip_status, weapon_ele1 = null, weapon_ele2 = null, shield_ele1 = null, shield_ele2 = null, available = null }) {
         this.pow = power;
         this.pre = precision;
         this.eva = evasion;
         this.hull = hull;
+        this.availablePoints = available || 0;
         this.weapon_dmg = weapon_dmg;
         this.shield_def = shield_def;
         this.n_clones = n_clones;
@@ -17,6 +18,10 @@ class Player {
 
         this.hp = (7.0 * hull) + shield_def;
         this.dmg = ((7.0 * this.pow) + weapon_dmg) * this.n_clones;
+
+        console.log(
+            `Player created with available points: ${this.availablePoints}, ArgumentAP: ${available}`
+        );
     }
 }
 

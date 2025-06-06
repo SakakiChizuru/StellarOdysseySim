@@ -18,7 +18,7 @@ const MobName = Object.freeze({
     TOXOIDS: 'Toxoids',
     SCORCHERS: 'Scorchers',
     GLACIALS: 'Glacials',
-    SPECTERS: 'Specters',
+    SPECTRES: 'Spectres',
     MINERS: 'Miners',
 });
 
@@ -36,7 +36,7 @@ const mob_properties = {
     [MobName.TOXOIDS]: new MobProperties([Element.CHEMICAL, Element.INCENDIARY], 'Exploring'),
     [MobName.SCORCHERS]: new MobProperties([Element.CHEMICAL, Element.KINETIC], 'Exploring'),
     [MobName.GLACIALS]: new MobProperties([Element.EXPLOSIVE, Element.INCENDIARY], 'Exploring'),
-    [MobName.SPECTERS]: new MobProperties([Element.ELECTROMAGNETIC, Element.ENERGY], 'Gathering'),
+    [MobName.SPECTRES]: new MobProperties([Element.ELECTROMAGNETIC, Element.ENERGY], 'Gathering'),
     [MobName.MINERS]: new MobProperties([Element.EXPLOSIVE, Element.KINETIC], 'Gathering'),
 };
 

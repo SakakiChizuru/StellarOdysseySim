@@ -323,7 +323,9 @@
             n_fights: 1000,
             clone_modifiers: [
                 { crit: 0, critdmg: 0, dual: 0 }
-            ]
+            ],
+            // 2025-06-06 Added available points
+            available: 0
         };
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -341,6 +343,8 @@
                     precision: form.precision.value,
                     evasion: form.evasion.value,
                     hull: form.hull.value,
+                    // 2025-06-06 Added available points
+                    available: form.available.value || 0,
                     weapon_dmg: form.weapon_dmg.value,
                     shield_def: form.shield_def.value,
                     n_clones: form.n_clones.value,
@@ -520,7 +524,7 @@
                     let step = 10; // default step
                     if (['n_clones', 'number_of_drones', 'optimizer_htk', 'optimizer_htd'].includes(targetId)) {
                         step = 1;
-                    } else if (['precision', 'hull', 'power', 'evasion'].includes(targetId)) {
+                    } else if (['precision', 'hull', 'power', 'evasion', 'available'].includes(targetId)) { // 2025-06-06 Added available points
                         step = 5;
                     } else if (['dodge_percentage', 'rare_drop_increase', 'maneuverability', 'income_boost', 'reputation'].includes(targetId)) {
                         step = 1;
@@ -547,7 +551,7 @@
                     let step = 10; // default step
                     if (['n_clones', 'number_of_drones', 'optimizer_htk', 'optimizer_htd'].includes(targetId)) {
                         step = 1;
-                    } else if (['precision', 'hull', 'power', 'evasion'].includes(targetId)) {
+                    } else if (['precision', 'hull', 'power', 'evasion', 'available'].includes(targetId)) { // 2025-06-06 Added available points
                         step = 5;
                     } else if (['dodge_percentage', 'rare_drop_increase', 'maneuverability', 'income_boost', 'reputation'].includes(targetId)) {
                         step = 1;
@@ -574,6 +578,8 @@
                 const precision = parseInt(form.precision.value) || 0;
                 const evasion = parseInt(form.evasion.value) || 0;
                 const hull = parseInt(form.hull.value) || 0;
+                // 2025-06-06 Added available points
+                const available = parseInt(form.available.value) || 0;
                 const weapon_dmg = parseInt(form.weapon_dmg.value) || 0;
                 const shield_def = parseInt(form.shield_def.value) || 0;
                 const n_clones = parseInt(form.n_clones.value) || 1;
@@ -608,9 +614,10 @@
                 }
 
                 // Create player
+                // 2025-06-06 Added available points
                 const player = new Player({
                     power, precision, evasion, hull, weapon_dmg, shield_def, n_clones, vip_status,
-                    weapon_ele1, weapon_ele2, shield_ele1, shield_ele2
+                    weapon_ele1, weapon_ele2, shield_ele1, shield_ele2, available
                 });
 
                 // Create and run battle
@@ -651,6 +658,8 @@
                 const precision = parseInt(form.precision.value) || 0;
                 const evasion = parseInt(form.evasion.value) || 0;
                 const hull = parseInt(form.hull.value) || 0;
+                // 2025-06-06 Added available points
+                const available = parseInt(form.available.value) || 0;
                 const weapon_dmg = parseInt(form.weapon_dmg.value) || 0;
                 const shield_def = parseInt(form.shield_def.value) || 0;
                 const n_clones = parseInt(form.n_clones.value) || 1;
@@ -676,9 +685,10 @@
                 const mob = new Mob(MobName[mob_enum_key], mob_level);
 
                 // Create player
+                // 2025-06-06 Added available points
                 const player = new Player({
                     power, precision, evasion, hull, weapon_dmg, shield_def, n_clones, vip_status,
-                    weapon_ele1, weapon_ele2, shield_ele1, shield_ele2
+                    weapon_ele1, weapon_ele2, shield_ele1, shield_ele2, available
                 });
 
                 const optimizerFightsInput = document.getElementById('optimizer_n_fights');
@@ -775,7 +785,9 @@
                         weapon_ele1: player.weapon_ele1,
                         weapon_ele2: player.weapon_ele2,
                         shield_ele1: player.shield_ele1,
-                        shield_ele2: player.shield_ele2
+                        shield_ele2: player.shield_ele2,
+                        // 2025-06-06 Added available points
+                        available: player.availablePoints
                     });
                     const battle = new Battle({ player: tmp_player, mob: mob, list_modifiers: list_modifiers });
                     
@@ -816,6 +828,8 @@
                         form.precision.value = precision;
                         form.evasion.value = evasion;
                         form.hull.value = hull;
+                        // 2025-06-06 Added available points
+                        form.available.value = available;
                     };
                 } else {
                     // Reset all values to "-"
@@ -934,6 +948,8 @@
                     form.precision.value = data.stats.precision || 0;
                     form.evasion.value = data.stats.evasion || 0;
                     form.hull.value = data.stats.hull || 0;
+                    // 2025-06-06 - Added available points
+                    form.available.value = data.stats.available || 0;
                 }
 
                 // Update ship data
@@ -1051,6 +1067,16 @@
             <div style="flex: 3;">
                 <div class="player-block" style="width: 420px; min-width: 420px; max-width: 420px;">
                     <div class="block-label">玩家</div>
+                    <div class="form-row"><!-- // 2025-06-06 Added available points -->
+                        <div class="form-group">
+                            <label for="available">剩余点数：</label>
+                            <div class="input-group">
+                                <button type="button" class="minus-btn" data-target="available">-</button>
+                                <input type="number" id="available" name="available" value="0" min="0">
+                                <button type="button" class="plus-btn" data-target="available">+</button>
+                            </div>
+                        </div>
+                    </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label for="power">威力（力量）：</label>
