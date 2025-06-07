@@ -425,7 +425,7 @@
                 let n = Math.min(Math.max(parseInt(nClonesInput.value) || 1, 1), 10);
                 nClonesInput.value = n;
                 if (cloneModifiers.length > n) {
-                    cloneModifiers = cloneModifiers.slice(0, n);re
+                    cloneModifiers = cloneModifiers.slice(0, n);
                 } else if (cloneModifiers.length < n) {
                     while (cloneModifiers.length < n) {
                         cloneModifiers.push({ crit: 0.0, critdmg: 0.0, dual: 0.0 });

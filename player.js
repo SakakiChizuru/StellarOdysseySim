@@ -19,9 +19,6 @@ class Player {
         this.hp = (7.0 * hull) + shield_def;
         this.dmg = ((7.0 * this.pow) + weapon_dmg) * this.n_clones;
 
-        console.log(
-            `Player created with available points: ${this.availablePoints}, ArgumentAP: ${available}`
-        );
     }
 }
 

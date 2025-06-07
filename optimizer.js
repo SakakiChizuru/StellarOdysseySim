@@ -100,7 +100,7 @@ class Optimizer {
         );
 
         const available_points = nb_points - needed_pow - needed_hull;
-        
+
         const lcl_result = [];
 
         for (let p = 0; p <= available_points; p++) {
@@ -122,7 +122,7 @@ class Optimizer {
                 shield_ele1: this.player.shield_ele1,
                 shield_ele2: this.player.shield_ele2,
                 // 2025-06-06 Added available points
-                available: this.player.availablePoints,
+                available: this.player.availablePoints
             });
             const battle = new Battle({
                 player: tmp_player,
@@ -229,7 +229,7 @@ class Optimizer {
                 shield_ele1: this.player.shield_ele1,
                 shield_ele2: this.player.shield_ele2,
                 // 2025-06-06 Added available points
-                available: this.player.availablePoints,
+                available: this.player.availablePoints
             });
 
             const battle = new Battle({
