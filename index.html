@@ -373,7 +373,9 @@
                     optimizer_htk: document.getElementById('optimizer_htk').value,
                     optimizer_htd: document.getElementById('optimizer_htd').value,
                     // API key
-                    api_key: form.api_key?.value || ''
+                    api_key: form.api_key?.value || '',
+                    // 2025-06-07 Add fill stat after optimization
+                    optimize_fill_after: document.getElementById('optimize_fill_after')?.checked || false
                 };
                 localStorage.setItem('stellarOdysseySettings', JSON.stringify(settings));
             }
@@ -805,7 +807,7 @@
                     document.getElementById('opt_precision').textContent = precision;
                     document.getElementById('opt_evasion').textContent = evasion;
                     document.getElementById('opt_hull').textContent = hull;
-                    
+                  
                     // Update the results
                     document.getElementById('opt_win_chance').textContent = `${(result.winChance * 100).toFixed(2)}%`;
                     document.getElementById('opt_credits_hour').textContent = `${millify(creditsPerHour)}／小时`;
@@ -813,13 +815,24 @@
                     document.getElementById('opt_exp_hour').textContent = `${millify(expPerHour)}／小时`;
                     document.getElementById('opt_exp_day').textContent = `${millify(expPerDay)}／天`;
 
+
+                    // 2025-06-07 Add fill stat after optimization
+                    if (document.getElementById('optimize_fill_after')?.checked) {
+                        form.power.value = power;
+                        form.precision.value = precision;
+                        form.evasion.value = evasion;
+                        form.hull.value = hull;
+                        // Reset available points after optimization
+                        form.available.value = 0;
+                    }
+
                     // Add Import button next to Optimize
                     let importBtn = document.getElementById('importOptimizedBtn');
                     if (!importBtn) {
                         importBtn = document.createElement('button');
                         importBtn.id = 'importOptimizedBtn';
                         importBtn.type = 'button';
-                        importBtn.textContent = 'Import';
+                        importBtn.textContent = '填充到玩家数据';
                         optimizerBtn.parentNode.insertBefore(importBtn, optimizerBtn.nextSibling);
                     }
                     importBtn.style.display = 'inline-block';
@@ -829,7 +842,7 @@
                         form.evasion.value = evasion;
                         form.hull.value = hull;
                         // 2025-06-06 Added available points
-                        form.available.value = available;
+                        form.available.value = 0;
                     };
                 } else {
                     // Reset all values to "-"
@@ -1296,13 +1309,16 @@
                         <div class="block-label">优化模拟
                             <span style="color: #4fa3ff; margin-left: 5px; cursor: help;" title="Find the optimal stat distribution for your current configuration. The optimizer will test various stat combinations using the specified number of simulations (up to 1,000,000). Higher values provide more accurate results but significantly increase computation time and may temporarily freeze the interface. Consider starting with a lower number and increasing it if needed.">ⓘ</span>
                         </div>
-                        <div style="display: flex; align-items: center; margin-bottom: 1em;">
+                        <div style="display: flex;align-items: baseline;margin-bottom: 1em;justify-content: flex-start;flex-direction: row;">
                             <span style="margin-right: 10px;">针对性优化:</span>
                             <label style="margin-right: 15px; display: flex; align-items: center;">
                                 <input type="radio" name="optimize_target" value="credits" checked style="margin-right: 5px;"> 货币
                             </label>
                             <label style="display: flex; align-items: center;">
                                 <input type="radio" name="optimize_target" value="exp" style="margin-right: 5px;"> 经验
+                            </label>
+                            <label style="display: flex; align-items: center; margin-left: 40px;">
+                                <input type="checkbox" id="optimize_fill_after" name="optimize_fill_after" checked style="margin-right: 40px;"> 优化后填充属性
                             </label>
                         </div>
                         <div class="form-row" style="margin-bottom: 1em;">
@@ -1335,7 +1351,7 @@
                             <div class="form-group" style="display: flex; flex-direction: row; align-items: center; margin-left: -250px;">
                                 <button id="optimizerBtn" type="button" style="margin-right: 10px;">简单计算优化</button>
                                 <button id="longOptimizerBtn" type="button" style="margin-right: 10px;" title="Optimize by searching through multiple values of HTK and HTD. It is not advised to use more than 5000 fights">复杂计算优化</button>
-                                <button id="importOptimizedBtn" type="button" style="display: none;">导入数据</button>
+                                <button id="importOptimizedBtn" type="button" style="display: none;">填充到玩家数据</button>
                             </div>
                         </div>
                         <div id="optimizerProgress" style="height: 50px; margin: 1em 0;">
@@ -1635,7 +1651,7 @@
     <div id="changelogModal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); align-items:center; justify-content:center;">
       <div style="background:#222; color:#fff; padding:1.5em; border-radius:10px; max-width:650px; width:117vw; max-width:65vw; max-height:70vh; overflow:auto; box-shadow:0 4px 32px #000; position:relative;">
         <button id="closeChangelog" style="position:absolute; top:0.5em; right:0.5em; background:none; border:none; color:#fff; font-size:1.5em; cursor:pointer;">&times;</button>
-        <h2 style="margin-top:0;">Changelog</h2>
+        <h2 style="margin-top:0;">版本改动</h2>
         <div id="changelogContent" style="white-space:pre-wrap; background:#181818; padding:1em; border-radius:6px; max-height:50vh; overflow:auto; font-size:1em; font-family:inherit;">载入中...</div>
       </div>
     </div>
@@ -1643,7 +1659,7 @@
     document.getElementById('changelogLink').addEventListener('click', function() {
       const modal = document.getElementById('changelogModal');
       modal.style.display = 'flex';
-      fetch('changelog.txt')
+      fetch('https://anfneub.github.io/StellarOdysseySim/changelog.txt')
         .then(r => r.text())
         .then(txt => {
           // Format lines starting with '-' as list items
