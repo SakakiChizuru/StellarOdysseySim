@@ -2,6 +2,7 @@ import { Element } from './dataclasses.js';
 
 class Player {
     constructor({ power, precision, evasion, hull, weapon_dmg, shield_def, n_clones, vip_status, weapon_ele1 = null, weapon_ele2 = null, shield_ele1 = null, shield_ele2 = null, available = null }) {
+
         this.pow = power;
         this.pre = precision;
         this.eva = evasion;
@@ -18,7 +19,6 @@ class Player {
 
         this.hp = (7.0 * hull) + shield_def;
         this.dmg = ((7.0 * this.pow) + weapon_dmg) * this.n_clones;
-
     }
 }
 

@@ -39,6 +39,7 @@ class Battle {
         this.mob_eva = mob.eva;
         this.credits_base = 300.0 * (1.0 + 0.1 * mob.lvl) * (player.vip_status ? 1.1 : 1.0);
         this.exp_base = Math.floor((20.0 + Math.floor(0.1 * mob.lvl)) * (player.vip_status ? 1.1 : 1.0));
+
     }
 
     fight() {

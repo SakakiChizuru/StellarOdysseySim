@@ -4,10 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>恒星奥德赛加点配置模拟器</title>
+    <!-- Rajdhani -->
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Tahoma, Arial, sans-serif; margin: 2em; background: #181c24; color: #e6eaf3; }
-        .form-section { max-width: 1100px; margin-left: 0; margin-right: auto; display: flex; flex-direction: row; gap: 2em; }
-        
+        body {
+            font-family: "Rajdhani", Tahoma, Arial, sans-serif;
+            margin: 2em;
+            background: #181c24;
+            color: #e6eaf3;
+        }
+        .form-section {
+            max-width: 1100px;
+            margin-left: 0;
+            margin-right: auto;
+            display: flex;
+            flex-direction: row;
+            gap: 2em;
+        }
+
         /* Tab styles */
         .tab-container {
             position: fixed;
@@ -47,11 +61,35 @@
             display: block;
         }
         /* End tab styles */
-
-        .form-section > div:first-child { flex: none; width: 420px; min-width: 420px; }
-        .form-row { display: flex; gap: 1em; margin-bottom: 1em; }
-        .form-group { flex: 1; display: flex; flex-direction: column; min-width: 180px; color: #e6eaf3; font-size: 1.08em; }
-        .input-group { display: flex; align-items: center; }
+        [type="number" i],
+        [type="text" i] {
+            font-family: "Rajdhani", Tahoma, Arial, sans-serif;
+            padding-block: 1px;
+            padding-inline: 2px;
+        }
+        .form-section > div:first-child {
+            flex: none;
+            width: 420px;
+            min-width: 420px;
+        }
+        .form-row {
+            display: flex;
+            gap: 1em;
+            margin-bottom: 1em;
+        }
+        .form-group {
+            font-family: "Rajdhani", Tahoma, Arial, sans-serif;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 180px;
+            color: #e6eaf3;
+            font-size: 1.08em;
+        }
+        .input-group {
+            display: flex;
+            align-items: center;
+        }
         .input-group button {
             width: 2.2em;
             height: 1.6em;
@@ -72,7 +110,8 @@
         .input-group button:active {
             background: #2a3142;
         }
-        .input-group input[type=number] {
+        .input-group input[type="number"] {
+            font-family: "Rajdhani", Tahoma, Arial, sans-serif;
             width: 3.84em;
             height: 1.32em;
             font-size: 1.14em;
@@ -84,6 +123,7 @@
             box-sizing: border-box;
         }
         .clone-modifiers-section {
+            font-family: "Rajdhani", Tahoma, Arial, sans-serif;
             flex: none;
             display: grid;
             grid-template-rows: repeat(5, 110px); /* 5 rows for up to 10 clones */
@@ -134,7 +174,7 @@
             white-space: nowrap;
             color: #e6eaf3;
         }
-        .clone-field-group input[type=number] {
+        .clone-field-group input[type="number"] {
             width: 3.2em;
             height: 1.1em;
             font-size: 0.98em;
@@ -159,9 +199,13 @@
             color: #e6eaf3;
             border: 1px solid #2c3242;
         }
-        label { margin-bottom: 0.2em; }
-        button[type=button], button[type=submit] {
-            margin-top: 1em; padding: 0.5em 1em;
+        label {
+            margin-bottom: 0.2em;
+        }
+        button[type="button"],
+        button[type="submit"] {
+            margin-top: 1em;
+            padding: 0.5em 1em;
             background: #36405a;
             color: #f3f6fa;
             border: 1px solid #4a5a7c;
@@ -169,7 +213,8 @@
             letter-spacing: 0.01em;
             transition: background 0.2s, color 0.2s;
         }
-        button[type=button]:hover, button[type=submit]:hover {
+        button[type="button"]:hover,
+        button[type="submit"]:hover {
             background: #4a5a7c;
             color: #fff;
         }
@@ -178,17 +223,35 @@
             color: #eaeaea;
             text-decoration: none;
         }
-        .block-label { font-size: 1.22em; font-weight: 700; margin-bottom: 0.5em; color: #f3f6fa; letter-spacing: 0.01em; }
-        #playerResult { margin-top: 1.5em; font-size: 1.1em; color: #f3f6fa; }
+        .block-label {
+            font-family: "Rejdhani", Tahoma, Arial, sans-serif;
+            font-size: 1.22em;
+            font-weight: 700;
+            margin-bottom: 0.5em;
+            color: #f3f6fa;
+            letter-spacing: 0.01em;
+        }
+        #playerResult {
+            margin-top: 1.5em;
+            font-size: 1.1em;
+            color: #f3f6fa;
+        }
         @media (max-width: 900px) {
-            .form-section { max-width: 100%; }
-            .form-row { flex-direction: column; }
-            .clone-modifiers-section { margin-left: 0; }
+            .form-section {
+                max-width: 100%;
+            }
+            .form-row {
+                flex-direction: column;
+            }
+            .clone-modifiers-section {
+                margin-left: 0;
+            }
         }
         .input-group .minus-btn,
         .input-group .plus-btn {
+            font-family: "Rejdhani", Tahoma, Arial, sans-serif;
             width: 1.73em;
-            height: 1.30em;
+            height: 1.3em;
             font-size: 1.02em;
             margin: 0 0.08em;
             display: flex;
@@ -203,12 +266,13 @@
         }
         #weapon_dmg,
         #shield_def {
-            width: 5.0em;
+            width: 5em;
             background: #36405a;
             color: #e6eaf3;
             border: 1px solid #2c3242;
         }
         .player-block {
+            font-family: "Rejdhani", Tahoma, Arial, sans-serif;
             background: #23283a;
             border-radius: 6px;
             border: 1px solid #2c3242;
@@ -233,26 +297,27 @@
             align-self: flex-start;
         }
         #mob_name {
-            font-size: 1.0em;
+            font-size: 1em;
             background: #36405a;
             color: #e6eaf3;
             border: 1px solid #2c3242;
         }
         #weapon_ele1,
         #weapon_ele2 {
-            font-size: 1.0em;
+            font-size: 1em;
             background: #36405a;
             color: #e6eaf3;
             border: 1px solid #2c3242;
         }
         #shield_ele1,
         #shield_ele2 {
-            font-size: 1.0em;
+            font-size: 1em;
             background: #36405a;
             color: #e6eaf3;
             border: 1px solid #2c3242;
         }
         .battle-block {
+            font-family: "Rejdhani", Tahoma, Arial, sans-serif;
             background: #23283a;
             border-radius: 6px;
             border: 1px solid #2c3242;
@@ -262,11 +327,12 @@
             min-width: 370px;
             max-width: 370px;
             margin-bottom: -0.5em;
-            margin-top: 5.0em;
+            margin-top: 5em;
             min-height: 230px;
             color: #e6eaf3;
         }
         .optimizer-block {
+            font-family: "Rejdhani", Tahoma, Arial, sans-serif;
             background: #23283a !important;
             border-radius: 6px;
             border: 1px solid #2c3242 !important;
@@ -277,6 +343,8 @@
             max-width: 370px;
             min-height: 230px;
             color: #e6eaf3;
+            display: flex;
+            flex-direction: column;
         }
         footer {
             position: fixed;
@@ -289,10 +357,8 @@
             background: #181c24;
             padding: 0.5em 0;
         }
-        #n_fights {
-            background: #36405a;
-            color: #e6eaf3;
-            border: 1px solid #2c3242;
+        div#optimizerResultInfo {
+            font-family: 'Rajdhani', Tahoma, Arial, sans-serif;
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
@@ -302,7 +368,7 @@
         import { Battle } from './battle.js';
         import { CloneModifiers, MobName } from './dataclasses.js';
         import { millify } from './utils.js';
-        import { Optimizer } from './optimizer.js';
+        import { Optimizer } from './optimizer.org.js';
 
         // Predefined test values for easy testing
         const DEFAULTS = {
@@ -647,7 +713,11 @@
             const optimizerBtn = document.getElementById('optimizerBtn');
             const longOptimizerBtn = document.getElementById('longOptimizerBtn');
             const optimizerResultDiv = document.getElementById('optimizerResult');
-            
+
+            // incremental optimizer
+            const incrementalOptimizerBtn = document.getElementById('incrementalOptimizerBtn');
+
+
             async function runOptimizer(isLongOptimize = false) {
                 // Reset progress bar
                 const progressBar = document.getElementById('optimizerProgressBar');
@@ -835,7 +905,7 @@
                         importBtn.textContent = '填充到玩家数据';
                         optimizerBtn.parentNode.insertBefore(importBtn, optimizerBtn.nextSibling);
                     }
-                    importBtn.style.display = 'inline-block';
+                    importBtn.style.visibility = 'visible';
                     importBtn.onclick = () => {
                         form.power.value = power;
                         form.precision.value = precision;
@@ -857,12 +927,408 @@
                     document.getElementById('opt_exp_day').textContent = '-';
                     
                     let importBtn = document.getElementById('importOptimizedBtn');
-                    if (importBtn) importBtn.style.display = 'none';
+                    if (importBtn) importBtn.style.visibility = 'hidden';
                 }
             }
 
+            // async function runIncrementalOptimizer() {
+            //     // 重置进度条
+            //     const progressBar = document.getElementById('optimizerProgressBar');
+            //     const progressText = document.getElementById('optimizerProgressText');
+            //     progressBar.style.width = '0%';
+            //     progressText.textContent = '0%';
+                
+            //     // 显示进度容器
+            //     // document.getElementById('optimizerProgressContainer').style.display = 'block';
+            //     // document.getElementById('optimizerResults').style.display = 'none';
+
+            //     // 收集玩家字段
+            //     const power = parseInt(form.power.value) || 0;
+            //     const precision = parseInt(form.precision.value) || 0;
+            //     const evasion = parseInt(form.evasion.value) || 0;
+            //     const hull = parseInt(form.hull.value) || 0;
+            //     const available = parseInt(form.available.value) || 0;
+            //     const weapon_dmg = parseInt(form.weapon_dmg.value) || 0;
+            //     const shield_def = parseInt(form.shield_def.value) || 0;
+            //     const n_clones = parseInt(form.n_clones.value) || 1;
+            //     const weapon_ele1 = form.weapon_ele1.value || null;
+            //     const weapon_ele2 = form.weapon_ele2.value || null;
+            //     const shield_ele1 = form.shield_ele1.value || null;
+            //     const shield_ele2 = form.shield_ele2.value || null;
+            //     const vip_status = form.vip_status.checked;
+
+            //     const base = {
+            //         pow: parseInt(form.power.value),
+            //         pre: parseInt(form.precision.value),
+            //         eva: parseInt(form.evasion.value),
+            //         hull: parseInt(form.hull.value)
+            //     };
+
+            //     // 收集克隆体修饰符
+            //     const list_modifiers = cloneModifiers.map(mod =>
+            //         new CloneModifiers(
+            //             (parseFloat(mod.crit) || 0) / 100,
+            //             (parseFloat(mod.critdmg) || 0) / 100,
+            //             (parseFloat(mod.dual) || 0) / 100
+            //         )
+            //     );
+
+            //     // 收集敌人字段
+            //     const mob_name = form.mob_name.value;
+            //     const mob_level = parseInt(form.mob_level.value) || 1;
+            //     let mob_enum_key = Object.keys(MobName).find(key => MobName[key] === mob_name);
+            //     const mob = new Mob(MobName[mob_enum_key], mob_level);
+
+            //     // 创建玩家对象
+            //     const player = new Player({
+            //         power, precision, evasion, hull, weapon_dmg, shield_def, n_clones, vip_status,
+            //         weapon_ele1, weapon_ele2, shield_ele1, shield_ele2, available
+            //     });
+
+            //     // 获取战斗模拟次数
+            //     const optimizerFightsInput = document.getElementById('optimizer_n_fights');
+            //     const n_fights = parseInt(optimizerFightsInput.value);
+                
+            //     // 获取声望值
+            //     const reputation = parseFloat(form.reputation?.value || 0) / 100;
+                
+            //     console.log(player, mob, list_modifiers, n_fights, reputation);
+            //     // 创建优化器
+            //     const optimizer = new Optimizer(player, mob, list_modifiers, n_fights, reputation);
+                
+            //     // 获取优化目标
+            //     const target = document.querySelector('input[name="optimize_target"]:checked').value;
+                
+            //     const topResults = [];
+
+            //     const resultArea = document.getElementById('opt_result');
+            //     resultArea.innerText = '正在计算，请稍候...';
+
+            //     // 创建进度更新函数
+            //     const updateProgress = (current, total) => {
+            //         const progress = (current / total) * 100;
+            //         progressBar.style.width = `${progress}%`;
+            //         progressText.textContent = `${Math.round(progress)}%`;
+                    
+            //         // 允许UI更新
+            //         return new Promise(resolve => setTimeout(resolve, 0));
+            //     };
+            //     // 执行多次获取前 5 优解
+            //     for (let i = 0; i < 8; i++) {
+            //         const result = await optimizer.findBestIncremental(target, true, updateProgress);
+            //         topResults.push(result);
+            //     }
+            //     // 执行增量优化
+            //     //const bestResult = await optimizer.findBestIncremental(target, true, updateProgress);
+            //     const uniqueBuilds = new Map();
+            //         for (const r of topResults) {
+            //             const key = r.build.join(',');
+            //             if (!uniqueBuilds.has(key)) {
+            //                 uniqueBuilds.set(key, r);
+            //             }
+            //         }
+
+            //     const bestList = Array.from(uniqueBuilds.values())
+            //         .sort((a, b) => b.win_chance - a.win_chance)
+            //         .slice(0, 5);
+
+
+            //     let opt_resulthtml = `
+            //     <table border="1" cellspacing="0" cellpadding="5">
+            //         <thead>
+            //             <tr>
+            //                 <th>#</th>
+            //                 <th>Power</th>
+            //                 <th>Precision</th>
+            //                 <th>Evasion</th>
+            //                 <th>Hull</th>
+            //                 <th>△Power</th>
+            //                 <th>△Precision</th>
+            //                 <th>△Evasion</th>
+            //                 <th>△Hull</th>
+            //                 <th>胜率<br>Win%</th>
+            //             </tr>
+            //         </thead>
+            //         <tbody>
+            //     `;
+
+            //     bestList.forEach((r, i) => {
+            //         const [p, pr, ev, h] = r.build;
+            //         opt_resulthtml += `
+            //             <tr>
+            //                 <td>#${i + 1}</td>
+            //                 <td>${p}</td>
+            //                 <td>${pr}</td>
+            //                 <td>${ev}</td>
+            //                 <td>${h}</td>
+            //                 <td>+${p - base.pow}</td>
+            //                 <td>+${pr - base.pre}</td>
+            //                 <td>+${ev - base.eva}</td>
+            //                 <td>+${h - base.hull}</td>
+            //                 <td>${(r.win_chance * 100).toFixed(2)}%</td>
+            //             </tr>
+            //         `;
+            //     });
+
+            //     opt_resulthtml += '</tbody></table>';
+
+            //     resultArea.innerHTML = opt_resulthtml
+            //     // 返回优化结果
+            //     return { 
+            //         bestStats: bestList[0].build, 
+            //         winChance: bestList[0].win_chance,
+            //         resource: bestList[0].resource
+            //     };
+            // }
+
+        
+        
+            // displayOptimizerResult 
+        
+        // runIncrementalOptimizer  增加 mode 参数，默认 'SINGLEMODE'
+            async function runIncrementalOptimizer(isSingleMode = true) {
+                console.log(isSingleMode? "SingleMode":"Top5 Mode");
+                // 重置进度条
+                const progressBar = document.getElementById('optimizerProgressBar');
+                const progressText = document.getElementById('optimizerProgressText');
+                progressBar.style.width = '0%';
+                progressText.textContent = '0%';
+
+                // 读取基础数据（保持原有代码）
+                const power = parseInt(form.power.value) || 0;
+                const precision = parseInt(form.precision.value) || 0;
+                const evasion = parseInt(form.evasion.value) || 0;
+                const hull = parseInt(form.hull.value) || 0;
+                const available = parseInt(form.available.value) || 0;
+                const weapon_dmg = parseInt(form.weapon_dmg.value) || 0;
+                const shield_def = parseInt(form.shield_def.value) || 0;
+                const n_clones = parseInt(form.n_clones.value) || 1;
+                const weapon_ele1 = form.weapon_ele1.value || null;
+                const weapon_ele2 = form.weapon_ele2.value || null;
+                const shield_ele1 = form.shield_ele1.value || null;
+                const shield_ele2 = form.shield_ele2.value || null;
+                const vip_status = form.vip_status.checked;
+
+                const base = {
+                    pow: power,
+                    pre: precision,
+                    eva: evasion,
+                    hull: hull
+                };
+
+                // 克隆修饰符
+                const list_modifiers = cloneModifiers.map(mod =>
+                    new CloneModifiers(
+                        (parseFloat(mod.crit) || 0) / 100,
+                        (parseFloat(mod.critdmg) || 0) / 100,
+                        (parseFloat(mod.dual) || 0) / 100
+                    )
+                );
+
+                // 敌人信息
+                const mob_name = form.mob_name.value;
+                const mob_level = parseInt(form.mob_level.value) || 1;
+                let mob_enum_key = Object.keys(MobName).find(key => MobName[key] === mob_name);
+                const mob = new Mob(MobName[mob_enum_key], mob_level);
+
+                // 玩家对象
+                const player = new Player({
+                    power, precision, evasion, hull, weapon_dmg, shield_def, n_clones, vip_status,
+                    weapon_ele1, weapon_ele2, shield_ele1, shield_ele2, available
+                });
+
+                // 战斗次数和声望
+                const optimizerFightsInput = document.getElementById('optimizer_n_fights');
+                const n_fights = parseInt(optimizerFightsInput.value);
+                const reputation = parseFloat(form.reputation?.value || 0) / 100;
+
+                // 优化器实例
+                const optimizer = new Optimizer(player, mob, list_modifiers, n_fights, reputation);
+
+                // 目标类型
+                const target = document.querySelector('input[name="optimize_target"]:checked').value;
+
+                const updateProgress = (current, total) => {
+                    const progress = (current / total) * 100;
+                    progressBar.style.width = `${progress}%`;
+                    progressText.textContent = `${Math.round(progress)}%`;
+                    return new Promise(resolve => setTimeout(resolve, 0));
+                };
+
+                if (!isSingleMode) {
+                    // TOP5模式，多次获取
+                    const topResults = [];
+
+                    for (let i = 0; i < 8; i++) {
+                        const result = await optimizer.findBestIncremental(target, true, updateProgress);
+                        topResults.push(result);
+                    }
+
+                    // 去重合并，取前5
+                    const uniqueBuilds = new Map();
+                    for (const r of topResults) {
+                        const key = r.build.join(',');
+                        if (!uniqueBuilds.has(key)) {
+                            uniqueBuilds.set(key, r);
+                        }
+                    }
+
+                    const bestList = Array.from(uniqueBuilds.values())
+                        .sort((a, b) => b.win_chance - a.win_chance)
+                        .slice(0, 5);
+
+                    return {
+                        bestList,
+                        baseStats: base
+                    };
+                } else {
+                    // 单次模式，直接返回单条结果
+                    const result = await optimizer.findBestIncremental(target, true, updateProgress);
+
+                    return {
+                        bestStats: result.build,
+                        baseStats: base,
+                        winChance: result.win_chance,
+                        resource: result.resource
+                    };
+                }
+            }
+
+
+        function displayOptimizerResult(result, isSingleMode = true) {
+            const optResultContainer = document.getElementById('opt_result');
+
+            if (!isSingleMode) {
+                // TOP5MODE 显示表格
+                optResultContainer.innerHTML = '';
+
+                const table = document.createElement('table');
+                table.style.fontFamily = '"Rajdhani", Tahoma, Arial, sans-serif';
+                table.style.margin = '0 auto';
+                table.style.textAlign = 'center';
+                table.style.width = '100%';
+                table.style.borderCollapse = 'collapse';
+
+                const thead = document.createElement('thead');
+                const headerRow = document.createElement('tr');
+                ['排名', '力量', '精准', '闪避', '船体', '▲力量', '▲精准', '▲闪避', '▲船体', '胜率'].forEach(text => {
+                    const th = document.createElement('th');
+                    th.textContent = text;
+                    th.style.border = '1px solid #ccc';
+                    th.style.padding = '4px';
+                    headerRow.appendChild(th);
+                });
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+
+                const tbody = document.createElement('tbody');
+                //console.log(result);
+                const baseStats = ['pow', 'pre', 'eva', 'hull'].map(k => result.baseStats[k]);
+                result.bestList.forEach((r, idx) => {
+                    const tr = document.createElement('tr');
+                    const tdRank = document.createElement('td');
+                    tdRank.textContent = (idx + 1).toString();
+                    tdRank.style.border = '1px solid #ccc';
+                    tdRank.style.padding = '4px';
+                    tr.appendChild(tdRank);
+
+                    r.build.forEach(val => {
+                        const td = document.createElement('td');
+                        td.textContent = val;
+                        td.style.border = '1px solid #ccc';
+                        td.style.padding = '4px';
+                        tr.appendChild(td);
+                    });
+
+                    r.build.forEach((val, idx) => {
+                        const td = document.createElement('td');
+                        const increasement = val - baseStats[idx];
+                        td.innerHTML = increasement > 0 ? `[<font color="Lime">+${increasement}</font>]` : '(0)';
+                        td.style.border = '1px solid #ccc';
+                        td.style.padding = '4px';
+                        tr.appendChild(td);
+                    })
+
+                    const tdWinChance = document.createElement('td');
+                    tdWinChance.textContent = (r.win_chance * 100).toFixed(2) + '%';
+                    tdWinChance.style.border = '1px solid #ccc';
+                    tdWinChance.style.padding = '4px';
+                    tr.appendChild(tdWinChance);
+
+                    tbody.appendChild(tr);
+                });
+                table.appendChild(tbody);
+
+                optResultContainer.appendChild(table);
+
+            } else {
+                const base = result.baseStats;
+
+                console.log(result);
+                // SINGLEMODE 显示单条结果
+                const IncrementalOptimizeResult = {
+                    power: result.bestStats[0],
+                    precision: result.bestStats[1],
+                    evasion: result.bestStats[2],
+                    hull: result.bestStats[3]
+                };
+
+                const IncrementalOptimizeIncresement = {
+                    power: IncrementalOptimizeResult.power - base.pow,
+                    precision: IncrementalOptimizeResult.precision - base.pre,
+                    evasion: IncrementalOptimizeResult.evasion - base.eva,
+                    hull: IncrementalOptimizeResult.hull - base.hull
+                };
+
+                document.getElementById('opt_power').innerHTML = `${IncrementalOptimizeResult.power} (<font color=${IncrementalOptimizeIncresement.power > 0 ? "'Lime'" : "'white'"}>${IncrementalOptimizeIncresement.power > 0 ? '+' : ''}${IncrementalOptimizeIncresement.power}</font>)`;
+                document.getElementById('opt_precision').innerHTML = `${IncrementalOptimizeResult.precision} (<font color=${IncrementalOptimizeIncresement.precision > 0 ? "'Lime'" : "'white'"}>${IncrementalOptimizeIncresement.precision > 0 ? '+' : ''}${IncrementalOptimizeIncresement.precision}</font>)`;
+                document.getElementById('opt_evasion').innerHTML = `${IncrementalOptimizeResult.evasion} (<font color=${IncrementalOptimizeIncresement.evasion > 0 ? "'Lime'" : "'white'"}>${IncrementalOptimizeIncresement.evasion > 0 ? '+' : ''}${IncrementalOptimizeIncresement.evasion}</font>)`;
+                document.getElementById('opt_hull').innerHTML = `${IncrementalOptimizeResult.hull} (<font color=${IncrementalOptimizeIncresement.hull > 0 ? "'Lime'" : "'white'"}>${IncrementalOptimizeIncresement.hull > 0 ? '+' : ''}${IncrementalOptimizeIncresement.hull}</font>)`;
+                
+                document.getElementById('opt_win_chance').textContent = `${(result.winChance * 100).toFixed(2)}%`;
+                document.getElementById('opt_credits_hour').textContent = `${millify(result.resource.credits_hourly)}／小时`;
+                document.getElementById('opt_credits_day').textContent = `${millify(result.resource.credits_daily)}／天`;
+                document.getElementById('opt_exp_hour').textContent = `${millify(result.resource.exp_hourly)}／小时`;
+                document.getElementById('opt_exp_day').textContent = `${millify(result.resource.exp_daily)}／天`;
+
+            }
+        }
+
+
             optimizerBtn.addEventListener('click', () => runOptimizer(false));
             longOptimizerBtn.addEventListener('click', () => runOptimizer(true));
+
+            // incrementalOptimizerBtn 的事件监听，控制显示切换，并调用显示函数
+            incrementalOptimizerBtn.addEventListener('click', async () => {
+                // try {
+                    // 读取是否选中TOP5模式
+                    const isSingleMode = !document.getElementById('incrementalTop5Mode').checked;
+
+                    // 切换显示样式
+                    const top5Div = document.getElementById('IncrementalOptimizeInfo');
+                    const optResultDiv = document.getElementById('optimizerResult');
+
+                    document.getElementById('opt_result').textContent = '正在计算...';
+
+                    if (!isSingleMode) {
+                        top5Div.style.display = 'flex';
+                        optResultDiv.style.display = 'none';
+                    } else {
+                        top5Div.style.display = 'none';
+                        optResultDiv.style.display = 'flex';
+                    }
+
+                    // 运行优化器，传入模式
+                    const result = await runIncrementalOptimizer(isSingleMode);
+
+                    // 显示结果，传入模式
+                    displayOptimizerResult(result, isSingleMode);
+
+                // } catch (error) {
+                //     console.error('优化过程中出错:', error);
+                //     alert('优化失败: ' + error.message);
+                // }
+            });
 
             // Add event listeners to save settings when values change
             form.querySelectorAll('input, select').forEach(element => {
@@ -1317,7 +1783,7 @@
                             <label style="display: flex; align-items: center;">
                                 <input type="radio" name="optimize_target" value="exp" style="margin-right: 5px;"> 经验
                             </label>
-                            <label style="display: flex; align-items:flex-start;justify-content: flex-start; margin-left: 40px;">
+                            <label style="display: flex; align-items:flex-start;justify-content:center; margin-left: 40px;">
                                 <input type="checkbox" id="optimize_fill_after" name="optimize_fill_after" checked style="margin-right: 5px;"> 优化后填充属性
                             </label>
                         </div>
@@ -1343,15 +1809,19 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="form-row">
+                        <div class="form-row"  style="display: flex; gap: 1em; margin-bottom: 1em; align-items: center;">
                             <div class="form-group">
                                 <label for="optimizer_n_fights">模拟战斗次数：</label>
                                 <input type="number" id="optimizer_n_fights" name="optimizer_n_fights" value="5000" min="1" max="1000000" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
                             </div>
-                            <div class="form-group" style="display: flex; flex-direction: row; align-items: center; margin-left: -250px;">
+                            <div class="form-group" style="display: flex; flex-direction: row; flex-wrap: wrap; align-items:baseline; margin-left: -250px;">
                                 <button id="optimizerBtn" type="button" style="margin-right: 10px;">简单计算优化</button>
                                 <button id="longOptimizerBtn" type="button" style="margin-right: 10px;" title="Optimize by searching through multiple values of HTK and HTD. It is not advised to use more than 5000 fights">复杂计算优化</button>
-                                <button id="importOptimizedBtn" type="button" style="display: none;">填充到玩家数据</button>
+                                <button id="importOptimizedBtn" type="button" style="visibility: hidden;">填充到玩家数据</button>
+                                <br style="flex-basis: 100%; height: 0;">
+                                <button id="incrementalOptimizerBtn" type="button" style="margin-right: 10px;">增量（加点）建议</button>
+                                <input type="checkbox" id="incrementalTop5Mode" name="incrementalTop5Mode" style="margin-right: 5px;"></input>
+                                <label for="incrementalTop5Mode" style="margin-right: 10px;">最优5模式（共计算8次）</label>
                             </div>
                         </div>
                         <div id="optimizerProgress" style="height: 50px; margin: 1em 0;">
@@ -1361,18 +1831,23 @@
                             <div id="optimizerProgressText" style="text-align: center; margin-top: 0.5em; font-size: 0.9em; color: #b0b6c6;">0%</div>
                         </div>
                         <div id="optimizerResult" style="display: flex; flex-direction: row; gap: 2em; margin-top: 1em;">
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.2em 1.2em; width: 140px; font-size: 1em;">
-                                <div><b>力量</b><br><span id="opt_power">-</span></div>
-                                <div><b>精准</b><br><span id="opt_precision">-</span></div>
-                                <div><b>闪避</b><br><span id="opt_evasion">-</span></div>
-                                <div><b>船体</b><br><span id="opt_hull">-</span></div>
+                            <div id="optimizerResultInfo" class="form-row">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.2em 1.2em; width: 180px; font-size: 1em;">
+                                    <div><b>力量</b><br><span id="opt_power">-</span></div>
+                                    <div><b>精准</b><br><span id="opt_precision">-</span></div>
+                                    <div><b>闪避</b><br><span id="opt_evasion">-</span></div>
+                                    <div><b>船体</b><br><span id="opt_hull">-</span></div>
+                                </div>
+                                <div style="font-size: 0.98em;">
+                                    <div><b>胜率：</b> <span id="opt_win_chance">-</span></div>
+                                    <div><b>货币／小时：</b> <span id="opt_credits_hour">-</span></div>
+                                    <div><b>货币／天：</b> <span id="opt_credits_day">-</span></div>
+                                    <div><b>经验／小时：</b> <span id="opt_exp_hour">-</span></div>
+                                    <div><b>经验／天：</b> <span id="opt_exp_day">-</span></div>
+                                </div>
                             </div>
-                            <div style="font-size: 0.98em;">
-                                <div><b>胜率：</b> <span id="opt_win_chance">-</span></div>
-                                <div><b>货币／小时：</b> <span id="opt_credits_hour">-</span></div>
-                                <div><b>货币／天：</b> <span id="opt_credits_day">-</span></div>
-                                <div><b>经验／小时：</b> <span id="opt_exp_hour">-</span></div>
-                                <div><b>经验／天：</b> <span id="opt_exp_day">-</span></div>
+                            <div id="IncrementalOptimizeInfo" class="form-row" style="display:none; flex-direction: column;align-items: center;width: 100%;font-size: 1.1em;align-content: center;justify-content: center; ">
+                                <div id="opt_result">-</div>
                             </div>
                         </div>
                     </div>
@@ -1594,7 +2069,7 @@
 
     <div id="playerResult"></div>
     <footer>
-        <span>Proudly made by anfneub<a href="https://anfneub.github.io/StellarOdysseySim/"> (Original Simulator Link Here)</a></span>
+        <span>Proudly made by anfneub <a href="https://anfneub.github.io/StellarOdysseySim/" target="_blank">(Original Simulator Link Here)</a></span>
         <span style="margin-left: 2.5em;" >中文化: <font color="#e02020">SakakiChizuru</font></span>
         <span style="margin-left: 2.5em;" id="lastUpdated"></span>
         <span style="margin-left: 2.5em;">Space Odyssey Version 1.1.6 2025-05-30</span>
