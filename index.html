@@ -1116,20 +1116,20 @@
                     tdWinChance.style.padding = '4px';
                     tr.appendChild(tdWinChance);
 
-                    const td = document.createElement('td');
-                    const bt = document.createElement('button');                
-                    bt.type = 'button';
-                    bt.style.margin = '0';
-                    bt.style.padding = '0.3em 0.3em';
-                    bt.textContent = '应用';
-                    bt.id = `apply_top${idx+1}`;
-                    bt.addEventListener('click', () => {
+                    const tdApply = document.createElement('td');
+                    const btApply = document.createElement('button');
+                    btApply.type = 'button';
+                    btApply.style.margin = '0';
+                    btApply.style.padding = '0.3em 0.3em';
+                    btApply.textContent = '应用';
+                    btApply.id = `apply_top${idx+1}`;
+                    btApply.addEventListener('click', () => {
                         applyStats(idx);
                     });
-                    td.appendChild(bt);
-                    td.style.border = '1px solid #ccc';
-                    td.style.padding = '4px';
-                    tr.appendChild(td);
+                    tdApply.appendChild(btApply);
+                    tdApply.style.border = '1px solid #ccc';
+                    tdApply.style.padding = '4px';
+                    tr.appendChild(tdApply);
 
                     tbody.appendChild(tr);
                 });
