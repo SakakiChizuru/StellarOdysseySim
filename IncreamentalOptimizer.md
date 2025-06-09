@@ -4,11 +4,12 @@
 
 ```javascript
 
-	async findBestIncremental(
+async findBestIncremental(
 		target = "credits",
 		verbose = false,
 		progressCallback = null
 	) {
+		// 获取当前玩家的基础属性 // Get base attributes of the player
 		const base = {
 			pow: this.player.pow,
 			pre: this.player.pre,
@@ -19,6 +20,7 @@
 		const totalPoints =
 			base.pow + base.pre + base.eva + base.hull + availablePoints;
 
+		// 保证构型合法并归一化点数 // Normalize build to ensure valid allocation
 		const normalizeBuild = (build) => {
 			const keys = ["pow", "pre", "eva", "hull"];
 			const corrected = [...build];
@@ -44,6 +46,7 @@
 			return corrected;
 		};
 
+		// 根据构型评估战斗结果 // Evaluate result for a given build
 		const evaluate = async (build) => {
 			const [power, precision, evasion, hull] = build;
 			const tmp_player = new Player({
@@ -111,6 +114,7 @@
 			};
 		};
 
+		// 初始化构型 // Generate initial build
 		const getInitialSolution = () => {
 			const perAttr = Math.floor(availablePoints / 4);
 			const remainder = availablePoints % 4;
@@ -122,16 +126,19 @@
 			]);
 		};
 
+		// 主优化过程 // Main optimization process
 		const runOptimization = async () => {
 			const populationSize = 10;
 			const mutationRate = 0.2;
 			const crossoverRate = 0.7;
 			const generations = 100;
-			const maxTabuSize = 200;
+			const maxTabuAge = 30;
+			const noNewLimit = 5;
 
-			let tabuList = new Set();
+			let tabuList = new Map();
 			let population = [];
 
+			// 初始化种群 // Initialize population
 			for (let i = 0; i < populationSize; i++) {
 				const build = getInitialSolution();
 				for (let j = 0; j < availablePoints; j++) {
@@ -153,20 +160,53 @@
 			for (const p of population)
 				if (!best || p.fitness > best.fitness) best = p;
 
+			let lastBestFitness = best.fitness;
 			let temperature = 1.0;
 			const coolingRate = 0.98;
+			let stableGenerations = 0;
+			const stableLimit = 20;
+			let perfectWinGenerations = 0;
+			const perfectWinThreshold = 3;
+			let noNewCounter = 0;
+			let terminatedEarly = false;
 
 			for (let gen = 0; gen < generations; gen++) {
 				const candidates = [];
 
+				// 清理过时的禁忌条目 // Remove outdated tabu entries
+				for (const [key, age] of tabuList.entries()) {
+					if (gen - age > maxTabuAge) {
+						tabuList.delete(key);
+					}
+				}
+
+				let attempts = 0;
 				while (candidates.length < populationSize) {
+					attempts++;
+					if (attempts >= 5000 || population.length < 2) {
+						terminatedEarly = true;
+						break;
+					}
+
 					const parent1 =
-						population[Math.floor(Math.random() * populationSize)];
+						population[
+							Math.floor(Math.random() * population.length)
+						];
 					const parent2 =
-						population[Math.floor(Math.random() * populationSize)];
+						population[
+							Math.floor(Math.random() * population.length)
+						];
+					if (
+						!parent1 ||
+						!parent2 ||
+						!parent1.build ||
+						!parent2.build
+					)
+						continue;
 
 					let child = [...parent1.build];
 
+					// 交叉操作 // Crossover
 					if (Math.random() < crossoverRate) {
 						const cp = Math.floor(Math.random() * 4);
 						child = [
@@ -175,6 +215,7 @@
 						];
 					}
 
+					// 变异操作 // Mutation
 					if (Math.random() < mutationRate) {
 						const i = Math.floor(Math.random() * 4);
 						const j = Math.floor(Math.random() * 4);
@@ -196,28 +237,106 @@
 					}
 
 					child = normalizeBuild(child);
-
 					const key = child.join(",");
 					if (tabuList.has(key)) continue;
 
 					candidates.push(child);
-					tabuList.add(key);
-					if (tabuList.size > maxTabuSize) {
-						const first = tabuList.values().next().value;
-						tabuList.delete(first);
-					}
+					tabuList.set(key, gen);
 				}
 
 				const evaluated = await Promise.all(
 					candidates.map((c) => evaluate(c))
 				);
+				let generationBest = best;
+				let foundBetter = false;
+
 				for (const res of evaluated) {
-					if (
-						res.fitness > best.fitness ||
+					if (res.fitness > generationBest.fitness) {
+						generationBest = res;
+						foundBetter = true;
+					} else if (
 						Math.random() <
-							Math.exp((res.fitness - best.fitness) / temperature)
+						Math.exp(
+							(res.fitness - generationBest.fitness) / temperature
+						)
 					) {
-						best = res;
+						generationBest = res;
+					}
+				}
+
+				if (foundBetter) {
+					best = generationBest;
+					lastBestFitness = best.fitness;
+					stableGenerations = 0;
+					noNewCounter = 0;
+				} else {
+					stableGenerations++;
+					noNewCounter++;
+
+					if (noNewCounter >= noNewLimit) {
+						if (verbose)
+							console.log(
+								`冗余构型超过 ${noNewLimit} 次，提前终止`
+							);
+						terminatedEarly = true;
+						break;
+					}
+
+					if (stableGenerations >= stableLimit) {
+						if (verbose)
+							console.log(
+								`提前终止：连续 ${stableLimit} 代无真实提升`
+							);
+						terminatedEarly = true;
+						break;
+					}
+				}
+
+				// 满胜率提前终止 // Early exit if perfect win rate
+				if (best.win_chance >= 0.999) {
+					perfectWinGenerations++;
+					if (perfectWinGenerations >= perfectWinThreshold) {
+						if (verbose)
+							console.log(
+								`胜率持续满 ${perfectWinThreshold} 代，提前终止。`
+							);
+						terminatedEarly = true;
+						break;
+					}
+				} else {
+					perfectWinGenerations = 0;
+				}
+
+				// 每10代进行局部爬山搜索 // Hill climbing every 10 generations
+				if (gen % 10 === 0) {
+					const localCandidates = [];
+					for (let i = 0; i < 10; i++) {
+						const neighbor = [...best.build];
+						const a = Math.floor(Math.random() * 4);
+						const b = Math.floor(Math.random() * 4);
+						if (
+							a !== b &&
+							neighbor[a] > base[Object.keys(base)[a]]
+						) {
+							neighbor[a]--;
+							neighbor[b]++;
+							localCandidates.push(normalizeBuild(neighbor));
+						}
+					}
+					const localResults = await Promise.all(
+						localCandidates.map((c) => evaluate(c))
+					);
+					for (const res of localResults) {
+						const key = res.build.join(",");
+						if (!tabuList.has(key) && res.fitness > best.fitness) {
+							best = res;
+							lastBestFitness = best.fitness;
+							stableGenerations = 0;
+							noNewCounter = 0;
+							tabuList.set(key, gen);
+							if (verbose)
+								console.log("局部精细搜索找到更优结果！");
+						}
 					}
 				}
 
@@ -236,6 +355,11 @@
 
 				if (progressCallback)
 					await progressCallback(gen + 1, generations);
+			}
+
+			// 如果提前终止，则强制进度到100% // If early termination, force progress to 100%
+			if (terminatedEarly && progressCallback) {
+				await progressCallback(generations, generations);
 			}
 
 			if (verbose) {
@@ -383,23 +507,22 @@ Embered original 'opt\_*' spans into a 'form-row' class div, for layout use.
 
                 if (!isSingleMode) {
                     // TOP5模式，多次获取
-                    const topResults = [];
+                    const topResults = new Map(); // 用于去重构型
+                    let attempts = 0;
 
-                    for (let i = 0; i < 8; i++) {
+                    while (topResults.size < 10 && attempts < 50) { // 最多尝试 50 次，防止死循环
                         const result = await optimizer.findBestIncremental(target, true, updateProgress);
-                        topResults.push(result);
-                    }
 
-                    // 去重合并，取前5
-                    const uniqueBuilds = new Map();
-                    for (const r of topResults) {
-                        const key = r.build.join(',');
-                        if (!uniqueBuilds.has(key)) {
-                            uniqueBuilds.set(key, r);
+                        const key = result.build.join(',');
+                        if (!topResults.has(key)) {
+                            topResults.set(key, result);
+                            document.getElementById('opt_result').textContent = `正在计算[${topResults.size}/10]...`;
                         }
+
+                        attempts++;
                     }
 
-                    const bestList = Array.from(uniqueBuilds.values())
+                    const bestList = Array.from(topResults.values())
                         .sort((a, b) => b.win_chance - a.win_chance)
                         .slice(0, 5);
 
@@ -448,7 +571,6 @@ Embered original 'opt\_*' spans into a 'form-row' class div, for layout use.
                 table.appendChild(thead);
 
                 const tbody = document.createElement('tbody');
-                //console.log(result);
                 const baseStats = ['pow', 'pre', 'eva', 'hull'].map(k => result.baseStats[k]);
                 result.bestList.forEach((r, idx) => {
                     const tr = document.createElement('tr');
@@ -490,7 +612,6 @@ Embered original 'opt\_*' spans into a 'form-row' class div, for layout use.
             } else {
                 const base = result.baseStats;
 
-                console.log(result);
                 // SINGLEMODE 显示单条结果
                 const IncrementalOptimizeResult = {
                     power: result.bestStats[0],
