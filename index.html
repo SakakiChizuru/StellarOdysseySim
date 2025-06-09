@@ -931,162 +931,8 @@
                     if (importBtn) importBtn.style.visibility = 'hidden';
                 }
             }
-
-            // async function runIncrementalOptimizer() {
-            //     // 重置进度条
-            //     const progressBar = document.getElementById('optimizerProgressBar');
-            //     const progressText = document.getElementById('optimizerProgressText');
-            //     progressBar.style.width = '0%';
-            //     progressText.textContent = '0%';
-                
-            //     // 显示进度容器
-            //     // document.getElementById('optimizerProgressContainer').style.display = 'block';
-            //     // document.getElementById('optimizerResults').style.display = 'none';
-
-            //     // 收集玩家字段
-            //     const power = parseInt(form.power.value) || 0;
-            //     const precision = parseInt(form.precision.value) || 0;
-            //     const evasion = parseInt(form.evasion.value) || 0;
-            //     const hull = parseInt(form.hull.value) || 0;
-            //     const available = parseInt(form.available.value) || 0;
-            //     const weapon_dmg = parseInt(form.weapon_dmg.value) || 0;
-            //     const shield_def = parseInt(form.shield_def.value) || 0;
-            //     const n_clones = parseInt(form.n_clones.value) || 1;
-            //     const weapon_ele1 = form.weapon_ele1.value || null;
-            //     const weapon_ele2 = form.weapon_ele2.value || null;
-            //     const shield_ele1 = form.shield_ele1.value || null;
-            //     const shield_ele2 = form.shield_ele2.value || null;
-            //     const vip_status = form.vip_status.checked;
-
-            //     const base = {
-            //         pow: parseInt(form.power.value),
-            //         pre: parseInt(form.precision.value),
-            //         eva: parseInt(form.evasion.value),
-            //         hull: parseInt(form.hull.value)
-            //     };
-
-            //     // 收集克隆体修饰符
-            //     const list_modifiers = cloneModifiers.map(mod =>
-            //         new CloneModifiers(
-            //             (parseFloat(mod.crit) || 0) / 100,
-            //             (parseFloat(mod.critdmg) || 0) / 100,
-            //             (parseFloat(mod.dual) || 0) / 100
-            //         )
-            //     );
-
-            //     // 收集敌人字段
-            //     const mob_name = form.mob_name.value;
-            //     const mob_level = parseInt(form.mob_level.value) || 1;
-            //     let mob_enum_key = Object.keys(MobName).find(key => MobName[key] === mob_name);
-            //     const mob = new Mob(MobName[mob_enum_key], mob_level);
-
-            //     // 创建玩家对象
-            //     const player = new Player({
-            //         power, precision, evasion, hull, weapon_dmg, shield_def, n_clones, vip_status,
-            //         weapon_ele1, weapon_ele2, shield_ele1, shield_ele2, available
-            //     });
-
-            //     // 获取战斗模拟次数
-            //     const optimizerFightsInput = document.getElementById('optimizer_n_fights');
-            //     const n_fights = parseInt(optimizerFightsInput.value);
-                
-            //     // 获取声望值
-            //     const reputation = parseFloat(form.reputation?.value || 0) / 100;
-                
-            //     console.log(player, mob, list_modifiers, n_fights, reputation);
-            //     // 创建优化器
-            //     const optimizer = new Optimizer(player, mob, list_modifiers, n_fights, reputation);
-                
-            //     // 获取优化目标
-            //     const target = document.querySelector('input[name="optimize_target"]:checked').value;
-                
-            //     const topResults = [];
-
-            //     const resultArea = document.getElementById('opt_result');
-            //     resultArea.innerText = '正在计算，请稍候...';
-
-            //     // 创建进度更新函数
-            //     const updateProgress = (current, total) => {
-            //         const progress = (current / total) * 100;
-            //         progressBar.style.width = `${progress}%`;
-            //         progressText.textContent = `${Math.round(progress)}%`;
-                    
-            //         // 允许UI更新
-            //         return new Promise(resolve => setTimeout(resolve, 0));
-            //     };
-            //     // 执行多次获取前 5 优解
-            //     for (let i = 0; i < 8; i++) {
-            //         const result = await optimizer.findBestIncremental(target, true, updateProgress);
-            //         topResults.push(result);
-            //     }
-            //     // 执行增量优化
-            //     //const bestResult = await optimizer.findBestIncremental(target, true, updateProgress);
-            //     const uniqueBuilds = new Map();
-            //         for (const r of topResults) {
-            //             const key = r.build.join(',');
-            //             if (!uniqueBuilds.has(key)) {
-            //                 uniqueBuilds.set(key, r);
-            //             }
-            //         }
-
-            //     const bestList = Array.from(uniqueBuilds.values())
-            //         .sort((a, b) => b.win_chance - a.win_chance)
-            //         .slice(0, 5);
-
-
-            //     let opt_resulthtml = `
-            //     <table border="1" cellspacing="0" cellpadding="5">
-            //         <thead>
-            //             <tr>
-            //                 <th>#</th>
-            //                 <th>Power</th>
-            //                 <th>Precision</th>
-            //                 <th>Evasion</th>
-            //                 <th>Hull</th>
-            //                 <th>△Power</th>
-            //                 <th>△Precision</th>
-            //                 <th>△Evasion</th>
-            //                 <th>△Hull</th>
-            //                 <th>胜率<br>Win%</th>
-            //             </tr>
-            //         </thead>
-            //         <tbody>
-            //     `;
-
-            //     bestList.forEach((r, i) => {
-            //         const [p, pr, ev, h] = r.build;
-            //         opt_resulthtml += `
-            //             <tr>
-            //                 <td>#${i + 1}</td>
-            //                 <td>${p}</td>
-            //                 <td>${pr}</td>
-            //                 <td>${ev}</td>
-            //                 <td>${h}</td>
-            //                 <td>+${p - base.pow}</td>
-            //                 <td>+${pr - base.pre}</td>
-            //                 <td>+${ev - base.eva}</td>
-            //                 <td>+${h - base.hull}</td>
-            //                 <td>${(r.win_chance * 100).toFixed(2)}%</td>
-            //             </tr>
-            //         `;
-            //     });
-
-            //     opt_resulthtml += '</tbody></table>';
-
-            //     resultArea.innerHTML = opt_resulthtml
-            //     // 返回优化结果
-            //     return { 
-            //         bestStats: bestList[0].build, 
-            //         winChance: bestList[0].win_chance,
-            //         resource: bestList[0].resource
-            //     };
-            // }
-
         
-        
-            // displayOptimizerResult 
-        
-        // runIncrementalOptimizer  增加 mode 参数，默认 'SINGLEMODE'
+
             async function runIncrementalOptimizer(isSingleMode = true) {
                 console.log(isSingleMode? "SingleMode":"Top5 Mode");
                 // 重置进度条
@@ -1301,7 +1147,7 @@
 
             // incrementalOptimizerBtn 的事件监听，控制显示切换，并调用显示函数
             incrementalOptimizerBtn.addEventListener('click', async () => {
-                // try {
+                try {
                     // 读取是否选中TOP5模式
                     const isSingleMode = !document.getElementById('incrementalTop5Mode').checked;
 
@@ -1325,10 +1171,10 @@
                     // 显示结果，传入模式
                     displayOptimizerResult(result, isSingleMode);
 
-                // } catch (error) {
-                //     console.error('优化过程中出错:', error);
-                //     alert('优化失败: ' + error.message);
-                // }
+                } catch (error) {
+                    console.error('优化过程中出错:', error);
+                    alert('优化失败: ' + error.message);
+                }
             });
 
             // Add event listeners to save settings when values change

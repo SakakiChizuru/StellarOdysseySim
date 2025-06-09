@@ -309,7 +309,6 @@ class Optimizer {
 			const coolingRate = 0.98;
 
 			for (let gen = 0; gen < generations; gen++) {
-				const newPopulation = [];
 				const candidates = [];
 
 				while (candidates.length < populationSize) {
