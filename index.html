@@ -720,6 +720,12 @@
 
 
             async function runOptimizer(isLongOptimize = false) {
+                const top5Div = document.getElementById('IncrementalOptimizeInfo');
+                const optResultDiv = document.getElementById('optimizerResultInfo');
+
+                optResultDiv.style.display = 'flex';
+                top5Div.style.display = 'none';
+
                 // Reset progress bar
                 const progressBar = document.getElementById('optimizerProgressBar');
                 const progressText = document.getElementById('optimizerProgressText');
