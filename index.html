@@ -1154,15 +1154,15 @@
                     // 切换显示样式
                     const top5Div = document.getElementById('IncrementalOptimizeInfo');
                     const optResultDiv = document.getElementById('optimizerResultInfo');
-
+                    
                     document.getElementById('opt_result').textContent = '正在计算...';
 
-                    if (!isSingleMode) {
-                        top5Div.style.display = 'flex';
-                        optResultDiv.style.display = 'none';
-                    } else {
+                    if (isSingleMode) {
                         top5Div.style.display = 'none';
                         optResultDiv.style.display = 'flex';
+                    } else {
+                        top5Div.style.display = 'flex';
+                        optResultDiv.style.display = 'none';
                     }
 
                     // 运行优化器，传入模式
