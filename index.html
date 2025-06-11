@@ -1012,8 +1012,9 @@
                     // TOP5模式，多次获取
                     const topResults = new Map(); // 用于去重构型
                     let attempts = 0;
-
-                    while (topResults.size < 10 && attempts < 50) { // 最多尝试 50 次，防止死循环
+                    let topSize = 10;
+                    if(available === 1) topSize = 4;
+                    while (topResults.size < topSize && attempts < 50) { // 最多尝试 50 次，防止死循环
                         const result = await optimizer.findBestIncremental(target, true, updateProgress);
 
                         const key = result.build.join(',');
@@ -1946,9 +1947,9 @@
     <div id="playerResult"></div>
     <footer>
         <span>Proudly made by anfneub <a href="https://anfneub.github.io/StellarOdysseySim/" target="_blank">(Original Simulator Link Here)</a></span>
-        <span style="margin-left: 2.5em;" >中文化: <font color="#e02020">SakakiChizuru</font></span>
+        <span style="margin-left: 2.5em;" >中文化: <font color="#LightCoral">SakakiChizuru</font></span>
         <span style="margin-left: 2.5em;" id="lastUpdated"></span>
-        <span style="margin-left: 2.5em;">Space Odyssey Version 1.1.6 2025-05-30</span>
+        <span style="margin-left: 2.5em;">Stellar Odyssey 版本 1.1.10 2025-06-03</span>
         <span style="margin-left: 2.5em; cursor: pointer; color: #4fa3ff; text-decoration: underline;" id="changelogLink">Changelog</span>
     </footer>
 
@@ -1991,10 +1992,10 @@
         // Set last updated date/time
         const lastUpdated = document.getElementById('lastUpdated');
         if (lastUpdated) {
-            const now = new Date();
-            const pad = n => n.toString().padStart(2, '0');
-            const dateStr = "2025-06-01";
-            const timeStr = "14:25";
+        //     const now = new Date();
+        //     const pad = n => n.toString().padStart(2, '0');
+            const dateStr = "2025-06-11";
+            const timeStr = "20:35 GMT+8";
             lastUpdated.textContent = `Last updated: ${dateStr} ${timeStr}`;
         }
     </script>

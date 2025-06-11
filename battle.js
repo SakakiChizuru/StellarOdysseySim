@@ -179,23 +179,6 @@ class Battle {
 		return wins / fights;
 	}
 
-	async repeat_fights_async(fights) {
-		let wins = 0;
-		const batchSize = 10;
-		for (let i = 0; i < fights; i++) {
-			const fight = this.fight();
-			if (fight.startsWith("Clones")) {
-				wins++;
-			}
-			this.reset();
-
-			if (i % batchSize === 0) {
-				await new Promise((r) => setTimeout(r, 0)); // 让出线程
-			}
-		}
-		return wins / fights;
-	}
-
 	get_revenue_print(win_chance = 1.0) {
 		const revenue_per_hour = this.get_revenue("hourly", win_chance);
 		const revenue_per_day = 24.0 * revenue_per_hour;
