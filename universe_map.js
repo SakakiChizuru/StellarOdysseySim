@@ -968,6 +968,9 @@ class UniverseMapExtended extends UniverseMap {
 	}
 
 	draw() {
+		//Quit drawing if Map tab not active.
+		if (!document.getElementById("universe-map-tab").classList.contains("active")) return;
+        
 		super.draw();
 
 		if (!this.trajectories || this.trajectories.length === 0) {
@@ -1098,8 +1101,8 @@ class CoordinateParser {
 		}
 
 		// 统一处理字符串
-		const normalized = CoordinateParser.#normalizeString(input);
-		const match = normalized.match(/(-?\d+(\.\d+)?)[,;](-?\d+(\.\d+)?)/);
+		const normalized = this.#normalizeString(input);
+		const match = normalized.match(/(-?\d+(\.\d+)?)[,;\s](-?\d+(\.\d+)?)/);
 		if (match) {
 			return {
 				x: Number(match[1]),
@@ -1138,8 +1141,14 @@ class CoordinateParser {
 		// 替换其他分隔符为统一格式
 		str = str.replace(/[;、]/g, ","); // 全部变成逗号
 
-		// 移除多余空格
-		str = str.replace(/\s+/g, "");
+		// 把空白替换为逗号
+		str = str.replace(/\s+/g, ",");
+
+		// 可能出现连续逗号，合并之
+		str = str.replace(/,+/g, ",");
+
+		// 去掉前后逗号
+		str = str.replace(/^,|,$/g, "");
 
 		return str.toLowerCase();
 	}
