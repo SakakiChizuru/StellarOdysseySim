@@ -361,6 +361,38 @@
         div#optimizerResultInfo, div#opt_result {
             font-family: 'Rajdhani', Tahoma, Arial, sans-serif;
         }
+
+        #pathFinder {
+            display: flex;
+            flex-direction: column;
+            background: rgba(20, 25, 40, 0.9);
+            border: 1px solid #4dccff;
+            border-radius: 10px;
+            padding: 25px;
+            transition: all 0.4s ease;
+            position: relative;
+            min-height: 300px;
+        }
+
+        #pathfinder.disabled {
+            opacity: 0.6;
+            pointer-events: none;
+            position: relative;
+        }
+        
+        #pathfinder.disabled::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(50, 50, 50, 0.6);
+            border-radius: 10px;
+            cursor: not-allowed;
+            z-index: 10;
+        }
+
     </style>
     <script src="outsite/js/axios.min.js"></script>
     <script type="module">
@@ -1852,6 +1884,25 @@
                 <div style="background: #23283a; border-radius: 6px; border: 1px solid #2c3242; padding: 1.2em; box-sizing: border-box;">
                     <div id="pathfinder">
                         <div style="font-size: 1.22em; font-weight: 700; margin-bottom: 1em; color: #f3f6fa; letter-spacing: 0.01em;">路径计算</div>
+                        <input id="start_at_self" type="checkbox">
+                        <label for="start_at_self">以自身为起点</label>
+                        <div style="display: flex; flex-direction: column; margin-top: 1em;">
+                            <div class="form-row">
+                                <div id="starterPointInfo">
+                                    <label for="starterPoint">起始点</label>
+                                    <input type="text" id="starterPoint" style="width: 55%; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.5em; border-radius: 4px; box-sizing: border-box;">
+                                </div>
+                                <div id="destinationInfo">
+                                    <label for="destinationPoint">目标点</label>
+                                    <input type="text" id="destinationPoint" style="width: 55%; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.5em; border-radius: 4px; box-sizing: border-box;">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <button id="findShortestPath" style="background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.5em 1em; border-radius: 4px; cursor: pointer; width: 100%;">计算路径</button>
+                            </div>
+                            <div class="form-row">
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1999,8 +2050,8 @@
         if (lastUpdated) {
         //     const now = new Date();
         //     const pad = n => n.toString().padStart(2, '0');
-            const dateStr = "2025-06-11";
-            const timeStr = "20:35 GMT+8";
+            const dateStr = "2025-06-13";
+            const timeStr = "18:24 GMT+8";
             lastUpdated.textContent = `最后更新: ${dateStr} ${timeStr}`;
         }
     </script>
@@ -2050,7 +2101,12 @@
     });
     </script>
     <script src="script.js"></script>
-    <script src="universe_map.js"></script>
+
+    <!--<script src="universe_map.js"></script>-->
+    
+    <!-- Implenting UniverseGrid -->
+    <script src="universe_map.org.js"></script>
+
     <script type="module">
         // Import probability functions
         import { probability_of_observation_with_per_gatherable_qualities } from './probabilities.js';
