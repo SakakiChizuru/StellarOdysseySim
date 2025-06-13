@@ -393,6 +393,121 @@
             z-index: 10;
         }
 
+         /* WinForm ListBox样式 */
+         .winform-list {
+            display: flex;
+            flex-direction: column;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            width: 100%;
+            height: 372px;
+            overflow: hidden;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.4);
+        }
+        
+        .list-header {
+            background: rgba(54, 64, 90, 0.6);
+            padding: 10px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+        }
+        
+        .list-header i {
+            display: flex;
+            flex-direction: row;
+            justify-content: baseline;
+            margin-right: 10px;
+            color: #4facfe;
+        }
+        
+        .list-content {
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        
+        .list-item {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: 60px;
+            height: 60px;
+        }
+        
+        .list-item:last-child {
+            border-bottom: none;
+        }
+        
+        .list-item:hover {
+            background: rgba(79, 172, 254, 0.15);
+            border-left: 3px solid #4facfe;
+        }
+                        
+        .item-content {
+            flex-grow: 1;
+        }
+        
+        .item-title {
+            font-weight: 500;
+            font-size: 1rem;
+            color: #fff;
+            margin-bottom: 7px;
+        }
+        
+        .item-description {
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+            font-size: 0.9rem;
+            color: #a0b0ff;
+            line-height: 1.4;
+        }
+        
+        .item-description > div {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 1px;
+            box-sizing: border-box;
+        }
+
+        /* 通过属性选择器分别指定宽度 */
+        .item-description > [name="from"] {
+            width: 40%;
+        }
+
+        .item-description > [name="to"] {
+            width: 40%;
+        }
+
+        .item-description > [name="distance"] {
+            width: 20%;
+        }
+        
+        /* 滚动条样式 */
+        .list-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .list-content::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+        
+        .list-content::-webkit-scrollbar-thumb {
+            background: rgba(79, 172, 254, 0.5);
+            border-radius: 4px;
+        }
+        
+        .list-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(79, 172, 254, 0.8);
+        }
+        
     </style>
     <script src="outsite/js/axios.min.js"></script>
     <script type="module">
@@ -1890,17 +2005,27 @@
                             <div class="form-row">
                                 <div id="starterPointInfo">
                                     <label for="starterPoint">起始点</label>
-                                    <input type="text" id="starterPoint" style="width: 55%; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.5em; border-radius: 4px; box-sizing: border-box;">
+                                    <input type="text" id="starterPoint" style="width: 65%; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.5em; border-radius: 4px; box-sizing: border-box; text-align: center;">
                                 </div>
                                 <div id="destinationInfo">
                                     <label for="destinationPoint">目标点</label>
-                                    <input type="text" id="destinationPoint" style="width: 55%; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.5em; border-radius: 4px; box-sizing: border-box;">
+                                    <input type="text" id="destinationPoint" style="width: 65%; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.5em; border-radius: 4px; box-sizing: border-box; text-align: center;" value="1499,1499">
                                 </div>
                             </div>
                             <div class="form-row">
                                 <button id="findShortestPath" style="background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.5em 1em; border-radius: 4px; cursor: pointer; width: 100%;">计算路径</button>
+                                <button id="clearShortestPath" style="background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.5em 1em; border-radius: 4px; cursor: pointer; width: 100%;">清除结果</button>
                             </div>
-                            <div class="form-row">
+                            <div class="form-row" id="trajectoryResult" style="margin: 0;">
+                                <div class="winform-list">
+                                    <div class="list-header">
+                                        <div>路径列表</div>
+                                        <div id="totalPathfindingDistance" style="margin-left: auto;"></div>
+                                    </div>
+                                    <div class="list-content" id="trajectoryListContent">
+
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2101,8 +2226,6 @@
     });
     </script>
     <script src="script.js"></script>
-
-    <!--<script src="universe_map.js"></script>-->
     
     <!-- Implenting UniverseGrid -->
     <script src="universe_map.js"></script>

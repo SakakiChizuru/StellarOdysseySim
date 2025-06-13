@@ -764,7 +764,7 @@ class UniverseMapExtended extends UniverseMap {
 		this.customMarkers = [];
 		this.highlightedSystems = [];
 		this.trajectories = [];
-		this.trajctoryAnimation = null;
+		this.trajectoryAnimation = null;
 		this.trajectoryHueOffset = null;
 		this.hueShiftSpeed = 2;
 		this.universeGrid = new UniverseGrid(2000, 2000);
@@ -893,16 +893,16 @@ class UniverseMapExtended extends UniverseMap {
 
 				if (this.currentSegmentIndex >= this.trajectories.length) {
 					this.animating = false;
-					this.trajctoryAnimation = this.startRainbowAnimation();
+					this.trajectoryAnimation = this.startRainbowAnimation();
 					return;
 				}
 			}
 
 			this.draw();
-			this.trajctoryAnimation = requestAnimationFrame(animate);
+			this.trajectoryAnimation = requestAnimationFrame(animate);
 		};
 
-		this.trajctoryAnimation = requestAnimationFrame(animate);
+		this.trajectoryAnimation = requestAnimationFrame(animate);
 	}
 
 	drawRainbowTrajectory() {
@@ -962,15 +962,20 @@ class UniverseMapExtended extends UniverseMap {
 			this.trajectoryHueOffset =
 				(this.trajectoryHueOffset + this.hueShiftSpeed) % 360;
 			this.draw();
-			this.trajctoryAnimation = requestAnimationFrame(animateRainbow);
+			this.trajectoryAnimation = requestAnimationFrame(animateRainbow);
 		};
 		requestAnimationFrame(animateRainbow);
 	}
 
 	draw() {
 		//Quit drawing if Map tab not active.
-		if (!document.getElementById("universe-map-tab").classList.contains("active")) return;
-        
+		if (
+			!document
+				.getElementById("universe-map-tab")
+				.classList.contains("active")
+		)
+			return;
+
 		super.draw();
 
 		if (!this.trajectories || this.trajectories.length === 0) {
@@ -1102,7 +1107,7 @@ class CoordinateParser {
 
 		// 统一处理字符串
 		const normalized = this.#normalizeString(input);
-		const match = normalized.match(/(-?\d+(\.\d+)?)[,;\s](-?\d+(\.\d+)?)/);
+		const match = normalized.match(/(-?\d+(\.\d+)?)[,.;\s](-?\d+(\.\d+)?)/);
 		if (match) {
 			return {
 				x: Number(match[1]),
@@ -1151,6 +1156,19 @@ class CoordinateParser {
 		str = str.replace(/^,|,$/g, "");
 
 		return str.toLowerCase();
+	}
+
+	static isValidCoordinator(input) {
+		return (
+			input &&
+			typeof input === "object" &&
+			typeof input.x === "number" &&
+			typeof input.y === "number"
+		);
+	}
+
+	static normalize(input) {
+		return this.isValidCoordinator(input) ? input : this.parse(input);
 	}
 }
 
@@ -1271,8 +1289,8 @@ class UniverseGrid {
 	}
 
 	#calculateSegmentDistance(from, to, starterOnly) {
-		if (this.#isStarter(from) && this.#isStarter(to)) return 0;
-		if (!starterOnly && this.#isStation(from) && this.#isStation(to))
+		if (this.isStarter(from) && this.isStarter(to)) return 0;
+		if (!starterOnly && this.isStation(from) && this.isStation(to))
 			return 0;
 		return Math.hypot(from.x - to.x, from.y - to.y) * this.unitDistance;
 	}
@@ -1289,12 +1307,12 @@ class UniverseGrid {
 				if (i === j) continue;
 
 				let dist;
-				if (this.#isStarter(nodes[i]) && this.#isStarter(nodes[j])) {
+				if (this.isStarter(nodes[i]) && this.isStarter(nodes[j])) {
 					dist = 0;
 				} else if (
 					!starterOnly &&
-					this.#isStation(nodes[i]) &&
-					this.#isStation(nodes[j])
+					this.isStation(nodes[i]) &&
+					this.isStation(nodes[j])
 				) {
 					dist = 0;
 				} else {
@@ -1362,12 +1380,17 @@ class UniverseGrid {
 		return { distance: dist[endIdx], path };
 	}
 
-	#isStarter(p) {
-		return this.initialPoints.some((pt) => pt.x === p.x && pt.y === p.y);
+	isStarter(p) {
+		const pReal = CoordinateParser.normalize(p);
+		return this.initialPoints.some(
+			(pt) => pt.x === pReal.x && pt.y === pReal.y
+		);
 	}
-	#isStation(p) {
+
+	isStation(p) {
+		const pReal = CoordinateParser.normalize(p);
 		return Array.from(this.spaceStations).some(
-			(pt) => pt.x === p.x && pt.y === p.y
+			(pt) => pt.x === pReal.x && pt.y === pReal.y
 		);
 	}
 
@@ -1425,6 +1448,12 @@ document.addEventListener("DOMContentLoaded", () => {
 	const starterPointI = document.getElementById("starterPoint");
 	const destinationPointI = document.getElementById("destinationPoint");
 	const findShortestPath = document.getElementById("findShortestPath");
+	const clearShortestPath = document.getElementById("clearShortestPath");
+
+	const totalPathfindingDistance = document.getElementById(
+		"totalPathfindingDistance"
+	);
+	const listContent = document.getElementById("trajectoryListContent");
 
 	// Load saved API key from localStorage
 	if (apiKeyInput) {
@@ -1446,6 +1475,14 @@ document.addEventListener("DOMContentLoaded", () => {
 			: "";
 	});
 
+	clearShortestPath.addEventListener("click", () => {
+		universeMap.clearTrajectories();
+		if (universeMap.trajectoryAnimation)
+			cancelAnimationFrame(universeMap.trajectoryAnimation);
+		totalPathfindingDistance.textContent = "";
+		listContent.innerHTML = "";
+	});
+
 	findShortestPath.addEventListener("click", () => {
 		if (!universeMap.playerPosition) {
 			alert("请先载入星图!");
@@ -1460,13 +1497,91 @@ document.addEventListener("DOMContentLoaded", () => {
 			destinationPointI.value
 		);
 		const tra = paths.starterSystemOnly.trajectories ?? null;
-		if (tra) {
-			cancelAnimationFrame(universeMap.trajctoryAnimation);
+		const totalDistance = (paths.starterSystemOnly.distance ?? 0).toFixed(
+			2
+		);
+		totalPathfindingDistance.textContent = "";
+
+		if (tra && tra.length > 0) {
+			totalPathfindingDistance.textContent = `总路程: ${totalDistance} 光年`;
+			listContent.innerHTML = "";
+
+			const writeClipboardText = async (text) => {
+				try {
+					await navigator.clipboard.writeText(text);
+				} catch (error) {
+					return false;
+				}
+				return true;
+			};
+
+			tra.forEach((traj, index) => {
+				const item = document.createElement("div");
+				item.className = "list-item";
+
+				const content = document.createElement("div");
+				content.className = "item-content";
+
+				const title = document.createElement("div");
+				title.className = "item-title";
+				title.textContent = `第 ${index + 1} 段`;
+
+				const description = document.createElement("div");
+				description.className = "item-description";
+
+				const fromDiv = document.createElement("div");
+				fromDiv.setAttribute("name", "from");
+				fromDiv.innerHTML = `起点:<br>[${traj.from.x}, ${traj.from.y}]${
+					universeMap.universeGrid.isStarter(traj.from)
+						? "(初始)"
+						: ""
+				}${
+					universeMap.universeGrid.isStation(traj.from)
+						? "(空间站)"
+						: ""
+				}`;
+
+				const toDiv = document.createElement("div");
+				toDiv.setAttribute("name", "to");
+				toDiv.innerHTML = `终点:<br>[${traj.to.x}, ${traj.to.y}]${
+					universeMap.universeGrid.isStarter(traj.to) ? "(初始)" : ""
+				}${
+					universeMap.universeGrid.isStation(traj.to)
+						? "(空间站)"
+						: ""
+				}`;
+
+				const distanceDiv = document.createElement("div");
+				distanceDiv.setAttribute("name", "distance");
+				distanceDiv.innerHTML = `${traj.distance.toFixed(2)}<br/>光年`;
+
+				description.appendChild(fromDiv);
+				description.appendChild(toDiv);
+				description.appendChild(distanceDiv);
+
+				content.appendChild(title);
+				content.appendChild(description);
+
+				item.appendChild(content);
+
+				item.addEventListener("click", () => {
+					let succ = writeClipboardText(`${traj.to.x},${traj.to.y}`);
+					alert(
+						`目标坐标[${traj.to.x},${traj.to.y}]复制${
+							succ ? "成功" : "失败"
+						}!`
+					);
+				});
+
+				listContent.appendChild(item);
+			});
+
+			cancelAnimationFrame(universeMap.trajectoryAnimation);
 			universeMap.pushTrajectories(tra);
 			universeMap.startTrajectoryAnimation();
 		} else {
 			universeMap.clearTrajectories();
-			cancelAnimationFrame(universeMap.trajctoryAnimation);
+			cancelAnimationFrame(universeMap.trajectoryAnimation);
 		}
 	});
 
