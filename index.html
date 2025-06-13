@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>恒星奥德赛加点配置模拟器</title>
     <!-- Rajdhani -->
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600&display=swap" rel="stylesheet">
+    <link href="outsite/css/Rajdhani.css" rel="stylesheet">
     <link rel="icon" href="https://game.stellarodyssey.app/favicon.ico" type="image/x-icon">
     <style>
         body {
@@ -362,7 +362,7 @@
             font-family: 'Rajdhani', Tahoma, Arial, sans-serif;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="outsite/js/axios.min.js"></script>
     <script type="module">
         import { Player } from './player.js';
         import { Mob } from './mob.js';
@@ -1015,7 +1015,7 @@
                     let topSize = 10;
                     if(available === 1) topSize = 4;
                     while (topResults.size < topSize && attempts < 50) { // 最多尝试 50 次，防止死循环
-                        const result = await optimizer.findBestIncremental(target, true, updateProgress);
+                        const result = await optimizer.findBestIncremental(target, false, updateProgress);
 
                         const key = result.build.join(',');
                         if (!topResults.has(key)) {
@@ -1036,7 +1036,7 @@
                     };
                 } else {
                     // 单次模式，直接返回单条结果
-                    const result = await optimizer.findBestIncremental(target, true, updateProgress);
+                    const result = await optimizer.findBestIncremental(target, false, updateProgress);
 
                     return {
                         bestStats: result.build,
@@ -1822,7 +1822,7 @@
 
     <div id="universe-map-tab" class="tab-content">
         <div style="display: flex; flex-direction: row; padding: 2em; gap: 2em; height: 720px;">
-            <div style="display: flex; flex-direction: column; gap: 1em; min-width: 400px; max-width: 400px; margin-top: 37vh; transform: translateY(-50%);">
+            <div style="display: flex; flex-direction: column; gap: 1em; min-width: 400px; max-width: 400px; margin-top: 18vh; transform: translateY(-50%);">
                 <div style="background: #23283a; border-radius: 6px; border: 1px solid #2c3242; padding: 1.2em; box-sizing: border-box;">
                     <div style="font-size: 1.22em; font-weight: 700; margin-bottom: 1em; color: #f3f6fa; letter-spacing: 0.01em;">已发现星系</div>
                     <div style="display: flex; flex-direction: column; gap: 1em;">
@@ -1846,7 +1846,12 @@
                                 显示玩家旅行路径
                             </label>
                         </div>
-                        <button id="loadSystemsBtn" type="button" style="background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.5em 1em; border-radius: 4px; cursor: pointer; width: 100%;">Load Systems</button>
+                        <button id="loadSystemsBtn" type="button" style="background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.5em 1em; border-radius: 4px; cursor: pointer; width: 100%;">载入星图</button>
+                    </div>
+                </div>
+                <div style="background: #23283a; border-radius: 6px; border: 1px solid #2c3242; padding: 1.2em; box-sizing: border-box;">
+                    <div id="pathfinder">
+                        <div style="font-size: 1.22em; font-weight: 700; margin-bottom: 1em; color: #f3f6fa; letter-spacing: 0.01em;">路径计算</div>
                     </div>
                 </div>
             </div>
@@ -1996,7 +2001,7 @@
         //     const pad = n => n.toString().padStart(2, '0');
             const dateStr = "2025-06-11";
             const timeStr = "20:35 GMT+8";
-            lastUpdated.textContent = `Last updated: ${dateStr} ${timeStr}`;
+            lastUpdated.textContent = `最后更新: ${dateStr} ${timeStr}`;
         }
     </script>
     <!-- Changelog Modal -->
