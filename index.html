@@ -572,6 +572,7 @@
                     mob_level: form.mob_level.value,
                     // Squadron buffs
                     income_boost: form.income_boost?.value || 0,
+                    battle_boost: form.battle_boost?.value || 0,
                     reputation: form.reputation?.value || 0,
                     // Clone modifiers
                     clone_modifiers: cloneModifiers,
@@ -740,15 +741,15 @@
                     let step = 10; // default step
                     if (['n_clones', 'number_of_drones', 'optimizer_htk', 'optimizer_htd'].includes(targetId)) {
                         step = 1;
-                    } else if (['precision', 'hull', 'power', 'evasion', 'available'].includes(targetId)) { // 2025-06-06 Added available points
+                    } else if (['precision', 'hull', 'power', 'evasion', 'available'].includes(targetId)) {
                         step = 5;
-                    } else if (['dodge_percentage', 'rare_drop_increase', 'maneuverability', 'income_boost', 'reputation'].includes(targetId)) {
+                    } else if (['dodge_percentage', 'rare_drop_increase', 'maneuverability', 'income_boost', 'battle_boost', 'reputation'].includes(targetId)) {
                         step = 1;
                     }
                     
                     val = Math.max(min, val - step);
                     // Round to 1 decimal place for percentage fields
-                    if (['dodge_percentage', 'rare_drop_increase', 'maneuverability', 'income_boost', 'reputation'].includes(targetId)) {
+                    if (['dodge_percentage', 'rare_drop_increase', 'maneuverability', 'income_boost', 'battle_boost', 'reputation'].includes(targetId)) {
                         val = Math.round(val * 10) / 10;
                     }
                     input.value = val;
@@ -767,15 +768,15 @@
                     let step = 10; // default step
                     if (['n_clones', 'number_of_drones', 'optimizer_htk', 'optimizer_htd'].includes(targetId)) {
                         step = 1;
-                    } else if (['precision', 'hull', 'power', 'evasion', 'available'].includes(targetId)) { // 2025-06-06 Added available points
+                    } else if (['precision', 'hull', 'power', 'evasion', 'available'].includes(targetId)) {
                         step = 5;
-                    } else if (['dodge_percentage', 'rare_drop_increase', 'maneuverability', 'income_boost', 'reputation'].includes(targetId)) {
+                    } else if (['dodge_percentage', 'rare_drop_increase', 'maneuverability', 'income_boost', 'battle_boost', 'reputation'].includes(targetId)) {
                         step = 1;
                     }
                     
                     val = Math.min(max, val + step);
                     // Round to 1 decimal place for percentage fields
-                    if (['dodge_percentage', 'rare_drop_increase', 'maneuverability', 'income_boost', 'reputation'].includes(targetId)) {
+                    if (['dodge_percentage', 'rare_drop_increase', 'maneuverability', 'income_boost', 'battle_boost', 'reputation'].includes(targetId)) {
                         val = Math.round(val * 10) / 10;
                     }
                     input.value = val;
@@ -794,7 +795,6 @@
                 const precision = parseInt(form.precision.value) || 0;
                 const evasion = parseInt(form.evasion.value) || 0;
                 const hull = parseInt(form.hull.value) || 0;
-                // 2025-06-06 Added available points
                 const available = parseInt(form.available.value) || 0;
                 const weapon_dmg = parseInt(form.weapon_dmg.value) || 0;
                 const shield_def = parseInt(form.shield_def.value) || 0;
@@ -831,9 +831,10 @@
 
                 // Create player
                 // 2025-06-06 Added available points
+                const battle_boost = (parseInt(form.battle_boost?.value || 0) * 0.05);
                 const player = new Player({
-                    power, precision, evasion, hull, weapon_dmg, shield_def, n_clones, vip_status,
-                    weapon_ele1, weapon_ele2, shield_ele1, shield_ele2, available
+                    power, precision, evasion, hull, available, weapon_dmg, shield_def, n_clones, vip_status,
+                    weapon_ele1, weapon_ele2, shield_ele1, shield_ele2, battle_boost
                 });
 
                 // Create and run battle
@@ -912,9 +913,10 @@
 
                 // Create player
                 // 2025-06-06 Added available points
+                const battle_boost = (parseInt(form.battle_boost?.value || 0) * 0.05);
                 const player = new Player({
-                    power, precision, evasion, hull, weapon_dmg, shield_def, n_clones, vip_status,
-                    weapon_ele1, weapon_ele2, shield_ele1, shield_ele2, available
+                    power, precision, evasion, hull, available, weapon_dmg, shield_def, n_clones, vip_status,
+                    weapon_ele1, weapon_ele2, shield_ele1, shield_ele2, battle_boost
                 });
 
                 const optimizerFightsInput = document.getElementById('optimizer_n_fights');
@@ -925,8 +927,8 @@
                 
                 if (isLongOptimize) {
                     const target = document.querySelector('input[name="optimize_target"]:checked').value;
-                    const range_htk = Array.from({length: 7}, (_, i) => i + 4); // range(4,11)
-                    const range_htd = Array.from({length: 4}, (_, i) => i + 3); // range(3,7)
+                    const range_htk = Array.from({length: 14}, (_, i) => i + 3); // [3, 4, ..., 13]
+                    const range_htd = Array.from({length: 12}, (_, i) => i + 2); // [2, 3, ..., 9]
                     const totalIterations = range_htk.length * range_htd.length;
                     let currentIteration = 0;
 
@@ -998,12 +1000,14 @@
 
                 // Update the results display
                 if (result && result.bestStats && result.winChance !== undefined) {
+                    const battle_boost = (parseInt(form.battle_boost?.value || 0) * 0.05);
                     const [power, precision, evasion, hull] = result.bestStats;
                     const tmp_player = new Player({
                         power,
                         precision,
                         evasion,
                         hull,
+                        available: player.availablePoints,
                         weapon_dmg: player.weapon_dmg,
                         shield_def: player.shield_def,
                         n_clones: player.n_clones,
@@ -1012,8 +1016,7 @@
                         weapon_ele2: player.weapon_ele2,
                         shield_ele1: player.shield_ele1,
                         shield_ele2: player.shield_ele2,
-                        // 2025-06-06 Added available points
-                        available: player.availablePoints
+                        battle_boost: battle_boost
                     });
                     const battle = new Battle({ player: tmp_player, mob: mob, list_modifiers: list_modifiers });
                     
@@ -1087,7 +1090,7 @@
         
 
             async function runIncrementalOptimizer(isSingleMode = true) {
-                console.log(isSingleMode? "SingleMode":"Top5 Mode");
+                //console.log(isSingleMode? "SingleMode":"Top5 Mode");
                 // 重置进度条
                 const progressBar = document.getElementById('optimizerProgressBar');
                 const progressText = document.getElementById('optimizerProgressText');
@@ -1132,9 +1135,10 @@
                 const mob = new Mob(MobName[mob_enum_key], mob_level);
 
                 // 玩家对象
+                const battle_boost = (parseInt(form.battle_boost?.value || 0) * 0.05);
                 const player = new Player({
-                    power, precision, evasion, hull, weapon_dmg, shield_def, n_clones, vip_status,
-                    weapon_ele1, weapon_ele2, shield_ele1, shield_ele2, available
+                    power, precision, evasion, hull, available, weapon_dmg, shield_def, n_clones, vip_status,
+                    weapon_ele1, weapon_ele2, shield_ele1, shield_ele2, battle_boost
                 });
 
                 // 战斗次数和声望
@@ -1154,7 +1158,7 @@
                     progressText.textContent = `${Math.round(progress)}%`;
                     return new Promise(resolve => setTimeout(resolve, 0));
                 };
-
+                
                 if (!isSingleMode) {
                     // TOP5模式，多次获取
                     const topResults = new Map(); // 用于去重构型
@@ -1182,6 +1186,7 @@
                         baseStats: base
                     };
                 } else {
+
                     // 单次模式，直接返回单条结果
                     const result = await optimizer.findBestIncremental(target, false, updateProgress);
 
@@ -1342,8 +1347,6 @@
 
                     // 运行优化器，传入模式
                     const result = await runIncrementalOptimizer(isSingleMode);
-
-                    console.log(result);
 
                     // 显示结果，传入模式
                     displayOptimizerResult(result, isSingleMode);
@@ -1510,17 +1513,24 @@
                         form.mob_level.value = data.actions.currentNpcLevel;
                     }
                 }
+                
+                // Handle spacestation battleboost
+                if (data.spacestation && data.spacestation.battling_boost) {
+                    form.battle_boost.value = data.spacestation.battling_boost;
+                } else {
+                    form.battle_boost.value = 0;
+                }
 
                 // Handle spacestation incomeboost
                 if (data.spacestation && data.spacestation.incomeboost) {
-                    form.income_boost.value = data.spacestation.incomeboost * 2.0;
+                    form.income_boost.value = data.spacestation.incomeboost;
                 } else {
                     form.income_boost.value = 0;
                 }
 
                 // Handle reputation
                 if (data.reputation !== null && data.reputation !== undefined) {
-                    form.reputation.value = (data.reputation * 0.2).toFixed(1);
+                    form.reputation.value = data.reputation;
                 } else {
                     form.reputation.value = 0;
                 }
@@ -1733,14 +1743,23 @@
                     <div class="block-label">舰队BUFF</div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="income_boost">空间站：</label>
+                            <label for="battle_boost">战斗加成等级:</label>
+                            <div class="input-group">
+                                <button type="button" class="minus-btn" data-target="battle_boost">-</button>
+                                <input type="number" id="battle_boost" name="battle_boost" value="0" min="0" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
+                                <button type="button" class="plus-btn" data-target="battle_boost">+</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="income_boost">收入加成等级：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="income_boost">-</button>
                                 <input type="number" id="income_boost" name="income_boost" value="0" min="0" max="100" step="0.1" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
-                                <span style="margin: 0 0.2em;">%</span>
                                 <button type="button" class="plus-btn" data-target="income_boost">+</button>
                             </div>
                         </div>
+                    </div>
+                    <div class="form-row">
                         <div class="form-group">
                             <label for="reputation">声望：</label>
                             <div class="input-group">
@@ -2130,7 +2149,7 @@
         <span>Proudly made by anfneub <a href="https://anfneub.github.io/StellarOdysseySim/" target="_blank">(Original Simulator Link Here)</a></span>
         <span style="margin-left: 2.5em;" >中文化: <font color="LightCoral">SakakiChizuru</font></span>
         <span style="margin-left: 2.5em;" id="lastUpdated"></span>
-        <span style="margin-left: 2.5em;">Stellar Odyssey 版本 1.1.10 2025-06-03</span>
+        <span style="margin-left: 2.5em;">Stellar Odyssey 版本 1.2.1 2025-06-16</span>
         <span style="margin-left: 2.5em; cursor: pointer; color: #4fa3ff; text-decoration: underline;" id="changelogLink">Changelog</span>
     </footer>
 
@@ -2175,8 +2194,8 @@
         if (lastUpdated) {
         //     const now = new Date();
         //     const pad = n => n.toString().padStart(2, '0');
-            const dateStr = "2025-06-13";
-            const timeStr = "18:24 GMT+8";
+            const dateStr = "2025-06-18";
+            const timeStr = "06:38 GMT+8";
             lastUpdated.textContent = `最后更新: ${dateStr} ${timeStr}`;
         }
     </script>

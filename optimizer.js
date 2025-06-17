@@ -98,17 +98,14 @@ class Optimizer {
 			)
 		);
 
-		// 2025-06-06 Added available points
 		const nb_points = Math.floor(
 			this.player.pow +
-				this.player.pre +
-				this.player.eva +
+				this.player.pre_before_boost +
+				this.player.eva_before_boost +
 				this.player.hull +
-				this.player.availablePoints
+				this.player.available
 		);
-
 		const available_points = nb_points - needed_pow - needed_hull;
-
 		const lcl_result = [];
 
 		for (let p = 0; p <= available_points; p++) {
@@ -129,8 +126,7 @@ class Optimizer {
 				weapon_ele2: this.player.weapon_ele2,
 				shield_ele1: this.player.shield_ele1,
 				shield_ele2: this.player.shield_ele2,
-				// 2025-06-06 Added available points
-				available: this.player.availablePoints,
+				battle_boost: this.player.battle_boost,
 			});
 			const battle = new Battle({
 				player: tmp_player,
@@ -156,6 +152,174 @@ class Optimizer {
 		};
 	}
 
+	findBestBuild(htd, htk, target = "credits", verbose = false) {
+		//console.log(htk, htd);
+
+		const total_hp_to_have = (htd - 1) * this.mob.dmg + 1;
+		const remaining_hp = Math.max(
+			0.0,
+			total_hp_to_have - this.player.shield_def
+		);
+		const needed_hull = Math.ceil(remaining_hp / 7.0);
+
+		let total_damage_modifier = 0.0;
+
+		let weapon1 = this.player.weapon_ele1,
+			weapon2 = this.player.weapon_ele2;
+		if (weapon1 && (!weapon2 || weapon2 === "None") && weapon1 !== "None")
+			weapon2 = weapon1;
+		if (weapon2 && (!weapon1 || weapon1 === "None") && weapon2 !== "None")
+			weapon1 = weapon2;
+		let shield1 = this.player.shield_ele1,
+			shield2 = this.player.shield_ele2;
+		if (shield1 && (!shield2 || shield2 === "None") && shield1 !== "None")
+			shield2 = shield1;
+		if (shield2 && (!shield1 || shield1 === "None") && shield2 !== "None")
+			shield1 = shield2;
+		const modifications = [weapon1, weapon2, shield1, shield2];
+		const target_weaknesses = this.mob.weaknesses || [];
+		for (const mod of modifications) {
+			if (mod && target_weaknesses.includes(mod)) {
+				total_damage_modifier += 0.15;
+			}
+		}
+
+		const total_attack_to_have = this.mob.hp / htk + 1;
+		const player_dmg =
+			this.player.n_clones *
+			this.player.weapon_dmg *
+			(1 + total_damage_modifier);
+		const needed_power = Math.ceil(
+			Math.max(
+				0.0,
+				(total_attack_to_have - player_dmg) /
+					(7.0 * this.player.n_clones * (1 + total_damage_modifier))
+			)
+		);
+
+		const nb_points = Math.floor(
+			this.player.pow +
+				this.player.pre_before_boost +
+				this.player.eva_before_boost +
+				this.player.hull +
+				this.player.available
+		);
+		const available_points = nb_points - needed_power - needed_hull;
+
+		let best_build = [0, 0, 0, 0];
+		let best_res = 0;
+		let best_win_chance = 0;
+
+		if (available_points < 0) {
+			return [best_build, best_res];
+		}
+
+		for (let p = 0; p <= available_points; p++) {
+			const power = needed_power;
+			const precision = p;
+			const evasion = available_points - p;
+			const hull = needed_hull;
+
+			const tmp_player = new Player({
+				power,
+				precision,
+				evasion,
+				hull,
+				weapon_dmg: this.player.weapon_dmg,
+				shield_def: this.player.shield_def,
+				n_clones: this.player.n_clones,
+				vip_status: this.player.vip_status,
+				weapon_ele1: this.player.weapon_ele1,
+				weapon_ele2: this.player.weapon_ele2,
+				shield_ele1: this.player.shield_ele1,
+				shield_ele2: this.player.shield_ele2,
+				battle_boost: this.player.battle_boost,
+			});
+
+			const battle = new Battle({
+				player: tmp_player,
+				mob: this.mob,
+				list_modifiers: this.list_modifiers,
+			});
+			const win_chance = battle.repeat_fights(this.n_fights);
+
+			let res;
+			if (target === "credits") {
+				res = battle.get_revenue("hourly", win_chance);
+			} else if (target === "exp") {
+				res = battle.get_experience(
+					"hourly",
+					win_chance,
+					this.player.reputation || 0
+				);
+			} else {
+				throw new Error(`Invalid target ${target}`);
+			}
+
+			if (verbose) {
+				console.log(
+					`[${power},${precision},${evasion},${hull}]: ${millify(
+						res
+					)} with ${(100 * win_chance).toFixed(3)}% win chance`
+				);
+			}
+
+			if (res > best_res) {
+				best_res = res;
+				best_build = [power, precision, evasion, hull];
+				best_win_chance = win_chance;
+			}
+		}
+
+		if (verbose) {
+			console.log(`${best_build}: ${millify(best_res)}`);
+		}
+		return [best_build, best_res, best_win_chance];
+	}
+
+	iterateThroughBuilds(target = "credits", verbose = false) {
+		const range_htk = Array.from({ length: 11 }, (_, i) => i + 3); // [3, 4, ..., 13]
+		const range_htd = Array.from({ length: 8 }, (_, i) => i + 2); // [2, 3, ..., 9]
+
+		let best_build = [0, 0, 0, 0];
+		let best_res = 0;
+		let best_htk = 0;
+		let best_htd = 0;
+		let best_win_chance = 0;
+
+		for (const htk of range_htk) {
+			for (const htd of range_htd) {
+				const [build, res, win_chance] = this.findBestBuild(
+					htd,
+					htk,
+					target
+				);
+
+				if (res > best_res) {
+					best_res = res;
+					best_build = build;
+					best_htk = htk;
+					best_htd = htd;
+					best_win_chance = win_chance;
+				}
+
+				if (verbose) {
+					console.log(`htk: ${htk}, htd: ${htd}`);
+					console.log(`${build}: ${millify(res)}`);
+					console.log("--------------------------------");
+				}
+			}
+		}
+
+		if (verbose) {
+			console.log("\nOverall best build:");
+			console.log(`htk: ${best_htk}, htd: ${best_htd}`);
+			console.log(`${best_build}: ${millify(best_res)}`);
+		}
+
+		return [best_build, best_res, best_win_chance, best_htk, best_htd];
+	}
+
 	async findBestIncremental(
 		target = "credits",
 		verbose = false,
@@ -164,11 +328,12 @@ class Optimizer {
 		// 获取当前玩家的基础属性 // Get base attributes of the player
 		const base = {
 			pow: this.player.pow,
-			pre: this.player.pre,
-			eva: this.player.eva,
+			pre: this.player.pre_before_boost,
+			eva: this.player.eva_before_boost,
 			hull: this.player.hull,
 		};
-		const availablePoints = this.player.availablePoints;
+
+		const availablePoints = this.player.available;
 		const totalPoints =
 			base.pow + base.pre + base.eva + base.hull + availablePoints;
 
@@ -201,11 +366,13 @@ class Optimizer {
 		// 根据构型评估战斗结果 // Evaluate result for a given build
 		const evaluate = async (build) => {
 			const [power, precision, evasion, hull] = build;
+
 			const tmp_player = new Player({
 				power,
 				precision,
 				evasion,
 				hull,
+				available: availablePoints,
 				weapon_dmg: this.player.weapon_dmg,
 				shield_def: this.player.shield_def,
 				n_clones: this.player.n_clones,
@@ -213,8 +380,7 @@ class Optimizer {
 				weapon_ele1: this.player.weapon_ele1,
 				weapon_ele2: this.player.weapon_ele2,
 				shield_ele1: this.player.shield_ele1,
-				shield_ele2: this.player.shield_ele2,
-				available: availablePoints,
+				shield_ele2: this.player.shield_ele2
 			});
 
 			const battle = new Battle({
@@ -531,174 +697,6 @@ class Optimizer {
 		}
 
 		return await runOptimization();
-	}
-
-	findBestBuild(htd, htk, target = "credits", verbose = false) {
-		const total_hp_to_have = (htd - 1) * this.mob.dmg + 1;
-		const remaining_hp = Math.max(
-			0.0,
-			total_hp_to_have - this.player.shield_def
-		);
-		const needed_hull = Math.ceil(remaining_hp / 7.0);
-
-		let total_damage_modifier = 0.0;
-
-		let weapon1 = this.player.weapon_ele1,
-			weapon2 = this.player.weapon_ele2;
-		if (weapon1 && (!weapon2 || weapon2 === "None") && weapon1 !== "None")
-			weapon2 = weapon1;
-		if (weapon2 && (!weapon1 || weapon1 === "None") && weapon2 !== "None")
-			weapon1 = weapon2;
-		let shield1 = this.player.shield_ele1,
-			shield2 = this.player.shield_ele2;
-		if (shield1 && (!shield2 || shield2 === "None") && shield1 !== "None")
-			shield2 = shield1;
-		if (shield2 && (!shield1 || shield1 === "None") && shield2 !== "None")
-			shield1 = shield2;
-		const modifications = [weapon1, weapon2, shield1, shield2];
-		const target_weaknesses = this.mob.weaknesses || [];
-		for (const mod of modifications) {
-			if (mod && target_weaknesses.includes(mod)) {
-				total_damage_modifier += 0.15;
-			}
-		}
-
-		const total_attack_to_have = this.mob.hp / htk + 1;
-		const player_dmg =
-			this.player.n_clones *
-			this.player.weapon_dmg *
-			(1 + total_damage_modifier);
-		const needed_power = Math.ceil(
-			Math.max(
-				0.0,
-				(total_attack_to_have - player_dmg) /
-					(7.0 * this.player.n_clones * (1 + total_damage_modifier))
-			)
-		);
-
-		// 2025-06-06 Added available points
-		const nb_points = Math.floor(
-			this.player.pow +
-				this.player.pre +
-				this.player.eva +
-				this.player.hull +
-				this.player.availablePoints
-		);
-
-		const available_points = nb_points - needed_power - needed_hull;
-
-		let best_build = [0, 0, 0, 0];
-		let best_res = 0;
-		let best_win_chance = 0;
-
-		if (available_points < 0) {
-			return [best_build, best_res];
-		}
-
-		for (let p = 0; p <= available_points; p++) {
-			const power = needed_power;
-			const precision = p;
-			const evasion = available_points - p;
-			const hull = needed_hull;
-
-			const tmp_player = new Player({
-				power,
-				precision,
-				evasion,
-				hull,
-				weapon_dmg: this.player.weapon_dmg,
-				shield_def: this.player.shield_def,
-				n_clones: this.player.n_clones,
-				vip_status: this.player.vip_status,
-				weapon_ele1: this.player.weapon_ele1,
-				weapon_ele2: this.player.weapon_ele2,
-				shield_ele1: this.player.shield_ele1,
-				shield_ele2: this.player.shield_ele2,
-				// 2025-06-06 Added available points
-				available: this.player.availablePoints,
-			});
-
-			const battle = new Battle({
-				player: tmp_player,
-				mob: this.mob,
-				list_modifiers: this.list_modifiers,
-			});
-			const win_chance = battle.repeat_fights(this.n_fights);
-
-			let res;
-			if (target === "credits") {
-				res = battle.get_revenue("hourly", win_chance);
-			} else if (target === "exp") {
-				res = battle.get_experience(
-					"hourly",
-					win_chance,
-					this.player.reputation || 0
-				);
-			} else {
-				throw new Error(`Invalid target ${target}`);
-			}
-
-			if (verbose) {
-				console.log(
-					`[${power},${precision},${evasion},${hull}]: ${millify(
-						res
-					)} with ${(100 * win_chance).toFixed(3)}% win chance`
-				);
-			}
-
-			if (res > best_res) {
-				best_res = res;
-				best_build = [power, precision, evasion, hull];
-				best_win_chance = win_chance;
-			}
-		}
-
-		if (verbose) {
-			console.log(`${best_build}: ${millify(best_res)}`);
-		}
-		return [best_build, best_res, best_win_chance];
-	}
-
-	iterateThroughBuilds(target = "credits", verbose = false) {
-		const range_htk = Array.from({ length: 7 }, (_, i) => i + 4); // range(4,11)
-		const range_htd = Array.from({ length: 4 }, (_, i) => i + 3); // range(3,7)
-
-		let best_build = [0, 0, 0, 0];
-		let best_res = 0;
-		let best_htk = 0;
-		let best_htd = 0;
-		let best_win_chance = 0;
-
-		for (const htk of range_htk) {
-			for (const htd of range_htd) {
-				const [build, res, win_chance] = this.findBestBuild(
-					htd,
-					htk,
-					target
-				);
-				if (res > best_res) {
-					best_res = res;
-					best_build = build;
-					best_htk = htk;
-					best_htd = htd;
-					best_win_chance = win_chance;
-				}
-
-				if (verbose) {
-					console.log(`htk: ${htk}, htd: ${htd}`);
-					console.log(`${build}: ${millify(res)}`);
-					console.log("--------------------------------");
-				}
-			}
-		}
-
-		if (verbose) {
-			console.log("\nOverall best build:");
-			console.log(`htk: ${best_htk}, htd: ${best_htd}`);
-			console.log(`${best_build}: ${millify(best_res)}`);
-		}
-
-		return [best_build, best_res, best_win_chance, best_htk, best_htd];
 	}
 }
 
