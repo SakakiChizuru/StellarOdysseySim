@@ -510,6 +510,9 @@
         
     </style>
     <script src="outsite/js/axios.min.js"></script>
+    <!-- link to wokerpool.min.js -->
+    <!-- suggest to : https://cdn.jsdelivr.net/npm/workerpool@9.2.0/dist/workerpool.min.js -->
+    <!--<script src="outsite/js/workerpool.min.js"></script>-->
     <script type="module">
         import { Player } from './player.js';
         import { Mob } from './mob.js';
@@ -962,11 +965,11 @@
 
                     result = { bestStats: best_build, winChance: best_win_chance };
                     
-                    // Update HTK and HTD fields with the optimal values
+                    //Update HTK and HTD fields with the optimal values
                     document.getElementById('optimizer_htk').value = best_htk;
                     document.getElementById('optimizer_htd').value = best_htd;
                     
-                    // Save the new values to localStorage
+                    //Save the new values to localStorage
                     const settings = JSON.parse(localStorage.getItem('stellarOdysseySettings') || '{}');
                     settings.optimizer_htk = best_htk;
                     settings.optimizer_htd = best_htd;

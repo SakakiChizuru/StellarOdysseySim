@@ -215,3 +215,6 @@ class Battle {
 }
 
 export { Battle }; 
+	
+// Prepare for workerpool.
+self.Battle = Battle;

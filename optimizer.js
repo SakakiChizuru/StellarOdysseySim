@@ -380,7 +380,8 @@ class Optimizer {
 				weapon_ele1: this.player.weapon_ele1,
 				weapon_ele2: this.player.weapon_ele2,
 				shield_ele1: this.player.shield_ele1,
-				shield_ele2: this.player.shield_ele2
+				shield_ele2: this.player.shield_ele2,
+				battle_boost: this.player.battle_boost
 			});
 
 			const battle = new Battle({

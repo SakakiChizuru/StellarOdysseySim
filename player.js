@@ -42,3 +42,6 @@ class Player {
 }
 
 export { Player };
+	
+// Prepare for workerpool.
+self.Player = Player;
