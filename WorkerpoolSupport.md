@@ -1,4 +1,4 @@
-#WorkerPool support
+# WorkerPool support
 
 ## Modification of .js files(and adds).
 ### Modification of `mob.js` `optimizer.js` `player.js` :
