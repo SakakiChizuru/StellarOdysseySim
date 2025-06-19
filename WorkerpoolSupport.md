@@ -1,11 +1,11 @@
 #WorkerPool support
 
 ## Modification of .js files(and adds).
-###Modification of `mob.js` `optimizer.js` `player.js` :
+### Modification of `mob.js` `optimizer.js` `player.js` :
 
 `serialize()` function in each js file and one more `static deserialize()` function in `optimizer.js` put in the end of each Class.
 
-###Adds:
+### Adds:
 
 `workerpool.js` -> for Class WokerPool export.
 `optimizer.woker.js` -> for opitimize Worker thread used by WorkerPool.
