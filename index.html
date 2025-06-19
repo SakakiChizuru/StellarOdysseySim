@@ -510,9 +510,6 @@
         
     </style>
     <script src="outsite/js/axios.min.js"></script>
-    <!-- link to wokerpool.min.js -->
-    <!-- suggest to : https://cdn.jsdelivr.net/npm/workerpool@9.2.0/dist/workerpool.min.js -->
-    <!--<script src="outsite/js/workerpool.min.js"></script>-->
     <script type="module">
         import { Player } from './player.js';
         import { Mob } from './mob.js';
@@ -520,6 +517,8 @@
         import { CloneModifiers, MobName } from './dataclasses.js';
         import { millify } from './utils.js';
         import { Optimizer } from './optimizer.js';
+
+        import { WorkerPool } from './workerpool.js';
 
         // Predefined test values for easy testing
         const DEFAULTS = {
@@ -929,51 +928,74 @@
                 let result;
                 
                 if (isLongOptimize) {
+                    const pool = new WorkerPool(navigator.hardwareConcurrency || 8);
                     const target = document.querySelector('input[name="optimize_target"]:checked').value;
-                    const range_htk = Array.from({length: 14}, (_, i) => i + 3); // [3, 4, ..., 13]
-                    const range_htd = Array.from({length: 12}, (_, i) => i + 2); // [2, 3, ..., 9]
-                    const totalIterations = range_htk.length * range_htd.length;
-                    let currentIteration = 0;
-
-                    let best_build = [0, 0, 0, 0];
-                    let best_res = 0;
-                    let best_htk = 0;
-                    let best_htd = 0;
-                    let best_win_chance = 0;
-
+                    const range_htk = Array.from({length: 14}, (_, i) => i + 3);
+                    const range_htd = Array.from({length: 12}, (_, i) => i + 2);
+                    const totalTasks = range_htk.length * range_htd.length;
+                    let completedTasks = 0;
+                    
+                    const optimizer = new Optimizer(player, mob, list_modifiers, n_fights, reputation);
+                    const optimizerData = optimizer.serialize();
+                    
+                    const tasks = [];
                     for (const htk of range_htk) {
                         for (const htd of range_htd) {
-                            const [build, res, win_chance] = optimizer.findBestBuild(htd, htk, target);
-                            if (res > best_res) {
-                                best_res = res;
-                                best_build = build;
-                                best_htk = htk;
-                                best_htd = htd;
-                                best_win_chance = win_chance;
-                            }
-
-                            // Update progress
-                            currentIteration++;
-                            const progress = (currentIteration / totalIterations) * 100;
-                            progressBar.style.width = `${progress}%`;
-                            progressText.textContent = `${Math.round(progress)}%`;
-                            
-                            // Allow UI to update
-                            await new Promise(resolve => setTimeout(resolve, 0));
+                            tasks.push({
+                                optimizerData,
+                                target,
+                                htd,
+                                htk
+                            });
                         }
                     }
+                    
+                    const updateProgress = () => {
+                        completedTasks++;
+                        const progress = (completedTasks / totalTasks) * 100;
+                        progressBar.style.width = `${progress}%`;
+                        progressText.textContent = `${Math.round(progress)}%`;
+                    };
 
-                    result = { bestStats: best_build, winChance: best_win_chance };
-                    
-                    //Update HTK and HTD fields with the optimal values
-                    document.getElementById('optimizer_htk').value = best_htk;
-                    document.getElementById('optimizer_htd').value = best_htd;
-                    
-                    //Save the new values to localStorage
-                    const settings = JSON.parse(localStorage.getItem('stellarOdysseySettings') || '{}');
-                    settings.optimizer_htk = best_htk;
-                    settings.optimizer_htd = best_htd;
-                    localStorage.setItem('stellarOdysseySettings', JSON.stringify(settings));
+                    try {
+                        const results = await Promise.all(tasks.map(task => {
+                            return pool.runTask(task)
+                                .then(result => {
+                                    updateProgress();
+                                    return result;
+                                });
+                        }));
+                        
+                        let bestResult = results[0];
+                        for (const resultone of results) {
+                            if (resultone.res > bestResult.res) {
+                                bestResult = resultone;
+                            }
+                        }
+                        
+                        let {
+                            build: best_build,
+                            res: best_res,
+                            win_chance: best_win_chance,
+                            htd: best_htd,
+                            htk: best_htk
+                        } = bestResult;
+
+                        result = { bestStats: best_build, winChance: best_win_chance };
+
+                        document.getElementById('optimizer_htk').value = best_htk;
+                        document.getElementById('optimizer_htd').value = best_htd;
+                        
+                        //Save the new values to localStorage
+                        const settings = JSON.parse(localStorage.getItem('stellarOdysseySettings') || '{}');
+                        settings.optimizer_htk = best_htk;
+                        settings.optimizer_htd = best_htd;
+                        localStorage.setItem('stellarOdysseySettings', JSON.stringify(settings));
+                    } catch (error) {
+                        console.error('Optimization error:', error);
+                    } finally {
+                        pool.terminate();
+                    }
                 } else {
                     const target = document.querySelector('input[name="optimize_target"]:checked').value;
                     const htk = parseInt(document.getElementById('optimizer_htk').value);

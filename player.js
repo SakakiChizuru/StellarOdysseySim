@@ -37,11 +37,27 @@ class Player {
 		this.hp = Math.floor((7.0 * hull + shield_def) * (1.0 + battle_boost));
 		this.dmg = Math.floor(
 			(7.0 * this.pow + weapon_dmg) * this.n_clones * (1.0 + battle_boost)
-        );
+		);
+	}
+
+	serialize() {
+		return {
+			power: this.pow,
+			precision: this.pre_before_boost,
+			evasion: this.eva_before_boost,
+			hull: this.hull,
+			available: this.available,
+			weapon_dmg: this.weapon_dmg,
+			shield_def: this.shield_def,
+			n_clones: this.n_clones,
+			vip_status: this.vip_status,
+			weapon_ele1: this.weapon_ele1,
+			weapon_ele2: this.weapon_ele2,
+			shield_ele1: this.shield_ele1,
+			shield_ele2: this.shield_ele2,
+			battle_boost: this.battle_boost,
+		};
 	}
 }
 
 export { Player };
-	
-// Prepare for workerpool.
-self.Player = Player;

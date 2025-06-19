@@ -381,8 +381,10 @@ class Optimizer {
 				weapon_ele2: this.player.weapon_ele2,
 				shield_ele1: this.player.shield_ele1,
 				shield_ele2: this.player.shield_ele2,
-				battle_boost: this.player.battle_boost
+				battle_boost: this.player.battle_boost,
 			});
+
+			console.log(`Opt Boost `, this.player.battle_boost);
 
 			const battle = new Battle({
 				player: tmp_player,
@@ -698,6 +700,65 @@ class Optimizer {
 		}
 
 		return await runOptimization();
+	}
+
+	// For workerpool
+	serialize() {
+		return {
+			player: {
+				power: this.player.pow,
+				precision: this.player.pre_before_boost,
+				evasion: this.player.eva_before_boost,
+				hull: this.player.hull,
+				available: this.player.available,
+				weapon_dmg: this.player.weapon_dmg,
+				shield_def: this.player.shield_def,
+				n_clones: this.player.n_clones,
+				vip_status: this.player.vip_status,
+				weapon_ele1: this.player.weapon_ele1,
+				weapon_ele2: this.player.weapon_ele2,
+				shield_ele1: this.player.shield_ele1,
+				shield_ele2: this.player.shield_ele2,
+				battle_boost: this.player.battle_boost,
+			},
+			mob: {
+				name: this.mob.name,
+				lvl: this.mob.lvl,
+				dmg: this.mob.dmg,
+				pre: this.mob.pre,
+				eva: this.mob.eva,
+				hp: this.mob.hp,
+			},
+			list_modifiers: this.list_modifiers.map((m) => ({
+				bonus_crit_chance: m.bonus_crit_chance,
+				bonus_crit_damage: m.bonus_crit_damage,
+				dual_shot_chance: m.dual_shot_chance,
+			})),
+			n_fights: this.n_fights,
+			reputation: this.reputation,
+		};
+	}
+
+	static deserialize(data) {
+		const player = new Player(data.player);
+		const mob = new Mob(data.mob.name, data.mob.lvl);
+		Object.assign(mob, data.mob);
+		const list_modifiers = data.list_modifiers.map(
+			(m) =>
+				new CloneModifiers(
+					m.bonus_crit_chance,
+					m.bonus_crit_damage,
+					m.dual_shot_chance
+				)
+		);
+
+		return new Optimizer(
+			player,
+			mob,
+			list_modifiers,
+			data.n_fights,
+			data.reputation
+		);
 	}
 }
 
