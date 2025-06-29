@@ -844,8 +844,8 @@
                 const win_chance = battle.repeat_fights(n_fights);
 
                 // Get income boost and reputation values
-                const income_boost = parseFloat(form.income_boost?.value || 0) / 100;
-                const reputation = parseFloat(form.reputation?.value || 0) / 100;
+                const income_boost = (parseInt(form.income_boost?.value || 0) * 0.02);
+                const reputation = (parseFloat(form.reputation?.value || 0) / 100);
 
                 // Print result
                 const creditsPerHour = battle.get_revenue('hourly', win_chance, income_boost, reputation);
@@ -868,8 +868,35 @@
             // incremental optimizer
             const incrementalOptimizerBtn = document.getElementById('incrementalOptimizerBtn');
 
-
             async function runOptimizer(isLongOptimize = false) {
+
+                // Loads Optimized worker amount from localStorage.
+                function getRecommendedWorkerCount() {
+                    const defaultCores = navigator.hardwareConcurrency || 4;
+                    const defaultSafe = Math.max(1, Math.floor(defaultCores / 2));
+                    const saved = localStorage.getItem("optimizer_maxWorkers");
+                    return saved ? parseInt(saved, 10) : defaultSafe;
+                }
+
+                let blockedFrames = 0;
+                let blockThreshold = 200;
+
+                // CPU cost and blocking monitor.
+                function monitorBlocking() {
+                    let lastTime = performance.now();
+                    const check = () => {
+                        const now = performance.now();
+                        const delay = now - lastTime;
+                        if (delay > blockThreshold) {
+                            blockedFrames++;
+                        }
+                        lastTime = now;
+                        requestAnimationFrame(check);
+                    };
+                    requestAnimationFrame(check);
+                }
+                monitorBlocking();
+
                 const top5Div = document.getElementById('IncrementalOptimizeInfo');
                 const optResultDiv = document.getElementById('optimizerResultInfo');
 
@@ -928,7 +955,9 @@
                 let result;
                 
                 if (isLongOptimize) {
-                    const pool = new WorkerPool(navigator.hardwareConcurrency || 8);
+                    const usedThreads = getRecommendedWorkerCount();
+                    const pool = new WorkerPool(usedThreads);
+
                     const target = document.querySelector('input[name="optimize_target"]:checked').value;
                     function range(start, end) {
                         return Array.from({length: end - start + 1}, (_, i) => i + start);
@@ -998,6 +1027,24 @@
                         console.error('Optimization error:', error);
                     } finally {
                         pool.terminate();
+                        
+                        //Adjusting worker amounts(- or +) and save into localStorage.
+                        function evaluateAndSaveThreadSetting(usedThreads) {
+                            console.log(`Blocked frames: ${blockedFrames}`);
+                            const bad = blockedFrames > 5;
+                            const good = blockedFrames < 2;
+
+                            if (bad && usedThreads > 1) {
+                                const next = usedThreads - 1;
+                                console.warn(`⚠ 阻塞检测：下次使用 ${next} 个线程`); // console.warn(`⚠ Blocking Detected：Try using ${next} threads next time.`);
+                                localStorage.setItem('optimizer_maxWorkers', next);
+                            } else if (good && usedThreads < (navigator.hardwareConcurrency || 4)) {
+                                const next = usedThreads + 1;
+                                console.info(`✅ 流畅：下次尝试使用 ${next} 个线程`); // console.info(`✅ Flowing :Try using ${next} threads next time.`);
+                                localStorage.setItem('optimizer_maxWorkers', next);
+                            }
+                        }
+                        evaluateAndSaveThreadSetting(usedThreads);
                     }
                 } else {
                     const target = document.querySelector('input[name="optimize_target"]:checked').value;
@@ -1049,8 +1096,8 @@
                     const battle = new Battle({ player: tmp_player, mob: mob, list_modifiers: list_modifiers });
                     
                     // Get income boost and reputation values
-                    const income_boost = parseFloat(form.income_boost?.value || 0) / 100;
-                    const reputation = parseFloat(form.reputation?.value || 0) / 100;
+                    const income_boost = (parseInt(form.income_boost?.value || 0) * 0.02);
+                    const reputation = (parseFloat(form.reputation?.value || 0) / 100);
 
                     const creditsPerHour = battle.get_revenue('hourly', result.winChance, income_boost, reputation);
                     const creditsPerDay = battle.get_revenue('daily', result.winChance, income_boost, reputation);
@@ -1542,6 +1589,13 @@
                     }
                 }
                 
+                // Handle spacestation battleboost
+                if (data.spacestation && data.spacestation.battling_boost) {
+                    form.battle_boost.value = data.spacestation.battling_boost;
+                } else {
+                    form.battle_boost.value = 0;
+                }
+
                 // Handle spacestation battleboost
                 if (data.spacestation && data.spacestation.battling_boost) {
                     form.battle_boost.value = data.spacestation.battling_boost;

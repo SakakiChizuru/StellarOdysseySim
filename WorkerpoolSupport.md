@@ -92,3 +92,77 @@ Fully replace `if (isLongOptimize)` statement `True` part with:
         pool.terminate();
     }
 ```
+
+## CPU usage optimization (Limit worker amounts) and little changes
+
+### Add in the beginning of `function runOptimizer()` 
+
+```Javascript
+    // Loads Optimized worker amount from localStorage.
+    function getRecommendedWorkerCount() {
+        const defaultCores = navigator.hardwareConcurrency || 4;
+        const defaultSafe = Math.max(1, Math.floor(defaultCores / 2));
+        const saved = localStorage.getItem("optimizer_maxWorkers");
+        return saved ? parseInt(saved, 10) : defaultSafe;
+    }
+
+    let blockedFrames = 0;
+    let blockThreshold = 200;
+
+    // CPU cost and blocking monitor.
+    function monitorBlocking() {
+        let lastTime = performance.now();
+        const check = () => {
+            const now = performance.now();
+            const delay = now - lastTime;
+            if (delay > blockThreshold) {
+                blockedFrames++;
+            }
+            lastTime = now;
+            requestAnimationFrame(check);
+        };
+        requestAnimationFrame(check);
+    }
+    monitorBlocking();
+```
+
+### Change after `if (isLongOptimize) {`
+
+From 
+
+```Javascript
+    const pool = new WorkerPool(navigator.hardwareConcurrency || 8);
+```
+
+To
+
+```Javascript
+    const usedThreads = getRecommendedWorkerCount();
+    const pool = new WorkerPool(usedThreads);
+```
+
+### Add in `finally` block, after `pool.terminate();`
+
+```Javascript
+    //Adjusting worker amounts(- or +) and save into localStorage.
+    function evaluateAndSaveThreadSetting(usedThreads) {
+        console.log(`Blocked frames: ${blockedFrames}`);
+        const bad = blockedFrames > 5;
+        const good = blockedFrames < 2;
+
+        if (bad && usedThreads > 1) {
+            const next = usedThreads - 1;
+            console.warn(`⚠ 阻塞检测：下次使用 ${next} 个线程`); // console.warn(`⚠ Blocking Detected：Try using ${next} threads next time.`);
+            localStorage.setItem('optimizer_maxWorkers', next);
+        } else if (good && usedThreads < (navigator.hardwareConcurrency || 4)) {
+            const next = usedThreads + 1;
+            console.info(`✅ 流畅：下次尝试使用 ${next} 个线程`); // console.info(`✅ Flowing :Try using ${next} threads next time.`);
+            localStorage.setItem('optimizer_maxWorkers', next);
+        }
+    }
+    evaluateAndSaveThreadSetting(usedThreads);
+```
+
+## Little chagne:
+
+Changed file name `optimizer_worker.js` to `optimizer.worker.js`, if you'd like change it, don't forget change it in `wokerpool.js`.
