@@ -834,21 +834,23 @@
                 // Create player
                 // 2025-06-06 Added available points
 
-                const CalculateBoost = function (value) {
+                const CalculateBoost = function (boostValue) {
                     switch(true) {
-                        case (value >= 1 && value <= 10):
-                            return (parseInt(value || 0) * 0.05);
+                        case (boostValue >= 1 && boostValue <= 10):
+                            return (parseInt(boostValue) * 0.05);
                             break;
-                        case (value >= 11 && value <= 20):
-                            return (parseInt(value || 0) * 0.03);
+                        case (boostValue >= 11 && boostValue <= 20):
+                            return (10 * 0.05 + (parseInt(boostValue) - 10) * 0.03);
                             break;
-                        case (value > 20):
-                            return (parseInt(value || 0) * 0.02);
+                        case (boostValue > 20):
+                        return (10 * 0.05 + 10 * 0.03 + (parseInt(boostValue) - 20) * 0.02);
                             break;
                         default:
                             return 0;
                     }
                 }
+
+                
 
                 const battle_boost = CalculateBoost(form.battle_boost?.value || 0);
                 const player = new Player({
@@ -961,16 +963,16 @@
                 // 2025-06-06 Added available points
                 // const battle_boost = (parseInt(form.battle_boost?.value || 0) * 0.05);
 
-                const CalculateBoost = function (value) {
+                const CalculateBoost = function (boostValue) {
                     switch(true) {
-                        case (value >= 1 && value <= 10):
-                            return (parseInt(value || 0) * 0.05);
+                        case (boostValue >= 1 && boostValue <= 10):
+                            return (parseInt(boostValue) * 0.05);
                             break;
-                        case (value >= 11 && value <= 20):
-                            return (parseInt(value || 0) * 0.03);
+                        case (boostValue >= 11 && boostValue <= 20):
+                            return (10 * 0.05 + (parseInt(boostValue) - 10) * 0.03);
                             break;
-                        case (value > 20):
-                            return (parseInt(value || 0) * 0.02);
+                        case (boostValue > 20):
+                        return (10 * 0.05 + 10 * 0.03 + (parseInt(boostValue) - 20) * 0.02);
                             break;
                         default:
                             return 0;
@@ -1246,16 +1248,16 @@
                 const mob = new Mob(MobName[mob_enum_key], mob_level);
 
 
-                const CalculateBoost = function (value) {
+                const CalculateBoost = function (boostValue) {
                     switch(true) {
-                        case (value >= 1 && value <= 10):
-                            return (parseInt(value || 0) * 0.05);
+                        case (boostValue >= 1 && boostValue <= 10):
+                            return (parseInt(boostValue) * 0.05);
                             break;
-                        case (value >= 11 && value <= 20):
-                            return (parseInt(value || 0) * 0.03);
+                        case (boostValue >= 11 && boostValue <= 20):
+                            return (10 * 0.05 + (parseInt(boostValue) - 10) * 0.03);
                             break;
-                        case (value > 20):
-                            return (parseInt(value || 0) * 0.02);
+                        case (boostValue > 20):
+                        return (10 * 0.05 + 10 * 0.03 + (parseInt(boostValue) - 20) * 0.02);
                             break;
                         default:
                             return 0;
@@ -1264,6 +1266,7 @@
 
                 // 玩家对象
                 const battle_boost = CalculateBoost(form.battle_boost?.value || 0);
+
                 const player = new Player({
                     power, precision, evasion, hull, available, weapon_dmg, shield_def, n_clones, vip_status,
                     weapon_ele1, weapon_ele2, shield_ele1, shield_ele2, battle_boost
@@ -1641,24 +1644,31 @@
                         form.mob_level.value = data.actions.currentNpcLevel;
                     }
                 }
-                
+
                 // Handle spacestation battleboost
-                if (data.spacestation && data.spacestation.battling_boost) {
+/*                 if (data.spacestation && data.spacestation.battling_boost) {
                     form.battle_boost.value = data.spacestation.battling_boost;
                 } else {
                     form.battle_boost.value = 0;
-                }
+                } */
 
-                // Handle spacestation battleboost
-                if (data.spacestation && data.spacestation.battling_boost) {
-                    form.battle_boost.value = data.spacestation.battling_boost;
+                if (data.squadron && data.squadron.buildings) {
+                    for (const building of data.squadron.buildings) {
+                        if (building.name === 'Barracks') {
+                            form.battle_boost.value = building.level; // Assuming each level gives 5% boost
+                        }
+                    }
                 } else {
                     form.battle_boost.value = 0;
                 }
 
                 // Handle spacestation incomeboost
-                if (data.spacestation && data.spacestation.incomeboost) {
-                    form.income_boost.value = data.spacestation.incomeboost;
+                if (data.squadron && data.squadron.buildings) {
+                    for (const building of data.squadron.buildings) {
+                        if (building.name === 'Amplifier') {
+                            form.income_boost.value = building.level; // Assuming each level gives 5% boost
+                        }
+                    }
                 } else {
                     form.income_boost.value = 0;
                 }
