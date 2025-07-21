@@ -833,7 +833,24 @@
 
                 // Create player
                 // 2025-06-06 Added available points
-                const battle_boost = (parseInt(form.battle_boost?.value || 0) * 0.05);
+
+                const CalculateBoost = function (value) {
+                    switch(true) {
+                        case (value >= 1 && value <= 10):
+                            return (parseInt(value || 0) * 0.05);
+                            break;
+                        case (value >= 11 && value <= 20):
+                            return (parseInt(value || 0) * 0.03);
+                            break;
+                        case (value > 20):
+                            return (parseInt(value || 0) * 0.02);
+                            break;
+                        default:
+                            return 0;
+                    }
+                }
+
+                const battle_boost = CalculateBoost(form.battle_boost?.value || 0);
                 const player = new Player({
                     power, precision, evasion, hull, available, weapon_dmg, shield_def, n_clones, vip_status,
                     weapon_ele1, weapon_ele2, shield_ele1, shield_ele2, battle_boost
@@ -942,7 +959,26 @@
 
                 // Create player
                 // 2025-06-06 Added available points
-                const battle_boost = (parseInt(form.battle_boost?.value || 0) * 0.05);
+                // const battle_boost = (parseInt(form.battle_boost?.value || 0) * 0.05);
+
+                const CalculateBoost = function (value) {
+                    switch(true) {
+                        case (value >= 1 && value <= 10):
+                            return (parseInt(value || 0) * 0.05);
+                            break;
+                        case (value >= 11 && value <= 20):
+                            return (parseInt(value || 0) * 0.03);
+                            break;
+                        case (value > 20):
+                            return (parseInt(value || 0) * 0.02);
+                            break;
+                        default:
+                            return 0;
+                    }
+                }
+
+                const battle_boost = CalculateBoost(form.battle_boost?.value || 0);
+                
                 const player = new Player({
                     power, precision, evasion, hull, available, weapon_dmg, shield_def, n_clones, vip_status,
                     weapon_ele1, weapon_ele2, shield_ele1, shield_ele2, battle_boost
@@ -1075,7 +1111,7 @@
 
                 // Update the results display
                 if (result && result.bestStats && result.winChance !== undefined) {
-                    const battle_boost = (parseInt(form.battle_boost?.value || 0) * 0.05);
+                    const battle_boost = CalculateBoost(form.battle_boost?.value || 0);
                     const [power, precision, evasion, hull] = result.bestStats;
                     const tmp_player = new Player({
                         power,
@@ -1209,8 +1245,25 @@
                 let mob_enum_key = Object.keys(MobName).find(key => MobName[key] === mob_name);
                 const mob = new Mob(MobName[mob_enum_key], mob_level);
 
+
+                const CalculateBoost = function (value) {
+                    switch(true) {
+                        case (value >= 1 && value <= 10):
+                            return (parseInt(value || 0) * 0.05);
+                            break;
+                        case (value >= 11 && value <= 20):
+                            return (parseInt(value || 0) * 0.03);
+                            break;
+                        case (value > 20):
+                            return (parseInt(value || 0) * 0.02);
+                            break;
+                        default:
+                            return 0;
+                    }
+                }
+
                 // 玩家对象
-                const battle_boost = (parseInt(form.battle_boost?.value || 0) * 0.05);
+                const battle_boost = CalculateBoost(form.battle_boost?.value || 0);
                 const player = new Player({
                     power, precision, evasion, hull, available, weapon_dmg, shield_def, n_clones, vip_status,
                     weapon_ele1, weapon_ele2, shield_ele1, shield_ele2, battle_boost
