@@ -544,6 +544,33 @@
             available: 0
         };
 
+        function CalculateBoost(boostValue) {
+            switch(true) {
+                case (boostValue >= 1 && boostValue <= 10):
+                    return (parseInt(boostValue) * 0.05);
+                    break;
+                case (boostValue >= 11 && boostValue <= 20):
+                    return (10 * 0.05 + (parseInt(boostValue) - 10) * 0.03);
+                    break;
+                case (boostValue > 20):
+                    return (10 * 0.08 + (parseInt(boostValue) - 20) * 0.02);
+                    break;
+                default:
+                    return 0;
+            }
+        }
+        function DisplayBoostPercent() {
+            const battleBoostValue = Number(document.getElementById('battle_boost').value);
+            let battleBoostPercent = (!isNaN(battleBoostValue) && battleBoostValue > 0) ? parseInt(CalculateBoost(battleBoostValue) * 100) : '';
+            let battleBoostLabelText = `战斗加成等级${battleBoostPercent !== '' ? `(${battleBoostPercent}%)` : ''}:`;
+            document.querySelector("#playerForm > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > label").textContent = battleBoostLabelText;
+
+            const incomeBoostValue = Number(document.getElementById('income_boost').value);
+            let incomeBoostPercent = (!isNaN(incomeBoostValue) && incomeBoostValue > 0) ? parseInt(incomeBoostValue * 2) : '';
+            let incomeBoostLabelText = `收入加成等级${incomeBoostPercent !== '' ? `(${incomeBoostPercent}%)` : ''}:`;
+            document.querySelector("#playerForm > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(2) > label").textContent = incomeBoostLabelText;
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             const form = document.getElementById('playerForm');
             const resultDiv = document.getElementById('playerResult');
@@ -637,6 +664,8 @@
                 cloneModifiers = DEFAULTS.clone_modifiers.map(mod => ({...mod}));
                 renderCloneModifiers(parseInt(DEFAULTS.n_clones) || 1);
             }
+
+            DisplayBoostPercent();
 
             // For selects and n_clones, trigger input event to update UI
             const nClonesInput = document.getElementById('n_clones');
@@ -832,25 +861,7 @@
                 }
 
                 // Create player
-                // 2025-06-06 Added available points
-
-                const CalculateBoost = function (boostValue) {
-                    switch(true) {
-                        case (boostValue >= 1 && boostValue <= 10):
-                            return (parseInt(boostValue) * 0.05);
-                            break;
-                        case (boostValue >= 11 && boostValue <= 20):
-                            return (10 * 0.05 + (parseInt(boostValue) - 10) * 0.03);
-                            break;
-                        case (boostValue > 20):
-                        return (10 * 0.05 + 10 * 0.03 + (parseInt(boostValue) - 20) * 0.02);
-                            break;
-                        default:
-                            return 0;
-                    }
-                }
-
-                
+                // 2025-06-06 Added available points              
 
                 const battle_boost = CalculateBoost(form.battle_boost?.value || 0);
                 const player = new Player({
@@ -962,22 +973,6 @@
                 // Create player
                 // 2025-06-06 Added available points
                 // const battle_boost = (parseInt(form.battle_boost?.value || 0) * 0.05);
-
-                const CalculateBoost = function (boostValue) {
-                    switch(true) {
-                        case (boostValue >= 1 && boostValue <= 10):
-                            return (parseInt(boostValue) * 0.05);
-                            break;
-                        case (boostValue >= 11 && boostValue <= 20):
-                            return (10 * 0.05 + (parseInt(boostValue) - 10) * 0.03);
-                            break;
-                        case (boostValue > 20):
-                        return (10 * 0.05 + 10 * 0.03 + (parseInt(boostValue) - 20) * 0.02);
-                            break;
-                        default:
-                            return 0;
-                    }
-                }
 
                 const battle_boost = CalculateBoost(form.battle_boost?.value || 0);
                 
@@ -1246,23 +1241,6 @@
                 const mob_level = parseInt(form.mob_level.value) || 1;
                 let mob_enum_key = Object.keys(MobName).find(key => MobName[key] === mob_name);
                 const mob = new Mob(MobName[mob_enum_key], mob_level);
-
-
-                const CalculateBoost = function (boostValue) {
-                    switch(true) {
-                        case (boostValue >= 1 && boostValue <= 10):
-                            return (parseInt(boostValue) * 0.05);
-                            break;
-                        case (boostValue >= 11 && boostValue <= 20):
-                            return (10 * 0.05 + (parseInt(boostValue) - 10) * 0.03);
-                            break;
-                        case (boostValue > 20):
-                        return (10 * 0.05 + 10 * 0.03 + (parseInt(boostValue) - 20) * 0.02);
-                            break;
-                        default:
-                            return 0;
-                    }
-                }
 
                 // 玩家对象
                 const battle_boost = CalculateBoost(form.battle_boost?.value || 0);
@@ -1646,12 +1624,6 @@
                 }
 
                 // Handle spacestation battleboost
-/*                 if (data.spacestation && data.spacestation.battling_boost) {
-                    form.battle_boost.value = data.spacestation.battling_boost;
-                } else {
-                    form.battle_boost.value = 0;
-                } */
-
                 if (data.squadron && data.squadron.buildings) {
                     for (const building of data.squadron.buildings) {
                         if (building.name === 'Barracks') {
@@ -1672,6 +1644,8 @@
                 } else {
                     form.income_boost.value = 0;
                 }
+
+                DisplayBoostPercent();
 
                 // Handle reputation
                 if (data.reputation !== null && data.reputation !== undefined) {
