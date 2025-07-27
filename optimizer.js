@@ -214,11 +214,20 @@ class Optimizer {
 			return [best_build, best_res];
 		}
 
-		for (let p = 0; p <= available_points; p++) {
+		//Assuming the hit chance percent of Player Versus Mob must greater than 30%.
+		const hc30_pre = parseInt((0.3 * this.mob.pre) / 0.7);
+		const startingtime = performance.now();
+
+		for (let p = hc30_pre; p <= available_points; p++) {
 			const power = needed_power;
+			const hull = needed_hull;
 			const precision = p;
 			const evasion = available_points - p;
-			const hull = needed_hull;
+
+			if (precision > available_points || evasion < 0) {
+				console.log(`Skipping invalid build: [${power}, ${precision}, ${evasion}, ${hull}]`);
+				continue; // Skip invalid builds
+			}
 
 			const tmp_player = new Player({
 				power,
@@ -271,9 +280,16 @@ class Optimizer {
 			}
 		}
 
+		const endtime = performance.now();
+
 		if (verbose) {
 			console.log(`${best_build}: ${millify(best_res)}`);
+
+			console.log(
+				`Time taken: ${(endtime - startingtime).toFixed(2)} ms`
+			);
 		}
+
 		return [best_build, best_res, best_win_chance];
 	}
 
