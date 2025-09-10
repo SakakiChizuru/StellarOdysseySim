@@ -20,6 +20,8 @@ class UniverseMap {
 		this.journalData = null;
 		this.hoveredJourneyPoint = null;
 
+		this.visible = this.getVisibleRange();
+
 		// Load checkbox states from localStorage
 		this.showPublicSystems =
 			localStorage.getItem("showPublicSystems") === "true";
@@ -222,7 +224,21 @@ class UniverseMap {
 		return `hsl(${hue}, 100%, 50%)`;
 	}
 
+	getVisibleRange() {
+        const padding = { left: 40, right: 140, top: 25, bottom: 25 };
+        const graphWidth = this.canvas.width - padding.left - padding.right;
+        const graphHeight = this.canvas.height - padding.top - padding.bottom;
+        const visibleWidth = 2000 / this.zoomLevel;
+        const visibleHeight = 2000 / this.zoomLevel;
+        const left = this.offsetX;
+        const top = this.offsetY;
+        const right = left + visibleWidth;
+        const bottom = top + visibleHeight;
+        return { left, right, top, bottom };
+    }
+
 	draw() {
+		this.visible = this.getVisibleRange();
 		const ctx = this.ctx;
 		const width = this.canvas.width;
 		const height = this.canvas.height;
@@ -447,6 +463,16 @@ class UniverseMap {
 		// Draw systems if showPublicSystems is true
 		if (this.showPublicSystems) {
 			this.systems.forEach((system, index) => {
+
+				if (
+                    system.coordinate_x < this.visible.left ||
+                    system.coordinate_x > this.visible.right ||
+                    system.coordinate_y < this.visible.top ||
+                    system.coordinate_y > this.visible.bottom
+                ) {
+                    return;
+                }
+
 				const x = toPixelX(system.coordinate_x);
 				const y = toPixelY(system.coordinate_y);
 
@@ -676,11 +702,13 @@ class UniverseMap {
 		this.isDragging = true;
 		const rect = this.canvas.getBoundingClientRect();
 		this.lastX = e.clientX - rect.left;
-		this.lastY = e.clientY - rect.top;
+		this.lastY = e.clientY - rect.top;		
+		this.visible = this.getVisibleRange();
 	}
 
 	handleMouseUp() {
-		this.isDragging = false;
+		this.isDragging = false;		
+		this.visible = this.getVisibleRange();	
 	}
 
 	handleWheel(e) {
@@ -1004,11 +1032,21 @@ class UniverseMapExtended extends UniverseMap {
 			height -
 			padding.bottom -
 			((y - this.offsetY) / 2000) * graphHeight * this.zoomLevel;
+		
 
 		// 绘制每段轨迹
 		if (this.trajectories && this.trajectories.length > 0) {
 			for (let i = 0; i < this.trajectories.length; i++) {
 				const segment = this.trajectories[i];
+
+				if (
+                    (segment.from.x < this.visible.left && segment.to.x < this.visible.left) ||
+                    (segment.from.x > this.visible.right && segment.to.x > this.visible.right) ||
+                    (segment.from.y < this.visible.top && segment.to.y < this.visible.top) ||
+                    (segment.from.y > this.visible.bottom && segment.to.y > this.visible.bottom)
+                ) {
+                    continue; // 跳过不在可视范围的轨迹
+                }
 
 				const fromX = toPixelX(segment.from.x);
 				const fromY = toPixelY(segment.from.y);
@@ -1600,29 +1638,6 @@ document.addEventListener("DOMContentLoaded", () => {
 				loadButton.disabled = true;
 				loadButton.textContent = "载入中...";
 
-				// Load systems
-				const systemsResponse = await fetch(
-					"https://api.stellarodyssey.app/api/public/systems",
-					{
-						headers: {
-							Accept: "application/json",
-							"sodyssey-api-key": apiKey,
-						},
-					}
-				);
-
-				if (!systemsResponse.ok) {
-					throw new Error(
-						`Server responded with status ${systemsResponse.status}`
-					);
-				}
-
-				const systemsData = await systemsResponse.json();
-				universeMap.loadSystems(systemsData);
-
-				// Add a 1 second delay between requests
-				await new Promise((resolve) => setTimeout(resolve, 1000));
-
 				// Load journal
 				const journalResponse = await fetch(
 					"https://api.stellarodyssey.app/api/public/journal",
@@ -1648,6 +1663,30 @@ document.addEventListener("DOMContentLoaded", () => {
 					universeMap.setPlayerPosition(journalData.fullJournal[0]);
 					universeMap.setJournalData(journalData);
 				}
+
+				// Add a 1 second delay between requests
+				await new Promise((resolve) => setTimeout(resolve, 1000));
+
+				// Load systems
+				const systemsResponse = await fetch(
+					"https://api.stellarodyssey.app/api/public/systems",
+					//`https://api.stellarodyssey.app/api/public/systems/nearby?x=${universeMap.playerPosition.coordinate_x}&y=${universeMap.playerPosition.coordinate_y}&z=1&mobile=false`,
+					{
+						headers: {
+							Accept: "application/json",
+							"sodyssey-api-key": apiKey,
+						},
+					}
+				);
+
+				if (!systemsResponse.ok) {
+					throw new Error(
+						`Server responded with status ${systemsResponse.status}`
+					);
+				}
+
+				const systemsData = await systemsResponse.json();
+				universeMap.loadSystems(systemsData);
 
 				loadButton.disabled = false;
 				loadButton.textContent = "载入星图";

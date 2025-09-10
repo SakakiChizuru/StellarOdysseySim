@@ -152,7 +152,7 @@ class Optimizer {
 		};
 	}
 
-	findBestBuild(htd, htk, target = "credits", verbose = false) {
+	findBestBuild(htd, htk, target = "credits", hcn = null, verbose = false) {
 		const total_hp_to_have =
 			((htd - 1) * this.mob.dmg + 1) / (1 + this.player.battle_boost);
 		const remaining_hp = Math.max(
@@ -215,16 +215,17 @@ class Optimizer {
 		}
 
 		//Assuming the hit chance percent of Player Versus Mob must greater than 30%.
-		const hc30_pre = parseInt((0.3 * this.mob.pre) / 0.7);
-		const startingtime = performance.now();
+		const hc_needed = parseFloat(hcn || 0.25);
+		const hc_pre = parseInt((hcn * this.mob.pre) / (1 - hcn));
+		//const startingtime = performance.now();
 
-		for (let p = hc30_pre; p <= available_points; p++) {
+		for (let p = hc_pre; p <= available_points; p++) {
 			const power = needed_power;
 			const hull = needed_hull;
 			const precision = p;
 			const evasion = available_points - p;
 
-			if (precision > available_points || evasion < 0) {
+			if (evasion < 0) {
 				console.log(`Skipping invalid build: [${power}, ${precision}, ${evasion}, ${hull}]`);
 				continue; // Skip invalid builds
 			}

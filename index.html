@@ -1102,7 +1102,7 @@
                     
                     requestAnimationFrame(animateProgress);
 
-                    const [bestBuild, bestRes, bestWinChance] = optimizer.findBestBuild(htd, htk, target, false);
+                    const [bestBuild, bestRes, bestWinChance] = optimizer.findBestBuild(htd, htk, target, 0.25, false);
                     result = { bestStats: bestBuild, winChance: bestWinChance };
                 }
 
