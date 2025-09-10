@@ -524,10 +524,10 @@ class UniverseMap {
 
 				// Only draw if within visible area and graph boundaries
 				if (
-					pixelX >= padding.left &&
-					pixelX <= width - padding.right &&
-					pixelY >= padding.top &&
-					pixelY <= height - padding.bottom
+					x >= this.visible.left &&
+					x <= this.visible.right &&
+					y >= this.visible.top &&
+					y <= this.visible.bottom
 				) {
 					// Draw journey point
 					ctx.fillStyle = this.getColorFromDate(date);
