@@ -16,12 +16,14 @@ class Player {
 		shield_ele1 = null,
 		shield_ele2 = null,
 		battle_boost = 0.0,
+		battling_weapon_boost = 0.0,
+		battling_hull_boost = 0.0,
+		battling_precision_boost = 0.0,
+		battling_evasion_boost = 0.0 
 	}) {
 		this.pow = power;
 		this.pre_before_boost = precision;
-		this.pre = Math.floor(precision * (1.0 + battle_boost));
 		this.eva_before_boost = evasion;
-		this.eva = Math.floor(evasion * (1.0 + battle_boost));
 		this.hull = hull;
 		this.available = available;
 		this.weapon_dmg = weapon_dmg;
@@ -34,10 +36,15 @@ class Player {
 		this.vip_status = vip_status;
 		this.battle_boost = battle_boost;
 
-		this.hp = Math.floor((7.0 * hull + shield_def) * (1.0 + battle_boost));
-		this.dmg = Math.floor(
-			(7.0 * this.pow + weapon_dmg) * this.n_clones * (1.0 + battle_boost)
-		);
+        this.battling_weapon_boost = battling_weapon_boost;
+        this.battling_hull_boost = battling_hull_boost;
+        this.battling_precision_boost = battling_precision_boost;
+        this.battling_evasion_boost = battling_evasion_boost;
+
+		this.pre = Math.floor(precision * (1.0 + battle_boost) * (1.0 + battling_precision_boost));
+        this.eva = Math.floor(evasion * (1.0 + battle_boost) * (1.0 + battling_evasion_boost));
+        this.hp = Math.floor(((7.0 * this.hull * (1.0 + battling_hull_boost)) + shield_def) * (1.0 + battle_boost));
+        this.dmg = Math.floor((((7.0 * this.pow * (1.0 + battling_weapon_boost)) + weapon_dmg) * this.n_clones) * (1.0 + battle_boost));
 	}
 
 	serialize() {
@@ -56,6 +63,10 @@ class Player {
 			shield_ele1: this.shield_ele1,
 			shield_ele2: this.shield_ele2,
 			battle_boost: this.battle_boost,
+			battling_weapon_boost: this.battling_weapon_boost,
+            battling_hull_boost: this.battling_hull_boost,
+            battling_precision_boost: this.battling_precision_boost,
+            battling_evasion_boost: this.battling_evasion_boost,
 		};
 	}
 }

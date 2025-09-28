@@ -113,7 +113,7 @@
         }
         .input-group input[type="number"] {
             font-family: "Rajdhani", Tahoma, Arial, sans-serif;
-            width: 3.84em;
+            width: 80px;
             height: 1.32em;
             font-size: 1.14em;
             text-align: center;
@@ -563,12 +563,12 @@
             const battleBoostValue = Number(document.getElementById('battle_boost').value);
             let battleBoostPercent = (!isNaN(battleBoostValue) && battleBoostValue > 0) ? parseInt(CalculateBoost(battleBoostValue) * 100) : '';
             let battleBoostLabelText = `战斗加成等级${battleBoostPercent !== '' ? `(${battleBoostPercent}%)` : ''}:`;
-            document.querySelector("#playerForm > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > label").textContent = battleBoostLabelText;
+            document.querySelector("#playerForm > div:nth-child(1) > div:nth-child(4) > div:nth-child(2) > div:nth-child(1) > label").textContent = battleBoostLabelText;
 
             const incomeBoostValue = Number(document.getElementById('income_boost').value);
             let incomeBoostPercent = (!isNaN(incomeBoostValue) && incomeBoostValue > 0) ? parseInt(incomeBoostValue * 2) : '';
             let incomeBoostLabelText = `收入加成等级${incomeBoostPercent !== '' ? `(${incomeBoostPercent}%)` : ''}:`;
-            document.querySelector("#playerForm > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(2) > label").textContent = incomeBoostLabelText;
+            document.querySelector("#playerForm > div:nth-child(1) > div:nth-child(4) > div:nth-child(2) > div:nth-child(2) > label").textContent = incomeBoostLabelText;
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -603,6 +603,11 @@
                     income_boost: form.income_boost?.value || 0,
                     battle_boost: form.battle_boost?.value || 0,
                     reputation: form.reputation?.value || 0,
+                    // Technology buffs
+                    battling_weapon_boost: form.battling_weapon_boost?.value || 0,
+                    battling_hull_boost: form.battling_hull_boost?.value || 0,
+                    battling_precision_boost: form.battling_precision_boost?.value || 0,
+                    battling_evasion_boost: form.battling_evasion_boost?.value || 0,
                     // Clone modifiers
                     clone_modifiers: cloneModifiers,
                     // Resources calculator
@@ -836,6 +841,11 @@
                 const shield_ele2 = form.shield_ele2.value || null;
                 const vip_status = form.vip_status.checked;
 
+                const battling_weapon_boost = parseInt(form.battling_weapon_boost.value)/100 || 0;
+                const battling_hull_boost = parseInt(form.battling_hull_boost.value)/100 || 0;
+                const battling_precision_boost = parseInt(form.battling_precision_boost.value)/100 || 0;
+                const battling_evasion_boost = parseInt(form.battling_evasion_boost.value)/100 || 0;
+
                 // Gather clone modifiers
                 const list_modifiers = cloneModifiers.map(mod =>
                     new CloneModifiers(
@@ -866,7 +876,8 @@
                 const battle_boost = CalculateBoost(form.battle_boost?.value || 0);
                 const player = new Player({
                     power, precision, evasion, hull, available, weapon_dmg, shield_def, n_clones, vip_status,
-                    weapon_ele1, weapon_ele2, shield_ele1, shield_ele2, battle_boost
+                    weapon_ele1, weapon_ele2, shield_ele1, shield_ele2, battle_boost,
+                    battling_weapon_boost, battling_hull_boost, battling_precision_boost, battling_evasion_boost
                 });
 
                 // Create and run battle
@@ -955,6 +966,11 @@
                 const shield_ele2 = form.shield_ele2.value || null;
                 const vip_status = form.vip_status.checked;
 
+                const battling_weapon_boost = parseInt(form.battling_weapon_boost.value)/100 || 0;
+                const battling_hull_boost = parseInt(form.battling_hull_boost.value)/100 || 0;
+                const battling_precision_boost = parseInt(form.battling_precision_boost.value)/100 || 0;
+                const battling_evasion_boost = parseInt(form.battling_evasion_boost.value)/100 || 0;
+
                 // Gather clone modifiers
                 const list_modifiers = cloneModifiers.map(mod =>
                     new CloneModifiers(
@@ -978,7 +994,8 @@
                 
                 const player = new Player({
                     power, precision, evasion, hull, available, weapon_dmg, shield_def, n_clones, vip_status,
-                    weapon_ele1, weapon_ele2, shield_ele1, shield_ele2, battle_boost
+                    weapon_ele1, weapon_ele2, shield_ele1, shield_ele2, battle_boost, 
+                    battling_weapon_boost, battling_hull_boost, battling_precision_boost, battling_evasion_boost
                 });
 
                 const optimizerFightsInput = document.getElementById('optimizer_n_fights');
@@ -1124,7 +1141,11 @@
                         weapon_ele2: player.weapon_ele2,
                         shield_ele1: player.shield_ele1,
                         shield_ele2: player.shield_ele2,
-                        battle_boost: battle_boost
+                        battle_boost: battle_boost,
+                        battling_weapon_boost: player.battling_weapon_boost,
+                        battling_hull_boost: player.battling_hull_boost,
+                        battling_precision_boost: player.battling_precision_boost,
+                        battling_evasion_boost: player.battling_evasion_boost
                     });
                     const battle = new Battle({ player: tmp_player, mob: mob, list_modifiers: list_modifiers });
                     
@@ -1654,6 +1675,19 @@
                     form.reputation.value = 0;
                 }
 
+                // Handle skills (battling boosts)
+                if (data.skills) {
+                    form.battling_weapon_boost.value = data.skills.battling_weapon_boost || 0;
+                    form.battling_hull_boost.value = data.skills.battling_hull_boost || 0;
+                    form.battling_precision_boost.value = data.skills.battling_precision_boost || 0;
+                    form.battling_evasion_boost.value = data.skills.battling_evasion_boost || 0;
+                } else {
+                    form.battling_weapon_boost.value = 0;
+                    form.battling_hull_boost.value = 0;
+                    form.battling_precision_boost.value = 0;
+                    form.battling_evasion_boost.value = 0;
+                }
+
                 // Render clone modifiers with the new data
                 renderCloneModifiers(parseInt(form.n_clones.value) || 1);
                 
@@ -1697,7 +1731,7 @@
     <div id="battling-tab" class="tab-content active">
         <form id="playerForm" class="form-section" autocomplete="off" style="display: flex; flex-direction: row; gap: 2em;">
             <div style="flex: 3;">
-                <div class="player-block" style="width: 420px; min-width: 420px; max-width: 420px;">
+                <div class="player-block">
                     <div class="block-label">玩家</div>
                     <div class="form-row"><!-- // 2025-06-06 Added available points -->
                         <div class="form-group">
@@ -1711,7 +1745,7 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="power">威力（力量）：</label>
+                            <label for="power">威力：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="power">-</button>
                                 <input type="number" id="power" name="power" value="0" min="0">
@@ -1719,7 +1753,7 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="precision">精准：</label>
+                            <label for="precision">命中：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="precision">-</button>
                                 <input type="number" id="precision" name="precision" value="0" min="0">
@@ -1737,7 +1771,7 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="hull">船体：</label>
+                            <label for="hull">舰体：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="hull">-</button>
                                 <input type="number" id="hull" name="hull" value="0" min="0">
@@ -1832,6 +1866,45 @@
                         </div>
                     </div>
                 </div>
+                <div class="mob-block" style="width: 420px; min-width: 420px; max-width: 420px;">
+                    <div class="block-label">科技加成</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="battling_weapon_boost">武器增幅（威力）:</label>
+                            <div class="input-group">
+                                <button type="button" class="minus-btn" data-target="battling_weapon_boost">-</button>
+                                <input type="number" id="battling_weapon_boost" name="battling_weapon_boost" value="0" min="0" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">%
+                                <button type="button" class="plus-btn" data-target="battling_weapon_boost">+</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="battling_hull_boost">舰体增幅:</label>
+                            <div class="input-group">
+                                <button type="button" class="minus-btn" data-target="battling_hull_boost">-</button>
+                                <input type="number" id="battling_hull_boost" name="battling_hull_boost" value="0" min="0" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">%
+                                <button type="button" class="plus-btn" data-target="battling_hull_boost">+</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="battling_precision_boost">命中增幅:</label>
+                            <div class="input-group">
+                                <button type="button" class="minus-btn" data-target="battling_precision_boost">-</button>
+                                <input type="number" id="battling_precision_boost" name="battling_precision_boost" value="0" min="0" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">%
+                                <button type="button" class="plus-btn" data-target="battling_precision_boost">+</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="battling_evasion_boost">闪避增幅:</label>
+                            <div class="input-group">
+                                <button type="button" class="minus-btn" data-target="battling_evasion_boost">-</button>
+                                <input type="number" id="battling_evasion_boost" name="battling_evasion_boost" value="0" min="0" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">%
+                                <button type="button" class="plus-btn" data-target="battling_evasion_boost">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>               
                 <div class="mob-block" style="width: 420px; min-width: 420px; max-width: 420px;">
                     <div class="block-label">敌人</div>
                     <div class="form-row">
