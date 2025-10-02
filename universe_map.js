@@ -20,6 +20,10 @@ class UniverseMap {
 		this.journalData = null;
 		this.hoveredJourneyPoint = null;
 
+		// Added for space stations
+		this.squadronSpaceStations = [];
+		this.hoveredSpaceStation = null;
+
 		this.visible = this.getVisibleRange();
 
 		// Load checkbox states from localStorage
@@ -29,6 +33,8 @@ class UniverseMap {
 			localStorage.getItem("showCurrentPosition") === "true";
 		this.showPlayerJourney =
 			localStorage.getItem("showPlayerJourney") === "true";
+		this.showSpaceStations = 
+			localStorage.getItem('showSpaceStations') === 'true';
 
 		// Set initial checkbox states
 		document.getElementById("show_public_systems").checked =
@@ -37,6 +43,8 @@ class UniverseMap {
 			this.showCurrentPosition;
 		document.getElementById("show_player_journey").checked =
 			this.showPlayerJourney;
+		document.getElementById('show_space_stations').checked = 
+			this.showSpaceStations;
 
 		// Add checkbox event listeners
 		document
@@ -81,6 +89,16 @@ class UniverseMap {
 				this.draw();
 			});
 
+        document
+			.getElementById('show_space_stations')
+			.addEventListener('change', (e) => {
+				this.showSpaceStations = e.target.checked;
+				localStorage.setItem(
+					'showSpaceStations',
+					this.showSpaceStations);
+				this.draw();
+        	});
+
 		// Set canvas size
 		this.resizeCanvas();
 		window.addEventListener("resize", () => this.resizeCanvas());
@@ -92,8 +110,15 @@ class UniverseMap {
 		this.canvas.addEventListener("mousedown", (e) =>
 			this.handleMouseDown(e)
 		);
-		this.canvas.addEventListener("mouseup", () => this.handleMouseUp());
-		this.canvas.addEventListener("wheel", (e) => this.handleWheel(e));
+		this.canvas.addEventListener("mouseup", () => 
+			this.handleMouseUp()
+		);
+		this.canvas.addEventListener("wheel", (e) => 
+			this.handleWheel(e)
+		);
+
+		this._lastDrawTime = 0;      // For throttling draw calls
+        this._drawQueued = false;    // For throttling draw calls
 	}
 
 	resizeCanvas() {
@@ -238,6 +263,33 @@ class UniverseMap {
     }
 
 	draw() {
+        // Colors for each SS (10 visually distinct, base RGB)
+        const baseColors = [
+            [79, 163, 255],    // blue
+            [255, 82, 82],     // red
+            [76, 175, 80],     // green
+            [255, 193, 7],     // yellow
+            [156, 39, 176],    // purple
+            [255, 152, 0],     // orange
+            [233, 30, 99],     // pink
+            [0, 188, 212],     // cyan
+            [121, 85, 72],     // brown
+            [158, 158, 158]    // gray
+        ];
+        // Throttle draw calls to max 60fps
+        const now = performance.now();
+        if (now - this._lastDrawTime < 16) {
+            if (!this._drawQueued) {
+                this._drawQueued = true;
+                setTimeout(() => {
+                    this._drawQueued = false;
+                    this.draw();
+                }, 16 - (now - this._lastDrawTime));
+            }
+            return;
+        }
+        this._lastDrawTime = now;
+
 		this.visible = this.getVisibleRange();
 		const ctx = this.ctx;
 		const width = this.canvas.width;
@@ -577,6 +629,105 @@ class UniverseMap {
 				}
 			});
 		}
+
+		// Draw space station ellipses
+        if (this.showSpaceStations) {
+                    this.ctx.save();
+                    this.ctx.beginPath();
+            // Define a clipping region to the graph area
+                    this.ctx.rect(padding.left, padding.top, graphWidth, graphHeight);
+                    this.ctx.clip();
+
+            // For each space station, draw its range circle and then its marker
+            for (let idx = 0; idx < this.squadronSpaceStations.length; idx++) {
+                const ss = this.squadronSpaceStations[idx];
+                const rgb = baseColors[idx % baseColors.length];
+                const px = toPixelX(ss.x);
+                const py = toPixelY(ss.y);
+                // --- Draw range circle ---
+                const rangeLevel = ss.range ?? 0;
+                const rangeLy = 10 + rangeLevel;
+                // Convert range in light years to pixels on canvas (handle non-square aspect ratio)
+                const radiusX = (rangeLy / 2000.0) * graphWidth * this.zoomLevel;
+                const radiusY = (rangeLy / 2000.0) * graphHeight * this.zoomLevel;
+
+                const circleColor = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.3)`; // 60% transparent
+
+                this.ctx.beginPath();
+                this.ctx.ellipse(px, py, radiusX, radiusY, 0, 0, Math.PI * 2);
+                this.ctx.fillStyle = circleColor;
+                this.ctx.fill();
+
+                // --- Draw marker on top ---
+                const markerColor = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 1)`;
+                this.ctx.save();
+                this.ctx.beginPath();
+                this.ctx.arc(px, py, 5, 0, Math.PI * 2);
+                this.ctx.fillStyle = markerColor;
+                this.ctx.shadowColor = '#000';
+                this.ctx.shadowBlur = 8;
+                this.ctx.fill();
+                this.ctx.restore();
+                
+                // Draw marker border
+                this.ctx.save();
+                this.ctx.beginPath();
+                this.ctx.arc(px, py, 5, 0, Math.PI * 2);
+                this.ctx.lineWidth = 3;
+                this.ctx.strokeStyle = '#fff';
+                this.ctx.stroke();
+                this.ctx.restore();
+            }
+            this.ctx.restore(); // remove clipping
+        }
+
+		// Draw squadron space station tooltip if hovered
+        if (this.showSpaceStations && this.hoveredSpaceStation) {
+            const ss = this.hoveredSpaceStation;
+            const px = toPixelX(ss.x);
+            const py = toPixelY(ss.y);
+            
+            // Find the index of this space station to get its color
+            const ssIndex = this.squadronSpaceStations.findIndex(station => 
+                station.x === ss.x && station.y === ss.y && station.name === ss.name
+            );
+            
+            // Get the color for this space station
+            const rgb = baseColors[ssIndex % baseColors.length];
+            const borderColor = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+            
+            // Tooltip content
+            const lines = [
+                `${ss.name}`,
+                `星系: ${ss.system?.name || ''} (${ss.x}, ${ss.y})`,
+                `范围增幅等级: ${ss.range ?? 0}`,
+                `探索增幅等级: ${ss.exploring ?? 0}`,
+                `天文增幅等级: ${ss.astronomy ?? 0}`,
+                `传送增幅等级: ${ss.portal ?? 0}`,
+                `是否有传送门: ${ss.space_portal ? '是' : '否'}`
+            ];
+            this.ctx.font = '13px Arial';
+            const textWidth = Math.max(...lines.map(line => this.ctx.measureText(line).width));
+            const tooltipX = px + 12;
+            const tooltipY = py - 10;
+            const tooltipHeight = lines.length * 18 + 10;
+            // Draw background
+            this.ctx.save();
+            this.ctx.fillStyle = 'rgba(35, 40, 58, 0.95)';
+            this.ctx.strokeStyle = borderColor;
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            this.ctx.roundRect(tooltipX - 7, tooltipY - 22, textWidth + 18, tooltipHeight, 7);
+            this.ctx.fill();
+            this.ctx.stroke();
+            // Draw text
+            this.ctx.fillStyle = '#e6eaf3';
+            for (let i = 0; i < lines.length; i++) {
+                this.ctx.fillText(lines[i], tooltipX, tooltipY + i * 18);
+            }
+            this.ctx.restore();
+        }
+
 	}
 
 	handleMouseMove(e) {
@@ -694,6 +845,28 @@ class UniverseMap {
 				this.hoveredSystem = null;
 			}
 		}
+
+        // Check if mouse is over any squadron space station
+        if (this.showSpaceStations && this.squadronSpaceStations && this.squadronSpaceStations.length > 0) {
+            let foundSS = false;
+            for (const ss of this.squadronSpaceStations) {
+                const ssX = padding.left + ((ss.x - this.offsetX) / 2000) * graphWidth * this.zoomLevel;
+                const ssY = this.canvas.height - padding.bottom - ((ss.y - this.offsetY) / 2000) * graphHeight * this.zoomLevel;
+                const distance = Math.sqrt(Math.pow(x - ssX, 2) + Math.pow(y - ssY, 2));
+                if (distance < 10) {
+                    this.hoveredSpaceStation = ss;
+                    this.hoveredJourneyPoint = null;
+                    this.hoveredSystem = null;
+                    foundSS = true;
+                    break;
+                }
+            }
+            if (!foundSS) {
+                this.hoveredSpaceStation = null;
+            }
+        } else {
+            this.hoveredSpaceStation = null;
+        }
 
 		this.draw();
 	}
@@ -1121,6 +1294,7 @@ class UniverseMapExtended extends UniverseMap {
 
 class CoordinateParser {
 	static parse(input) {
+
 		if (typeof input === "object") {
 			if (Array.isArray(input)) {
 				if (input.length !== 2)
@@ -1225,7 +1399,7 @@ class UniverseGrid {
 				this.initialPoints.push({ x, y });
 			}
 		}
-		this.spaceStations = new Set();
+		this.portedSpaceStations = new Set();
 		this.kdTree = this.#buildKDTree(this.initialPoints);
 	}
 
@@ -1263,31 +1437,29 @@ class UniverseGrid {
 		return Math.hypot(p1.x - p2.x, p1.y - p2.y) * this.unitDistance;
 	}
 
-	#addSpaceStation(...args) {
+	#addPortedSpaceStation(...args) {
 		if (args.length === 0) return;
 		const point = this.#parsePoint(...args);
 		if (point.x < 0 || point.x > 2000 || point.y < 0 || point.y > 2000) {
 			throw new Error(`坐标超出范围: (${point.x}, ${point.y})`);
 		}
-		this.spaceStations.add(point);
+		this.portedSpaceStations.add(point);
 	}
 
-	addSpaceStations(...args) {
-		if (args.length === 1) {
-			if (Array.isArray(args[0])) {
-				args[0].forEach((ele) => this.#addSpaceStation(ele));
-			} else if (typeof args[0] === "object") {
-				Object.values(args[0]).forEach((ele) =>
-					this.#addSpaceStation(ele)
-				);
-			}
-		} else if (args.length > 1) {
-			args.forEach((point) => this.#addSpaceStation(point));
+
+	addPortedSpaceStations(stationInfos) {
+		if (Array.isArray(stationInfos)) {
+			stationInfos.forEach((info) => {
+				if (info.space_portal && info.space_portal == true) {	
+					const coordPoints = {x : info.system.coordinate_x, y : info.system.coordinate_y};				
+					this.#addPortedSpaceStation(coordPoints);
+				}
+			});
 		}
 	}
 
 	clearSpaceStations() {
-		this.spaceStations = new Set();
+		this.portedSpaceStations = new Set();
 	}
 
 	findNearestPoint(input) {
@@ -1299,7 +1471,7 @@ class UniverseGrid {
 		};
 
 		let best = { point: kdResult.point, distance: kdResult.distance };
-		for (const station of this.spaceStations) {
+		for (const station of this.portedSpaceStations) {
 			const d = Math.hypot(target.x - station.x, target.y - station.y);
 			if (d < best.distance) {
 				best = { point: station, distance: d };
@@ -1335,7 +1507,7 @@ class UniverseGrid {
 
 	#runShortestPath(start, end, starterOnly) {
 		const nodes = [start, end, ...this.initialPoints];
-		if (!starterOnly) nodes.push(...this.spaceStations);
+		if (!starterOnly) nodes.push(...this.portedSpaceStations);
 
 		const edges = new Map();
 
@@ -1427,7 +1599,7 @@ class UniverseGrid {
 
 	isStation(p) {
 		const pReal = CoordinateParser.normalize(p);
-		return Array.from(this.spaceStations).some(
+		return Array.from(this.portedSpaceStations).some(
 			(pt) => pt.x === pReal.x && pt.y === pReal.y
 		);
 	}
@@ -1534,11 +1706,17 @@ document.addEventListener("DOMContentLoaded", () => {
 			starterPointI.value,
 			destinationPointI.value
 		);
-		const tra = paths.starterSystemOnly.trajectories ?? null;
-		const totalDistance = (paths.starterSystemOnly.distance ?? 0).toFixed(
-			2
-		);
-		totalPathfindingDistance.textContent = "";
+
+		// 轨迹选择
+		const tra = universeMap.universeGrid.portedSpaceStations.size > 0
+			? (paths.withSpaceStation?.trajectories ?? null)
+			: (paths.starterSystemOnly?.trajectories ?? null);
+
+		// 距离选择
+		const totalDistance = universeMap.universeGrid.portedSpaceStations.size > 0
+			? Number(paths.withSpaceStation?.distance ?? 0).toFixed(2)
+			: Number(paths.starterSystemOnly?.distance ?? 0).toFixed(2);
+				totalPathfindingDistance.textContent = "";
 
 		if (tra && tra.length > 0) {
 			totalPathfindingDistance.textContent = `总路程: ${totalDistance} 光年`;
@@ -1670,7 +1848,6 @@ document.addEventListener("DOMContentLoaded", () => {
 				// Load systems
 				const systemsResponse = await fetch(
 					"https://api.stellarodyssey.app/api/public/systems",
-					//`https://api.stellarodyssey.app/api/public/systems/nearby?x=${universeMap.playerPosition.coordinate_x}&y=${universeMap.playerPosition.coordinate_y}&z=1&mobile=false`,
 					{
 						headers: {
 							Accept: "application/json",
@@ -1687,6 +1864,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
 				const systemsData = await systemsResponse.json();
 				universeMap.loadSystems(systemsData);
+
+
+                const userResponse = await fetch('https://api.stellarodyssey.app/api/public/user', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'sodyssey-api-key': apiKey
+                    }
+                });
+                if (userResponse.ok) {
+                    const userData = await userResponse.json();
+                    if (userData.data && userData.data.squadronSpaceStations && Array.isArray(userData.data.squadronSpaceStations)) {
+                        universeMap.squadronSpaceStations = userData.data.squadronSpaceStations.map(ss => ({
+                            ...ss,
+                            x: ss.system.coordinate_x,
+                            y: ss.system.coordinate_y
+                        }));
+
+						universeMap.universeGrid.addPortedSpaceStations(userData.data.squadronSpaceStations);
+                    }
+                }
 
 				loadButton.disabled = false;
 				loadButton.textContent = "载入星图";
@@ -1715,4 +1912,5 @@ document.addEventListener("DOMContentLoaded", () => {
 	) {
 		initializeMap();
 	}
+
 });
