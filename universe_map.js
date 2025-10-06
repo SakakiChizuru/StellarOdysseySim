@@ -24,6 +24,11 @@ class UniverseMap {
 		this.squadronSpaceStations = [];
 		this.hoveredSpaceStation = null;
 
+		// Listing Exploring boosted galaxy coordinates
+		this.drawnSpaceStations = [];
+		this.exploringBoostedGalaxies = [];
+		this.hoveredExploringBoostedGalaxy = null;
+
 		this.visible = this.getVisibleRange();
 
 		// Load checkbox states from localStorage
@@ -36,6 +41,9 @@ class UniverseMap {
 		this.showSpaceStations = 
 			localStorage.getItem('showSpaceStations') === 'true';
 
+		this.showExploringBoostedInRange =
+			localStorage.getItem('showExploringBoostedInRange') === 'true';
+
 		// Set initial checkbox states
 		document.getElementById("show_public_systems").checked =
 			this.showPublicSystems;
@@ -45,6 +53,10 @@ class UniverseMap {
 			this.showPlayerJourney;
 		document.getElementById('show_space_stations').checked = 
 			this.showSpaceStations;
+
+		document.getElementById('show_galaxy_explore_boost_in_range').checked =
+			this.showExploringBoostedInRange;
+
 
 		// Add checkbox event listeners
 		document
@@ -99,6 +111,17 @@ class UniverseMap {
 				this.draw();
         	});
 
+		document
+			.getElementById('show_galaxy_explore_boost_in_range')
+			.addEventListener('change', (e) => {
+				this.showExploringBoostedInRange = e.target.checked;
+				localStorage.setItem(
+					'showExploringBoostedInRange',
+					this.showExploringBoostedInRange);
+				console.log(`Show Exploring Boosted Galaxies in Range: ${this.showExploringBoostedInRange}`);
+				this.draw();
+			});
+
 		// Set canvas size
 		this.resizeCanvas();
 		window.addEventListener("resize", () => this.resizeCanvas());
@@ -143,13 +166,86 @@ class UniverseMap {
 	}
 
 	loadSystems(data) {
-		this.systems = data.systems;
+		this.systems = this.buildGalaxyMap(data.systems);
 		// Update the systems count text
 		const systemsCountElement = document.getElementById("systemsCount");
 		if (systemsCountElement) {
-			systemsCountElement.textContent = `目前有 ${this.systems.length} 个公开的星系`;
+			systemsCountElement.textContent = `目前有 ${this.systems.values.length} 个公开的星系`;
 		}
 		this.draw();
+	}
+
+	encodeKey(x, y) {
+        return (x << 16) | y;
+    }
+
+    buildGalaxyMap(systems) {
+        const map = new Map();
+        for (const sys of systems) {
+            map.set(this.encodeKey(sys.coordinate_x, sys.coordinate_y), sys);
+        }
+        return map;
+    }
+
+    getSystem(x, y) {
+        return this.systems.get(this.encodeKey(x, y)) || null;
+    }
+
+	getSystemsInRect(x1, y1, x2, y2) {
+        const systemsInRect = [];
+
+        for (const sys of this.systems.values()) {
+            if (
+                sys.coordinate_x >= x1 &&
+                sys.coordinate_x <= x2 &&
+                sys.coordinate_y >= y1 &&
+                sys.coordinate_y <= y2
+            ) {
+                systemsInRect.push(sys);
+            }
+        }
+
+        return systemsInRect;
+    }
+
+    hasSystem(x, y) {
+        return this.systems.has(this.encodeKey(x, y));
+    }
+
+	getCoordinatesInRange(centerX, centerY, range = 10) {
+
+		if (centerX === null || typeof centerX === 'undefined' || centerX < 1 || centerX > 2000 ||
+			centerX === null || typeof centerY === 'undefined' || centerY < 1 || centerY > 2000)
+			return null;
+		
+		if (range < 10 || range > 500)
+			range = 10;
+
+		const results = [];
+		const rangeSq = range * range;
+
+		const minX = Math.max(1, Math.floor(centerX - range));
+		const maxX = Math.min(2000, Math.ceil(centerX + range));
+		const minY = Math.max(1, Math.floor(centerY - range));
+		const maxY = Math.min(2000, Math.ceil(centerY + range));
+
+		for (let x = minX; x <= maxX; x++) {
+			for (let y = minY; y <= maxY; y++) {
+				const dx = x - centerX;
+				const dy = y - centerY;
+				if (dx * dx + dy * dy <= rangeSq) {
+					results.push({ x, y });
+				}
+			}
+		}
+
+		return results;
+	}
+
+	isHoveredExploringBoostedGalaxy(data) {
+		if (!this.hoveredExploringBoostedGalaxy || !data) return false;
+		return (this.hoveredExploringBoostedGalaxy.x === data.x &&
+				this.hoveredExploringBoostedGalaxy.y === data.y);
 	}
 
 	setPlayerPosition(position) {
@@ -514,15 +610,15 @@ class UniverseMap {
 
 		// Draw systems if showPublicSystems is true
 		if (this.showPublicSystems) {
-			this.systems.forEach((system, index) => {
-
+			//this.systems.values.forEach((system) => {
+			for (const system of this.systems.values()) {
 				if (
                     system.coordinate_x < this.visible.left ||
                     system.coordinate_x > this.visible.right ||
                     system.coordinate_y < this.visible.top ||
                     system.coordinate_y > this.visible.bottom
                 ) {
-                    return;
+                    continue;
                 }
 
 				const x = toPixelX(system.coordinate_x);
@@ -536,7 +632,7 @@ class UniverseMap {
 					y <= height - padding.bottom
 				) {
 					// Set color based on whether it's a starter system (first 9) or not
-					ctx.fillStyle = index < 9 ? "#4CAF50" : "#FF5252";
+					ctx.fillStyle = system.starter ? "#4CAF50" : "#FF5252";
 
 					// Draw system point as a square (2x2 pixels)
 					const size = this.hoveredSystem === system ? 7 : 5;
@@ -550,7 +646,7 @@ class UniverseMap {
 						ctx.fillText(system.name, x, y - 10);
 					}
 				}
-			});
+			}
 		}
 
 		// Draw player journey if enabled (moved to the end to ensure it's drawn on top)
@@ -638,9 +734,21 @@ class UniverseMap {
                     this.ctx.rect(padding.left, padding.top, graphWidth, graphHeight);
                     this.ctx.clip();
 
+					this.drawnSpaceStations = []; // Reset drawn space stations list
+
             // For each space station, draw its range circle and then its marker
             for (let idx = 0; idx < this.squadronSpaceStations.length; idx++) {
                 const ss = this.squadronSpaceStations[idx];
+				if (
+					ss.x < this.visible.left &&
+					ss.x > this.visible.right &&
+					ss.y < this.visible.top &&
+					ss.y > this.visible.bottom
+				) continue;
+
+				if (this.showExploringBoostedInRange)
+					this.drawnSpaceStations.push(ss); // Add to drawn list
+
                 const rgb = baseColors[idx % baseColors.length];
                 const px = toPixelX(ss.x);
                 const py = toPixelY(ss.y);
@@ -678,8 +786,54 @@ class UniverseMap {
                 this.ctx.stroke();
                 this.ctx.restore();
             }
+
             this.ctx.restore(); // remove clipping
         }
+
+
+		if (this.showSpaceStations && this.showExploringBoostedInRange) {
+			this.exploringBoostedGalaxies = [];
+			//console.log(`Hovered Exploring Boosted Galaxy: ${JSON.stringify(this.hoveredExploringBoostedGalaxy)}`);
+			if (this.drawnSpaceStations.length > 0) {
+				for (const ss of this.drawnSpaceStations) {
+					if (!ss.exploring || ss.exploring <= 0) continue;
+					const coords = this.getCoordinatesInRange(ss.x, ss.y, ss.range);
+					if (coords) {
+						this.exploringBoostedGalaxies.push(...coords);
+					}
+				}
+			}
+			for (const boostedGalaxy of this.exploringBoostedGalaxies) {
+				const hasInSystems = this.hasSystem(boostedGalaxy.x, boostedGalaxy.y);
+				if (hasInSystems) continue;
+				const gx = toPixelX(boostedGalaxy.x);
+				const gy = toPixelY(boostedGalaxy.y);
+
+				// Only draw systems that are within the visible area and graph boundaries
+				if (
+					gx >= padding.left &&
+					gx <= width - padding.right &&
+					gy >= padding.top &&
+					gy <= height - padding.bottom 
+				) {
+					// Set color based on whether it's a starter system (first 9) or not
+					ctx.fillStyle = "#5eb6ff";
+
+					// Draw system point as a square (2x2 pixels)
+					const size = this.isHoveredExploringBoostedGalaxy(boostedGalaxy) ? 7 : 5;
+					//const size = 5;
+					ctx.fillRect(gx - size / 2, gy - size / 2, size, size);
+
+					// Draw system coordinates if hovered
+					if (this.isHoveredExploringBoostedGalaxy(boostedGalaxy)) {
+						ctx.font = "14px Arial";
+						ctx.fillStyle = "#e6eaf3";
+						ctx.textAlign = "center";
+						ctx.fillText(`[${boostedGalaxy.x},${boostedGalaxy.y}]`, gx, gy - 10);
+					}
+				}
+			}
+		}
 
 		// Draw squadron space station tooltip if hovered
         if (this.showSpaceStations && this.hoveredSpaceStation) {
@@ -815,10 +969,29 @@ class UniverseMap {
 			}
 		}
 
+		if (this.showSpaceStations && this.showExploringBoostedInRange && this.exploringBoostedGalaxies.length > 0) {
+			let foundBoostedGalaxy = false;
+			for (const galaxy of this.exploringBoostedGalaxies) {
+				const gx = padding.left + ((galaxy.x - this.offsetX) / 2000) * graphWidth * this.zoomLevel;
+				const gy = this.canvas.height - padding.bottom - ((galaxy.y - this.offsetY) / 2000) * graphHeight * this.zoomLevel;
+				const distance = Math.sqrt(Math.pow(x - gx, 2) + Math.pow(y - gy, 2));
+				if (distance < 10) {
+					this.hoveredExploringBoostedGalaxy = galaxy;
+					this.hoveredJourneyPoint = null;
+					this.hoveredSystem = null;
+					foundBoostedGalaxy = true;
+					break;
+				}
+				if (!foundBoostedGalaxy) {
+					this.hoveredExploringBoostedGalaxy = null;
+				}
+			}
+		}
+
 		// If not hovering over a journey point, check for systems
 		if (!this.hoveredJourneyPoint) {
 			let found = false;
-			for (const system of this.systems) {
+			for (const system of this.systems.values()) {
 				const systemX =
 					padding.left +
 					((system.coordinate_x - this.offsetX) / 2000) *
@@ -857,6 +1030,7 @@ class UniverseMap {
                     this.hoveredSpaceStation = ss;
                     this.hoveredJourneyPoint = null;
                     this.hoveredSystem = null;
+					this.hoveredExploringBoostedGalaxy = null;
                     foundSS = true;
                     break;
                 }
@@ -867,6 +1041,8 @@ class UniverseMap {
         } else {
             this.hoveredSpaceStation = null;
         }
+
+
 
 		this.draw();
 	}
