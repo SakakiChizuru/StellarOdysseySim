@@ -508,6 +508,51 @@
             background: rgba(79, 172, 254, 0.8);
         }
         
+
+        /* 加成信息布局 */
+        #boostInfo .boost-row {
+            display: flex;
+            width: 100%;
+            gap: 12px; /* 两列间距 */
+        }
+
+        #boostInfo .boost-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex: 1;
+            min-width: 0; /* 防止 flex 子项溢出 */
+            padding: 2px 0;
+        }
+
+        #boostInfo .boost-item.empty {
+            visibility: hidden; /* 保持对齐但隐藏 */
+        }
+
+        #boostInfo .boost-label {
+            flex: 1;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #f3f6fa; /* 与父级文字颜色一致 */
+        }
+
+        #boostInfo .boost-value {
+            flex: 0 0 auto;
+            text-align: right;
+            font-weight: bold;
+            margin-left: 8px; /* 与 label 之间留点空隙 */
+            color: #a0d2ff; /* 可选：高亮数值 */
+        }
+
+        #levelUpInfo {
+            font-family: "Rajdhani", Tahoma, Arial, sans-serif;
+        }
+
+        #scrapPossibleInfo {
+            font-family: "Rajdhani", Tahoma, Arial, sans-serif;
+        }
     </style>
     <script src="outsite/js/axios.min.js"></script>
     <script type="module">
@@ -2256,6 +2301,234 @@
         </div>
     </div>
 
+    <div id="calculate-utils" class="tab-content">
+        <div class="form-section" style="display: flex; flex-direction: row; gap: 2em;">
+            <div class="optimizer-block" style="margin-top: 1.0em; margin-left: 5px; width: 500px; min-width: 500px; max-width: 500px; min-height: 120px; max-height: 120px;">
+                <div class="form-row">
+                    <div class="form-group" style="display: flex; align-content: center; justify-content: center; flex-wrap: nowrap; align-content: center; align-items: baseline;">
+                        <label for="userData_api_key">API Key：</label>
+                    </div>
+                    <div class="form-group" style="align-items: flex-end; justify-content: flex-end; margin-right: 0px;">
+                        <button id="userDataImport" type="button">导入数据</button>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="flex: 1;">
+                        <input type="text" id="userData_api_key" name="userData_api_key" style="width: 100%; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.2em;">
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; flex-direction: column;">
+                <div class="optimizer-block" style="display: flex; flex-direction: column; align-items: flex-start; margin-top: 1em; width: 580px; min-width: 580px; max-width: 580px;">
+                    <div class="form-row" style="width: 80%;">
+                        <div id="Craftron3000Calculate" style="font-size: 1.22em; font-weight: 700; margin-bottom: 1em; color: #f3f6fa; letter-spacing: 0.01em;">创制者 3000(Craftron 3000) 计算</div>
+                    </div>
+                    <div class="form-row" style="width: 100%;">
+                        <div class="form-group">
+                            <label>当前数据以及加成：</label>
+                            <div id="boostInfo" style="display: flex; width: 100%; min-height: 160px; flex-direction: column; gap: 3px; margin-top: 1px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="optimizer-block" style="display: flex; flex-direction: column; align-items: flex-start; margin-top: 1em; width: 580px; min-width: 580px; max-width: 580px;">
+                    <div class="form-row" style="width: 100%;">
+                        <div class="form-group">
+                            <label>升级计算：</label>
+                        </div>
+                    </div>
+                    <div class="form-row" style="width: 100%;">
+                        <div class="form-group" style="width: 35%;  align-items:baseline; justify-content: center;">
+                            <label for="fromLevel">当前等级：</label>
+                            <div class="input-group">
+                                <button type="button" class="minus-btn" data-target="fromLevel">-</button>
+                                <input type="number" id="fromLevel" name="fromLevel" value="0" min="0">
+                                <button type="button" class="plus-btn" data-target="fromLevel">+</button>
+                            </div>
+                        </div>
+                        <div class="form-group" style="width: 35%;  align-items:baseline; justify-content: center;">
+                            <label for="targetLevel">目标等级：</label>
+                            <div class="input-group">
+                                <button type="button" class="minus-btn" data-target="targetLevel">-</button>
+                                <input type="number" id="targetLevel" name="targetLevel" value="0" min="0">
+                                <button type="button" class="plus-btn" data-target="targetLevel">+</button>
+                            </div>
+                        </div>
+                        <div class="form-group" style="width: 25%;">
+                            <button id="calculateCraftronUpgrade" type="button" style="width: 80%;">计算</button>
+                            <button id="resetCraftronUpgrade" type="button" style="width: 80%;">重置</button>
+                        </div>
+                    </div>
+                    <div class="form-row" style="width: 100%;">
+                        <div id="levelUpInfo" style="display: flex; width: 100%; min-height: 50px; flex-direction: column; gap: 3px; margin-top: 1px;">
+                        </div>
+                    </div>
+                </div>
+                <div class="optimizer-block" style="display: flex; flex-direction: column; align-items: flex-start; margin-top: 1em; width: 580px; min-width: 580px; max-width: 580px;">
+                    <div class="form-row" style="width: 100%;">
+                        <div class="form-group">
+                            <label>数量计算升级：</label>
+                        </div>
+                    </div>
+                    <div class="form-row" style="width: 100%;">
+                        <div class="form-group" style="width: 70%; align-items:baseline; justify-content: center;">
+                            <label for="metalScrapAmount">金属碎片数量：</label>
+                            <div class="input-group">
+                                <button type="button" class="minus-btn" data-target="metalScrapAmount">-</button>
+                                <input type="number" id="metalScrapAmount" name="metalScrapAmount" value="0" min="0">
+                                <button type="button" class="plus-btn" data-target="metalScrapAmount">+</button>
+                            </div>
+                        </div>
+                        <div class="form-group" style="width: 25%; margin-left: 35%;">
+                            <button id="calculateScrapPossibleLevel" type="button" style="width: 80%;">计算</button>
+                            <button id="resetScrapPossibleLevel" type="button" style="width: 80%;">重置</button>
+                        </div>
+                    </div>
+                    <div class="form-row" style="width: 100%;">
+                        <div id="scrapPossibleInfo" style="display: flex; width: 100%; min-height: 50px; flex-direction: column; gap: 3px; margin-top: 1px;">
+                        </div>
+                    </div>
+                </div>                
+            </div>
+        </div>
+    </div>
+
+    <script type="module" defer>
+        // 从模块中导入你需要的类
+        import { CalculateUtils } from './calculateUtils.js';
+        import { Craftron3000Calculator } from './calculateUtils.js';
+
+        // 注意：模块脚本默认是 defer 的，所以 DOM 通常已就绪
+        // 但为了保险，也可以监听 DOMContentLoaded（不过通常不需要）
+
+        let craftronCalculator; // 模块作用域变量，不会污染全局
+
+        const userDataImportBtn = document.getElementById('userDataImport');
+        const apiKeyInput = document.getElementById('userData_api_key');
+
+        const levelFrom = document.getElementById('fromLevel');
+        const levelTo = document.getElementById('targetLevel');
+        const calculateCraftronUpgradeBtn = document.getElementById('calculateCraftronUpgrade');
+        const resetCraftronUpgradeBtn = document.getElementById('resetCraftronUpgrade');
+        const levelUpInfoDiv = document.getElementById('levelUpInfo');
+
+        const metalScrapAmountInput = document.getElementById('metalScrapAmount');
+        const calculateScrapPossibleLevelBtn = document.getElementById('calculateScrapPossibleLevel');
+        const resetScrapPossibleLevelBtn = document.getElementById('resetScrapPossibleLevel');
+        const scrapPossibleInfoDiv = document.getElementById('scrapPossibleInfo');
+
+        apiKeyInput.value = localStorage.getItem('userData_api_key') ?? null;
+
+        if (!userDataImportBtn) {
+            console.warn('未找到必要的 DOM 元素，跳过绑定');
+        } else {
+            userDataImportBtn.addEventListener('click', async () => {
+                const apiKey = apiKeyInput.value.trim();
+                if (!apiKey) {
+                    alert('请输入API Key');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('https://api.stellarodyssey.app/api/public/user', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'sodyssey-api-key': apiKey
+                    }
+                });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP 错误！状态码: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    localStorage.setItem('userData_api_key', apiKey);
+                    setInfo(data);
+                } catch (error) {
+                    console.error('数据导入失败:', error);
+                    alert('导入数据时出错: ' + error.message);
+                }
+            });
+        }
+
+        if (!calculateCraftronUpgradeBtn) {
+            console.warn('未找到必要的 DOM 元素，跳过绑定');
+        } else {
+            calculateCraftronUpgradeBtn.addEventListener('click', () => {
+                if (!craftronCalculator) {
+                    alert('请先导入玩家数据');
+                    return;
+                }
+                const fromLevel = parseInt(levelFrom.value);
+                const toLevel = parseInt(levelTo.value);
+                if (isNaN(fromLevel) || isNaN(toLevel) || fromLevel < 0 || toLevel < 0 || toLevel <= fromLevel) {
+                    alert('请输入有效的等级范围，且目标等级必须大于当前等级');
+                    return;
+                }
+                const result = craftronCalculator.calculateInputLevelRangeNeeds(fromLevel, toLevel);
+                let prepareHTML = `<div>从等级 ${fromLevel} 升级到 ${toLevel} 需要最少: <b>${result.totalNeeds}</b> 个金属碎片</div>`;
+                if (result.results.length >1) {
+                    prepareHTML += `<div>以下是每个等级的详细需求:</div>\n<ul>`;
+                    result.results.forEach(item => {
+                        let currentLevelMultiplier = craftronCalculator.BaseCalculator.formatPercent((craftronCalculator.multiplierFromAllFactors(item.level).rate - 1) * 100);
+                        prepareHTML += `<li>从 ${item.level} 升级到 ${item.level + 1} 需要 <b>${item.amount}</b> 个金属碎片 (总加成为：${currentLevelMultiplier}%)</li>\n`;
+                    });
+                    prepareHTML += `</ul>`;
+                }
+                levelUpInfoDiv.innerHTML = prepareHTML;
+            });
+        }
+
+        if (!resetCraftronUpgradeBtn) {
+            console.warn('未找到必要的 DOM 元素，跳过绑定');
+        } else {
+            resetCraftronUpgradeBtn.addEventListener('click', () => {
+                levelFrom.value = craftronCalculator ? craftronCalculator.CraftLevel : 0;
+                levelTo.value = craftronCalculator ? Math.max((levelTo.value ?? 0), craftronCalculator.CraftLevel + 1) : 0;
+                levelUpInfoDiv.innerHTML = '';
+            });
+        }
+
+        if (!calculateScrapPossibleLevelBtn) {
+            console.warn('未找到必要的 DOM 元素，跳过绑定');
+        } else {
+            calculateScrapPossibleLevelBtn.addEventListener('click', () => {
+                if (!craftronCalculator) {
+                    alert('请先导入玩家数据');
+                    return;
+                }
+                const scrapAmount = parseInt(metalScrapAmountInput.value);
+                if (isNaN(scrapAmount) || scrapAmount < 0) {
+                    alert('请输入有效的金属碎片数量');
+                    return;
+                }
+                const result = craftronCalculator.calculateMaxLevelFromQuantity(scrapAmount, craftronCalculator.CraftLevel);
+                let overflowMsg = (result.overflowExp > 0) ? `，并有 <b>${result.overflowExp}</b> 点溢出经验（可能会有几个金属碎片的经验出入）。` : '';
+                let prepareHTML = `<div>使用 ${scrapAmount} 个金属碎片可以从当前等级 ${craftronCalculator.CraftLevel} 升级到 <b>${result.level}</b> 级${overflowMsg}</div>`;
+                if (result.levelUpConsumptions.length > 0) {
+                    prepareHTML += `<div>以下是每个等级的详细需求:</div>\n<ul>`;
+                    result.levelUpConsumptions.forEach(item => {
+                        if (item.level === result.level) return; // 跳过最后一项，因为它是溢出经验
+                        let currentLevelMultiplier = craftronCalculator.BaseCalculator.formatPercent((craftronCalculator.multiplierFromAllFactors(item.level).rate - 1) * 100);
+                        prepareHTML += `<li>从 ${item.level} 升级到 ${item.level + 1} 需要 <b>${item.consumedQty}</b> 个金属碎片 (总加成为：${currentLevelMultiplier}%)</li>\n`;
+                    });
+                    prepareHTML += `</ul>`;
+                }
+                scrapPossibleInfoDiv.innerHTML = prepareHTML;
+            });
+        }
+
+        function setInfo(userData){
+            craftronCalculator = Craftron3000Calculator.fromAPIJSON(userData.data);
+            document.getElementById('boostInfo').innerHTML = craftronCalculator.renderBoostsAsHTML();
+            levelFrom.value = craftronCalculator.CraftLevel;
+            levelTo.value = craftronCalculator.CraftLevel + 1;
+        }
+    </script>
+
     <div id="probabilities-tab" class="tab-content">
         <div class="form-section" style="display: flex; flex-direction: row; gap: 2em;">
             <div class="optimizer-block" style="margin-top: 1.0em; margin-left: 5px; width: 500px; min-width: 500px; max-width: 500px; min-height: 210px; max-height: 600px;">
@@ -2341,6 +2614,7 @@
         <div class="tab active" data-tab="battling-tab">战斗</div>
         <div class="tab" data-tab="gathering-tab">采集</div>
         <div class="tab" data-tab="universe-map-tab">星图/寻路</div>
+        <div class="tab" data-tab="calculate-utils">计算工具</div>
         <div class="tab" data-tab="probabilities-tab">概率</div>
     </div>
 
