@@ -604,16 +604,26 @@
                     return 0;
             }
         }
-        function DisplayBoostPercent() {
+
+        function calcBattleBoostPct() {
             const battleBoostValue = Number(document.getElementById('battle_boost').value);
             let battleBoostPercent = (!isNaN(battleBoostValue) && battleBoostValue > 0) ? parseInt(CalculateBoost(battleBoostValue) * 100) : '';
             let battleBoostLabelText = `战斗加成等级${battleBoostPercent !== '' ? `(${battleBoostPercent}%)` : ''}:`;
-            document.querySelector("#playerForm > div:nth-child(1) > div:nth-child(4) > div:nth-child(2) > div:nth-child(1) > label").textContent = battleBoostLabelText;
+            //document.querySelector("#playerForm > div:nth-child(1) > div:nth-child(4) > div:nth-child(2) > div:nth-child(1) > label").textContent = battleBoostLabelText;
+            document.getElementById('battle_boost_label').textContent = battleBoostLabelText;
+        }
 
+        function calcIncomeBoostPct(){
             const incomeBoostValue = Number(document.getElementById('income_boost').value);
             let incomeBoostPercent = (!isNaN(incomeBoostValue) && incomeBoostValue > 0) ? parseInt(incomeBoostValue * 2) : '';
             let incomeBoostLabelText = `收入加成等级${incomeBoostPercent !== '' ? `(${incomeBoostPercent}%)` : ''}:`;
-            document.querySelector("#playerForm > div:nth-child(1) > div:nth-child(4) > div:nth-child(2) > div:nth-child(2) > label").textContent = incomeBoostLabelText;
+            //document.querySelector("#playerForm > div:nth-child(1) > div:nth-child(4) > div:nth-child(2) > div:nth-child(2) > label").textContent = incomeBoostLabelText;
+            document.getElementById('income_boost_label').textContent = incomeBoostLabelText;
+        }
+
+        function DisplayBoostPercent() {
+            calcBattleBoostPct();
+            calcIncomeBoostPct();
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -715,7 +725,7 @@
                 renderCloneModifiers(parseInt(DEFAULTS.n_clones) || 1);
             }
 
-            DisplayBoostPercent();
+            //DisplayBoostPercent();
 
             // For selects and n_clones, trigger input event to update UI
             const nClonesInput = document.getElementById('n_clones');
@@ -1700,6 +1710,8 @@
                     form.battle_boost.value = 0;
                 }
 
+                form.battle_boost.dispatchEvent(new Event('input'));
+
                 // Handle spacestation incomeboost
                 if (data.squadron && data.squadron.buildings) {
                     for (const building of data.squadron.buildings) {
@@ -1711,7 +1723,9 @@
                     form.income_boost.value = 0;
                 }
 
-                DisplayBoostPercent();
+                form.income_boost.dispatchEvent(new Event('input'));
+
+                // DisplayBoostPercent();
 
                 // Handle reputation
                 if (data.reputation !== null && data.reputation !== undefined) {
@@ -1765,7 +1779,9 @@
                     importBtn.textContent = '导入';
                 }
             });
-   
+            
+            document.getElementById('battle_boost').addEventListener('input', calcBattleBoostPct);
+            document.getElementById('income_boost').addEventListener('input', calcIncomeBoostPct);
         });
     </script>
 </head>
@@ -1980,7 +1996,7 @@
                     <div class="block-label">舰队BUFF</div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="battle_boost">战斗加成等级:</label>
+                            <label id="battle_boost_label" for="battle_boost">战斗加成等级:</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="battle_boost">-</button>
                                 <input type="number" id="battle_boost" name="battle_boost" value="0" min="0" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
@@ -1988,7 +2004,7 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="income_boost">收入加成等级：</label>
+                            <label id="income_boost_label" for="income_boost">收入加成等级：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="income_boost">-</button>
                                 <input type="number" id="income_boost" name="income_boost" value="0" min="0" max="100" step="0.1" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">

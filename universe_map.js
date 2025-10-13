@@ -212,22 +212,24 @@ class UniverseMap {
         return this.systems.has(this.encodeKey(x, y));
     }
 
-	getCoordinatesInRange(centerX, centerY, range = 10) {
+	getCoordinatesInRange(centerX, centerY, range = 0) {
 
 		if (centerX === null || typeof centerX === 'undefined' || centerX < 1 || centerX > 2000 ||
 			centerX === null || typeof centerY === 'undefined' || centerY < 1 || centerY > 2000)
 			return null;
 		
-		if (range < 10 || range > 500)
-			range = 10;
+		let sqRange = 10 + range;
+
+		if (sqRange < 10 || sqRange > 500)
+			sqRange = 10;
 
 		const results = [];
-		const rangeSq = range * range;
+		const rangeSq = sqRange * sqRange;
 
-		const minX = Math.max(1, Math.floor(centerX - range));
-		const maxX = Math.min(2000, Math.ceil(centerX + range));
-		const minY = Math.max(1, Math.floor(centerY - range));
-		const maxY = Math.min(2000, Math.ceil(centerY + range));
+		const minX = Math.max(1, Math.floor(centerX - sqRange));
+		const maxX = Math.min(2000, Math.ceil(centerX + sqRange));
+		const minY = Math.max(1, Math.floor(centerY - sqRange));
+		const maxY = Math.min(2000, Math.ceil(centerY + sqRange));
 
 		for (let x = minX; x <= maxX; x++) {
 			for (let y = minY; y <= maxY; y++) {
@@ -797,6 +799,7 @@ class UniverseMap {
 			if (this.drawnSpaceStations.length > 0) {
 				for (const ss of this.drawnSpaceStations) {
 					if (!ss.exploring || ss.exploring <= 0) continue;
+					//console.log(`Processing SS: ${ss.name}, range : ${ss.range ?? 0}`)
 					const coords = this.getCoordinatesInRange(ss.x, ss.y, ss.range);
 					if (coords) {
 						this.exploringBoostedGalaxies.push(...coords);
