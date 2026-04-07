@@ -2894,66 +2894,66 @@
         // 暴露到全局供语言切换时调用
         window.updateProbQualityLabels = updateQualitySelections;
 
-            function handleTypeChange(selectElement, inputElement) {
-                const isAny = selectElement.value === 'any';
-                inputElement.disabled = isAny;
-                inputElement.readOnly = isAny;
-                inputElement.style.background = isAny ? '#2c3242' : '#36405a';
-                inputElement.style.cursor = isAny ? 'not-allowed' : 'text';
-                inputElement.style.opacity = isAny ? '0.7' : '1';
-                inputElement.style.pointerEvents = isAny ? 'none' : 'auto';
-                
-                // Update quality selections when gatherable type changes
-                if (selectElement === nGatherableType) {
-                    updateQualitySelections();
-                }
-            }
-
-            // Add event listeners for type changes
-            ['n_nodes_type', 'n_gatherable_type', 'n_categories_type'].forEach(id => {
-                const select = document.getElementById(id);
-                if (select) {
-                    select.addEventListener('change', function() {
-                        handleTypeChange(this, document.getElementById(id.replace('_type', '')));
-                    });
-                    // Set initial state
-                    handleTypeChange(select, document.getElementById(id.replace('_type', '')));
-                }
-            });
-
-            // Prevent input when disabled
-            ['n_nodes', 'n_gatherable', 'n_categories'].forEach(id => {
-                const input = document.getElementById(id);
-                if (input) {
-                    input.addEventListener('keydown', function(e) {
-                        if (this.disabled) {
-                            e.preventDefault();
-                            return false;
-                        }
-                    });
-                    input.addEventListener('input', function(e) {
-                        if (this.disabled) {
-                            e.preventDefault();
-                            this.value = '';
-                            return false;
-                        }
-                    });
-                }
-            });
-
-            // Add input event listener for n_gatherable to update quality selections
-            nGatherable.addEventListener('input', updateQualitySelections);
-
-            // Set initial states
-            handleTypeChange(nNodesType, nNodes);
-            handleTypeChange(nGatherableType, nGatherable);
-            handleTypeChange(nCategoriesType, nCategories);
+        function handleTypeChange(selectElement, inputElement) {
+            const isAny = selectElement.value === 'any';
+            inputElement.disabled = isAny;
+            inputElement.readOnly = isAny;
+            inputElement.style.background = isAny ? '#2c3242' : '#36405a';
+            inputElement.style.cursor = isAny ? 'not-allowed' : 'text';
+            inputElement.style.opacity = isAny ? '0.7' : '1';
+            inputElement.style.pointerEvents = isAny ? 'none' : 'auto';
             
-            // Ensure quality selections are initialized
-            updateQualitySelections();
+            // Update quality selections when gatherable type changes
+            if (selectElement === nGatherableType) {
+                updateQualitySelections();
+            }
+        }
 
-            // Calculate probability
-            document.getElementById('calculateProbabilityBtn').addEventListener('click', function() {
+        // Add event listeners for type changes
+        ['n_nodes_type', 'n_gatherable_type', 'n_categories_type'].forEach(id => {
+            const select = document.getElementById(id);
+            if (select) {
+                select.addEventListener('change', function() {
+                    handleTypeChange(this, document.getElementById(id.replace('_type', '')));
+                });
+                // Set initial state
+                handleTypeChange(select, document.getElementById(id.replace('_type', '')));
+            }
+        });
+
+        // Prevent input when disabled
+        ['n_nodes', 'n_gatherable', 'n_categories'].forEach(id => {
+            const input = document.getElementById(id);
+            if (input) {
+                input.addEventListener('keydown', function(e) {
+                    if (this.disabled) {
+                        e.preventDefault();
+                        return false;
+                    }
+                });
+                input.addEventListener('input', function(e) {
+                    if (this.disabled) {
+                        e.preventDefault();
+                        this.value = '';
+                        return false;
+                    }
+                });
+            }
+        });
+
+        // Add input event listener for n_gatherable to update quality selections
+        nGatherable.addEventListener('input', updateQualitySelections);
+
+        // Set initial states
+        handleTypeChange(nNodesType, nNodes);
+        handleTypeChange(nGatherableType, nGatherable);
+        handleTypeChange(nCategoriesType, nCategories);
+        
+        // Ensure quality selections are initialized
+        updateQualitySelections();
+
+        // Calculate probability
+        document.getElementById('calculateProbabilityBtn').addEventListener('click', function() {
                 const nNodes = document.getElementById('n_nodes_type').value === 'any' ? 'Any' : parseInt(document.getElementById('n_nodes').value);
                 const nNodesType = document.getElementById('n_nodes_type').value;
                 const nGatherable = document.getElementById('n_gatherable_type').value === 'any' ? 'Any' : parseInt(document.getElementById('n_gatherable').value);
@@ -3008,7 +3008,6 @@
                 document.getElementById('probability_value').textContent = formatProbability(probability);
                 document.getElementById('estimated_systems').textContent = formatEstimatedSystems(estimatedSystems);
             });
-        });
     </script>
 </body>
 </html> 
