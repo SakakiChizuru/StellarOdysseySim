@@ -246,6 +246,8 @@ const en = {
     'prob.at_least': 'At Least',
     'prob.any': 'Any',
     'prob.quality_label': 'Gatherable Node {n} Quality:',
+    'prob.result_probability': 'Probability: ',
+    'prob.result_estimated': 'Estimated systems in universe: ',
 
     // ── Status/Button Text ─────────────────────────────────
     'status.calculating': 'Calculating...',
