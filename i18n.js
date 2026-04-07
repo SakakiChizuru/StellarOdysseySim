@@ -12,8 +12,18 @@
 // ─── 语言包缓存 ───────────────────────────────────────────────
 const localeCache = {};
 
+// ─── 检测浏览器默认语言 ─────────────────────────────────────
+function detectBrowserLanguage() {
+    const lang = navigator.language || navigator.userLanguage || 'zh';
+    // 中文（zh, zh-CN, zh-TW, zh-HK 等）使用中文，其他使用英文
+    if (lang.toLowerCase().startsWith('zh')) {
+        return 'zh';
+    }
+    return 'en';
+}
+
 // ─── 当前语言 ──────────────────────────────────────────────
-let currentLang = localStorage.getItem('so_lang') || 'zh';
+let currentLang = localStorage.getItem('so_lang') || detectBrowserLanguage();
 
 /**
  * 动态加载语言包
