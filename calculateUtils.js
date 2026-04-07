@@ -1,4 +1,5 @@
 import { Decimal } from './decimal.mjs';
+import { tSync as t } from './i18n.js';
 
 class CalculateUtils {
 
@@ -308,14 +309,14 @@ class Craftron3000Calculator {
         const totalDisplay = this.BaseCalculator.formatPercent(totalBonusPercent);
 
         const labelMap = {
-            CraftLevel: '制作等级：',
-            PetLevel: '宠物：',
-            GlobalBoosts: '全局加成：',
-            PvPTileBonus: 'PVP：',
-            TechnologyLevel: '科技：',
-            Premium: '会员：',
-            Craftron3000: '模块加成：',
-            BodyType: '基地类型：'
+            CraftLevel:     t('boost.CraftLevel'),
+            PetLevel:       t('boost.PetLevel'),
+            GlobalBoosts:   t('boost.GlobalBoosts'),
+            PvPTileBonus:   t('boost.PvPTileBonus'),
+            TechnologyLevel:t('boost.TechnologyLevel'),
+            Premium:        t('boost.Premium'),
+            Craftron3000:   t('boost.Craftron3000'),
+            BodyType:       t('boost.BodyType'),
         };
 
         const order = [
@@ -362,7 +363,7 @@ class Craftron3000Calculator {
         const detailHTML = rows.join('\n');
 
         return `
-            <div><b>总计经验加成：</b> ${totalDisplay}%</div>
+            <div><b>${t('boost.total')}</b> ${totalDisplay}%</div>
             ${detailHTML}
         `;
     }

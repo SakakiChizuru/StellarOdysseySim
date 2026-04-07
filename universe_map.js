@@ -170,7 +170,8 @@ class UniverseMap {
 		// Update the systems count text
 		const systemsCountElement = document.getElementById("systemsCount");
 		if (systemsCountElement) {
-			systemsCountElement.textContent = `目前有 ${this.systems.values.length} 个公开的星系`;
+			const _t = window._t || ((k) => k);
+			systemsCountElement.textContent = _t('map.systems_count', { n: this.systems.values.length });
 		}
 		this.draw();
 	}
@@ -284,11 +285,11 @@ class UniverseMap {
 				}
 			}
 
-			distanceElement.textContent = `你当前已旅行 ${totalDistance.toFixed(
-				2
-			)} 光年`;
+			const _t = window._t || ((k) => k);
+			distanceElement.textContent = _t('map.distance', { d: totalDistance.toFixed(2) });
 		} else if (distanceElement) {
-			distanceElement.textContent = "你当前已旅行0光年";
+			const _t = window._t || ((k) => k);
+			distanceElement.textContent = _t('map.distance_zero');
 		}
 		this.draw();
 	}
@@ -854,14 +855,15 @@ class UniverseMap {
             const borderColor = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
             
             // Tooltip content
+            const _t = window._t || ((k, v) => k);
             const lines = [
                 `${ss.name}`,
-                `星系: ${ss.system?.name || ''} (${ss.x}, ${ss.y})`,
-                `范围增幅等级: ${ss.range ?? 0}`,
-                `探索增幅等级: ${ss.exploring ?? 0}`,
-                `天文增幅等级: ${ss.astronomy ?? 0}`,
-                `传送增幅等级: ${ss.portal ?? 0}`,
-                `是否有传送门: ${ss.space_portal ? '是' : '否'}`
+                _t('ss.system', { name: ss.system?.name || '', x: ss.x, y: ss.y }),
+                _t('ss.range_level', { n: ss.range ?? 0 }),
+                _t('ss.explore_level', { n: ss.exploring ?? 0 }),
+                _t('ss.astro_level', { n: ss.astronomy ?? 0 }),
+                _t('ss.portal_level', { n: ss.portal ?? 0 }),
+                _t('ss.has_portal', { v: ss.space_portal ? _t('ss.yes') : _t('ss.no') })
             ];
             this.ctx.font = '13px Arial';
             const textWidth = Math.max(...lines.map(line => this.ctx.measureText(line).width));
@@ -1456,9 +1458,8 @@ class UniverseMapExtended extends UniverseMap {
 			const px = toPixelX(midX);
 			const py = toPixelY(midY);
 
-			const text = `第 ${index + 1} 步, 距离 ${seg.distance.toFixed(
-				1
-			)} 光年`;
+			const _t_step = window._t || ((k) => k);
+			const text = _t_step('path.step_tooltip', { n: index + 1, d: seg.distance.toFixed(1) });
 
 			ctx.font = "12px Arial";
 			const textWidth = ctx.measureText(text).width;
@@ -1855,7 +1856,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	selfCheck.addEventListener("click", (evt) => {
 		if (!universeMap.playerPosition) {
 			evt.preventDefault();
-			alert("请先载入星图!");
+			alert((window._t || ((k)=>k))('alert.load_map_first'));
 			return;
 		}
 		starterPointI.disabled = evt.target.checked;
@@ -1873,12 +1874,13 @@ document.addEventListener("DOMContentLoaded", () => {
 	});
 
 	findShortestPath.addEventListener("click", () => {
+		const _t = window._t || ((k) => k);
 		if (!universeMap.playerPosition) {
-			alert("请先载入星图!");
+			alert(_t('alert.load_map_first'));
 			return;
 		}
 		if (!starterPointI.value || !destinationPointI.value) {
-			alert("请正确输入坐标!");
+			alert(_t('alert.input_coord'));
 			return;
 		}
 		const paths = universeMap.universeGrid.findShortestPath(
@@ -1898,7 +1900,8 @@ document.addEventListener("DOMContentLoaded", () => {
 				totalPathfindingDistance.textContent = "";
 
 		if (tra && tra.length > 0) {
-			totalPathfindingDistance.textContent = `总路程: ${totalDistance} 光年`;
+			const _t = window._t || ((k, v) => k);
+			totalPathfindingDistance.textContent = _t('path.total', { d: totalDistance });
 			listContent.innerHTML = "";
 
 			const writeClipboardText = async (text) => {
@@ -1919,40 +1922,41 @@ document.addEventListener("DOMContentLoaded", () => {
 
 				const title = document.createElement("div");
 				title.className = "item-title";
-				title.textContent = `第 ${index + 1} 段`;
+				title.textContent = _t('path.segment', { n: index + 1 });
 
 				const description = document.createElement("div");
 				description.className = "item-description";
 
 				const fromDiv = document.createElement("div");
 				fromDiv.setAttribute("name", "from");
-				fromDiv.innerHTML = `起点:<br>[${traj.from.x}, ${traj.from.y}]${
+				fromDiv.innerHTML = `${_t('path.from')}<br>[${traj.from.x}, ${traj.from.y}]${
 					universeMap.universeGrid.isStarter(traj.from)
-						? "(初始)"
+						? _t('path.initial')
 						: ""
 				}${
 					universeMap.universeGrid.isStation(traj.from)
-						? "(空间站)"
+						? _t('path.station')
 						: ""
 				}`;
 
 				const toDiv = document.createElement("div");
 				toDiv.setAttribute("name", "to");
-				toDiv.innerHTML = `终点:<br>[${traj.to.x}, ${traj.to.y}]${
-					universeMap.universeGrid.isStarter(traj.to) ? "(初始)" : ""
+				toDiv.innerHTML = `${_t('path.to')}<br>[${traj.to.x}, ${traj.to.y}]${
+					universeMap.universeGrid.isStarter(traj.to) ? _t('path.initial') : ""
 				}${
 					universeMap.universeGrid.isStation(traj.to)
-						? "(空间站)"
+						? _t('path.station')
 						: ""
 				}`;
 
 				const distanceDiv = document.createElement("div");
 				distanceDiv.setAttribute("name", "distance");
-				distanceDiv.innerHTML = `${traj.distance.toFixed(2)}<br/>光年`;
+				distanceDiv.innerHTML = `${traj.distance.toFixed(2)}<br/>${_t('path.ly')}`;
 
 				description.appendChild(fromDiv);
 				description.appendChild(toDiv);
 				description.appendChild(distanceDiv);
+
 
 				content.appendChild(title);
 				content.appendChild(description);
@@ -1961,11 +1965,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
 				item.addEventListener("click", () => {
 					let succ = writeClipboardText(`${traj.to.x},${traj.to.y}`);
-					alert(
-						`目标坐标[${traj.to.x},${traj.to.y}]复制${
-							succ ? "成功" : "失败"
-						}!`
-					);
+					const _t2 = window._t || ((k) => k);
+					alert(_t2('alert.copy_success', {
+						x: traj.to.x,
+						y: traj.to.y,
+						result: succ ? _t2('alert.copy_ok') : _t2('alert.copy_fail')
+					}));
 				});
 
 				listContent.appendChild(item);
@@ -1982,9 +1987,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	if (loadButton && apiKeyInput) {
 		loadButton.addEventListener("click", async () => {
+			const _t = window._t || ((k) => k);
 			const apiKey = apiKeyInput.value.trim();
 			if (!apiKey) {
-				alert("请输入你的API key");
+				alert(_t('alert.input_api_key'));
 				return;
 			}
 
@@ -1993,7 +1999,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 			try {
 				loadButton.disabled = true;
-				loadButton.textContent = "载入中...";
+				loadButton.textContent = _t('btn.loading_map');
 
 				// Load journal
 				const journalResponse = await fetch(
@@ -2065,11 +2071,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
 				loadButton.disabled = false;
-				loadButton.textContent = "载入星图";
+				loadButton.textContent = _t('btn.load_map');
 			} catch (error) {
-				alert("读取数据失败: " + error.message);
+				alert(_t('alert.import_error', { msg: error.message }));
 				loadButton.disabled = false;
-				loadButton.textContent = "载入星图";
+				loadButton.textContent = _t('btn.load_map');
 			}
 		});
 	}

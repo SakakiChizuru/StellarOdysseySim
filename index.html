@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>恒星奥德赛加点配置模拟器</title>
+    <title data-i18n="app.title">恒星奥德赛加点配置模拟器</title>
     <!-- Sarasa Mono SC -->
     <link href="outsite/css/SarasaMonoSC.css" rel="stylesheet">
     <link rel="icon" href="https://game.stellarodyssey.app/favicon.ico" type="image/x-icon">
@@ -32,6 +32,7 @@
             background: #23283a;
             border-top: 1px solid #2c3242;
             display: flex;
+            align-items: center;
             padding: 0.3em 2em;
             z-index: 1000;
         }
@@ -53,6 +54,33 @@
             background: #23283a;
             border-bottom: 1px solid #23283a;
             margin-bottom: -1px;
+        }
+        /* Language switcher buttons */
+        .lang-btn {
+            min-width: 56px;
+            height: 32px;
+            padding: 0 8px;
+            background: #36405a;
+            color: #e6eaf3;
+            border: 1px solid #4fa3ff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 500;
+            line-height: 1;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+        .lang-btn:hover {
+            background: #4a5a7c;
+        }
+        .lang-btn.active {
+            background: #4fa3ff;
+            color: #fff;
+            border-color: #4fa3ff;
         }
         .tab-content {
             display: none;
@@ -562,8 +590,12 @@
         import { CloneModifiers, MobName } from './dataclasses.js';
         import { millify } from './utils.js';
         import { Optimizer } from './optimizer.js';
-
         import { WorkerPool } from './workerpool.js';
+        import { tSync as t, tMob, tElem, setLanguage, getLanguage, applyTranslations, initI18n } from './i18n.js';
+        // 将 i18n 函数挂载到 window，供 universe_map.js 等非模块脚本访问
+        window._t = t;
+        window._setLanguage = setLanguage;
+        window._getLanguage = getLanguage;
 
         // Predefined test values for easy testing
         const DEFAULTS = {
@@ -608,7 +640,9 @@
         function calcBattleBoostPct() {
             const battleBoostValue = Number(document.getElementById('battle_boost').value);
             let battleBoostPercent = (!isNaN(battleBoostValue) && battleBoostValue > 0) ? parseInt(CalculateBoost(battleBoostValue) * 100) : '';
-            let battleBoostLabelText = `战斗加成等级${battleBoostPercent !== '' ? `(${battleBoostPercent}%)` : ''}:`;
+            let battleBoostLabelText = battleBoostPercent !== ''
+                ? t('label.battle_boost_with_pct', { pct: battleBoostPercent })
+                : t('label.battle_boost');
             //document.querySelector("#playerForm > div:nth-child(1) > div:nth-child(4) > div:nth-child(2) > div:nth-child(1) > label").textContent = battleBoostLabelText;
             document.getElementById('battle_boost_label').textContent = battleBoostLabelText;
         }
@@ -616,7 +650,9 @@
         function calcIncomeBoostPct(){
             const incomeBoostValue = Number(document.getElementById('income_boost').value);
             let incomeBoostPercent = (!isNaN(incomeBoostValue) && incomeBoostValue > 0) ? parseInt(incomeBoostValue * 2) : '';
-            let incomeBoostLabelText = `收入加成等级${incomeBoostPercent !== '' ? `(${incomeBoostPercent}%)` : ''}:`;
+            let incomeBoostLabelText = incomeBoostPercent !== ''
+                ? t('label.income_boost_with_pct', { pct: incomeBoostPercent })
+                : t('label.income_boost');
             //document.querySelector("#playerForm > div:nth-child(1) > div:nth-child(4) > div:nth-child(2) > div:nth-child(2) > label").textContent = incomeBoostLabelText;
             document.getElementById('income_boost_label').textContent = incomeBoostLabelText;
         }
@@ -626,7 +662,33 @@
             calcIncomeBoostPct();
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            // ── i18n 初始化 ──────────────────────────────────────────
+            await initI18n();
+            applyTranslations();
+            function updateLangButtons() {
+                const lang = getLanguage();
+                const zhBtn = document.getElementById('langZh');
+                const enBtn = document.getElementById('langEn');
+                zhBtn.classList.toggle('active', lang === 'zh');
+                enBtn.classList.toggle('active', lang === 'en');
+            }
+            updateLangButtons();
+            document.getElementById('langZh').addEventListener('click', async () => {
+                await setLanguage('zh');
+                updateLangButtons();
+                // 语言切换后重绘克隆体区块（JS动态生成）
+                if (typeof renderCloneModifiers === 'function') renderCloneModifiers();
+                DisplayBoostPercent();
+            });
+            document.getElementById('langEn').addEventListener('click', async () => {
+                await setLanguage('en');
+                updateLangButtons();
+                if (typeof renderCloneModifiers === 'function') renderCloneModifiers();
+                DisplayBoostPercent();
+            });
+            // ── i18n 初始化结束 ───────────────────────────────────────
+
             const form = document.getElementById('playerForm');
             const resultDiv = document.getElementById('playerResult');
             const submitBtn = document.getElementById('submitBtn');
@@ -750,21 +812,21 @@
                     const block = document.createElement('div');
                     block.className = 'clone-modifiers-block';
                     block.innerHTML = `
-                        <div class="clone-label">克隆体 ${i+1}</div>
+                        <div class="clone-label">${t('clone.label', { n: i+1 })}</div>
                         <div class="clone-field-group">
-                            <label>暴击率</label>
+                            <label>${t('clone.crit')}</label>
                             <button type="button" class="minus-btn" data-clone="${i}" data-field="crit">-</button>
                             <input type="number" step="0.1" min="0" max="100" value="${cloneModifiers[i].crit}" class="clone-input" data-clone="${i}" data-field="crit">%
                             <button type="button" class="plus-btn" data-clone="${i}" data-field="crit">+</button>
                         </div>
                         <div class="clone-field-group">
-                            <label>暴击伤害</label>
+                            <label>${t('clone.critdmg')}</label>
                             <button type="button" class="minus-btn" data-clone="${i}" data-field="critdmg">-</button>
                             <input type="number" step="0.1" min="0" max="100" value="${cloneModifiers[i].critdmg}" class="clone-input" data-clone="${i}" data-field="critdmg">%
                             <button type="button" class="plus-btn" data-clone="${i}" data-field="critdmg">+</button>
                         </div>
                         <div class="clone-field-group">
-                            <label>双重射击</label>
+                            <label>${t('clone.dual')}</label>
                             <button type="button" class="minus-btn" data-clone="${i}" data-field="dual">-</button>
                             <input type="number" step="0.1" min="0" max="100" value="${cloneModifiers[i].dual}" class="clone-input" data-clone="${i}" data-field="dual">%
                             <button type="button" class="plus-btn" data-clone="${i}" data-field="dual">+</button>
@@ -949,11 +1011,11 @@
                 const expPerHour = battle.get_experience('hourly', win_chance, reputation);
                 const expPerDay = battle.get_experience('daily', win_chance, reputation);
 
-                battleResultDiv.innerHTML = `<b>胜率：</b> ${(win_chance * 100).toFixed(2)}%<br>` +
-                    `<b>货币／小时：</b> ${millify(creditsPerHour)}／小时<br>` +
-                    `<b>货币／天:</b> ${millify(creditsPerDay)}／天<br>` +
-                    `<b>经验／小时:</b> ${millify(expPerHour)}／小时<br>` +
-                    `<b>经验／天:</b> ${millify(expPerDay)}／天`;
+                battleResultDiv.innerHTML = `<b>${t('result.winrate')}</b> ${(win_chance * 100).toFixed(2)}%<br>` +
+                    `<b>${t('result.credits_hour')}</b> ${millify(creditsPerHour)}${t('result.per_hour')}<br>` +
+                    `<b>${t('result.credits_day')}</b> ${millify(creditsPerDay)}${t('result.per_day')}<br>` +
+                    `<b>${t('result.exp_hour')}</b> ${millify(expPerHour)}${t('result.per_hour')}<br>` +
+                    `<b>${t('result.exp_day')}</b> ${millify(expPerDay)}${t('result.per_day')}`;
             });
 
             // Optimizer logic
@@ -1221,10 +1283,10 @@
                   
                     // Update the results
                     document.getElementById('opt_win_chance').textContent = `${(result.winChance * 100).toFixed(2)}%`;
-                    document.getElementById('opt_credits_hour').textContent = `${millify(creditsPerHour)}／小时`;
-                    document.getElementById('opt_credits_day').textContent = `${millify(creditsPerDay)}／天`;
-                    document.getElementById('opt_exp_hour').textContent = `${millify(expPerHour)}／小时`;
-                    document.getElementById('opt_exp_day').textContent = `${millify(expPerDay)}／天`;
+                    document.getElementById('opt_credits_hour').textContent = `${millify(creditsPerHour)}${t('result.per_hour')}`;
+                    document.getElementById('opt_credits_day').textContent = `${millify(creditsPerDay)}${t('result.per_day')}`;
+                    document.getElementById('opt_exp_hour').textContent = `${millify(expPerHour)}${t('result.per_hour')}`;
+                    document.getElementById('opt_exp_day').textContent = `${millify(expPerDay)}${t('result.per_day')}`;
 
 
                     // 2025-06-07 Add fill stat after optimization
@@ -1243,7 +1305,7 @@
                         importBtn = document.createElement('button');
                         importBtn.id = 'importOptimizedBtn';
                         importBtn.type = 'button';
-                        importBtn.textContent = '填充到玩家数据';
+                        importBtn.textContent = t('btn.opt_fill');
                         optimizerBtn.parentNode.insertBefore(importBtn, optimizerBtn.nextSibling);
                     }
                     importBtn.style.visibility = 'visible';
@@ -1356,7 +1418,7 @@
                         const key = result.build.join(',');
                         if (!topResults.has(key)) {
                             topResults.set(key, result);
-                            document.getElementById('opt_result').textContent = `正在计算[${topResults.size}/10]...`;
+                            document.getElementById('opt_result').textContent = t('status.calculating_top5', { n: topResults.size });
                         }
 
                         attempts++;
@@ -1401,7 +1463,7 @@
 
                 const thead = document.createElement('thead');
                 const headerRow = document.createElement('tr');
-                ['#', '力量', '精准', '闪避', '船体', '▲力量', '▲精准', '▲闪避', '▲船体', '胜率', ''].forEach(text => {
+                [t('top5.rank'), t('top5.power'), t('top5.precision'), t('top5.evasion'), t('top5.hull'), t('top5.d_power'), t('top5.d_precision'), t('top5.d_evasion'), t('top5.d_hull'), t('top5.winrate'), ''].forEach(text => {
                     const th = document.createElement('th');
                     th.textContent = text;
                     th.style.border = '1px solid #ccc';
@@ -1459,7 +1521,7 @@
                     btApply.type = 'button';
                     btApply.style.margin = '0';
                     btApply.style.padding = '0.3em 0.3em';
-                    btApply.textContent = '应用';
+                    btApply.textContent = t('top5.apply');
                     btApply.id = `apply_top${idx+1}`;
                     btApply.addEventListener('click', () => {
                         applyStats(idx);
@@ -1498,10 +1560,10 @@
                 document.getElementById('opt_hull').innerHTML = `${IncrementalOptimizeResult.hull} (<font color=${IncrementalOptimizeIncresement.hull > 0 ? "'Lime'" : "'white'"}>${IncrementalOptimizeIncresement.hull > 0 ? '+' : ''}${IncrementalOptimizeIncresement.hull}</font>)`;
                 
                 document.getElementById('opt_win_chance').textContent = `${(result.winChance * 100).toFixed(2)}%`;
-                document.getElementById('opt_credits_hour').textContent = `${millify(result.resource.credits_hourly)}／小时`;
-                document.getElementById('opt_credits_day').textContent = `${millify(result.resource.credits_daily)}／天`;
-                document.getElementById('opt_exp_hour').textContent = `${millify(result.resource.exp_hourly)}／小时`;
-                document.getElementById('opt_exp_day').textContent = `${millify(result.resource.exp_daily)}／天`;
+                document.getElementById('opt_credits_hour').textContent = `${millify(result.resource.credits_hourly)}${t('result.per_hour')}`;
+                document.getElementById('opt_credits_day').textContent = `${millify(result.resource.credits_daily)}${t('result.per_day')}`;
+                document.getElementById('opt_exp_hour').textContent = `${millify(result.resource.exp_hourly)}${t('result.per_hour')}`;
+                document.getElementById('opt_exp_day').textContent = `${millify(result.resource.exp_daily)}${t('result.per_day')}`;
 
             }
         }
@@ -1520,7 +1582,7 @@
                     const top5Div = document.getElementById('IncrementalOptimizeInfo');
                     const optResultDiv = document.getElementById('optimizerResultInfo');
                     
-                    document.getElementById('opt_result').textContent = '正在计算...';
+                    document.getElementById('opt_result').textContent = t('status.calculating');
 
                     if (isSingleMode) {
                         top5Div.style.display = 'none';
@@ -1538,7 +1600,7 @@
 
                 } catch (error) {
                     console.error('优化过程中出错:', error);
-                    alert('优化失败: ' + error.message);
+                    alert(t('alert.opt_error', { msg: error.message }));
                 }
             });
 
@@ -1759,24 +1821,24 @@
             importBtn.addEventListener('click', async () => {
                 const apiKey = apiKeyInput.value.trim();
                 if (!apiKey) {
-                    alert('请输入你的 API key');
+                    alert(t('alert.input_api_key'));
                     return;
                 }
 
                 try {
                     importBtn.disabled = true;
-                    importBtn.textContent = '导入中...';
+                    importBtn.textContent = t('btn.importing');
 
                     const userData = await fetchUserData(apiKey);
                     updateFormWithUserData(userData);
                     
                     importBtn.disabled = false;
-                    importBtn.textContent = '导入';
+                    importBtn.textContent = t('btn.import');
                 } catch (error) {
                     alert(error.message);
                     
                     importBtn.disabled = false;
-                    importBtn.textContent = '导入';
+                    importBtn.textContent = t('btn.import');
                 }
             });
             
@@ -1786,17 +1848,17 @@
     </script>
 </head>
 <body>
-    <div style="font-size: 1.7em; font-weight: 600; margin-bottom: 1.2em; letter-spacing: 0.01em;">恒星奥德赛模拟优化器</div>
+    <div style="font-size: 1.7em; font-weight: 600; margin-bottom: 1.2em; letter-spacing: 0.01em;" data-i18n="app.heading">恒星奥德赛模拟优化器</div>
     
     <!-- Tab content sections -->
     <div id="battling-tab" class="tab-content active">
         <form id="playerForm" class="form-section" autocomplete="off" style="display: flex; flex-direction: row; gap: 2em;">
             <div style="flex: 3;">
                 <div class="player-block">
-                    <div class="block-label">玩家</div>
+                    <div class="block-label" data-i18n="block.player">玩家</div>
                     <div class="form-row"><!-- // 2025-06-06 Added available points -->
                         <div class="form-group">
-                            <label for="available">剩余点数：</label>
+                            <label for="available" data-i18n="label.available">剩余点数：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="available">-</button>
                                 <input type="number" id="available" name="available" value="0" min="0">
@@ -1806,7 +1868,7 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="power">威力：</label>
+                            <label for="power" data-i18n="label.power">威力：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="power">-</button>
                                 <input type="number" id="power" name="power" value="0" min="0">
@@ -1814,7 +1876,7 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="precision">命中：</label>
+                            <label for="precision" data-i18n="label.precision">命中：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="precision">-</button>
                                 <input type="number" id="precision" name="precision" value="0" min="0">
@@ -1824,7 +1886,7 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="evasion">闪避：</label>
+                            <label for="evasion" data-i18n="label.evasion">闪避：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="evasion">-</button>
                                 <input type="number" id="evasion" name="evasion" value="0" min="0">
@@ -1832,7 +1894,7 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="hull">舰体：</label>
+                            <label for="hull" data-i18n="label.hull">舰体：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="hull">-</button>
                                 <input type="number" id="hull" name="hull" value="0" min="0">
@@ -1842,7 +1904,7 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="weapon_dmg">武器伤害：</label>
+                            <label for="weapon_dmg" data-i18n="label.weapon_dmg">武器伤害：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="weapon_dmg">-</button>
                                 <input type="number" id="weapon_dmg" name="weapon_dmg" value="0" min="0">
@@ -1850,7 +1912,7 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="shield_def">护盾防御：</label>
+                            <label for="shield_def" data-i18n="label.shield_def">护盾防御：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="shield_def">-</button>
                                 <input type="number" id="shield_def" name="shield_def" value="0" min="0">
@@ -1860,59 +1922,59 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="weapon_ele1">武器改造1：</label>
+                            <label for="weapon_ele1" data-i18n="label.weapon_ele1">武器改造1：</label>
                             <select id="weapon_ele1" name="weapon_ele1">
-                                <option value="">无</option>
-                                <option value="Chemical">化学</option>
-                                <option value="Electromagnetic">电磁</option>
-                                <option value="Energy">能量</option>
-                                <option value="Explosive">爆炸</option>
-                                <option value="Incendiary">燃烧</option>
-                                <option value="Kinetic">动能</option>
+                                <option value="" data-i18n="ele.none">无</option>
+                                <option value="Chemical" data-i18n="ele.Chemical">化学</option>
+                                <option value="Electromagnetic" data-i18n="ele.Electromagnetic">电磁</option>
+                                <option value="Energy" data-i18n="ele.Energy">能量</option>
+                                <option value="Explosive" data-i18n="ele.Explosive">爆炸</option>
+                                <option value="Incendiary" data-i18n="ele.Incendiary">燃烧</option>
+                                <option value="Kinetic" data-i18n="ele.Kinetic">动能</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="weapon_ele2">武器改造2：</label>
+                            <label for="weapon_ele2" data-i18n="label.weapon_ele2">武器改造2：</label>
                             <select id="weapon_ele2" name="weapon_ele2">
-                                <option value="">无</option>
-                                <option value="Chemical">化学</option>
-                                <option value="Electromagnetic">电磁</option>
-                                <option value="Energy">能量</option>
-                                <option value="Explosive">爆炸</option>
-                                <option value="Incendiary">燃烧</option>
-                                <option value="Kinetic">动能</option>
+                                <option value="" data-i18n="ele.none">无</option>
+                                <option value="Chemical" data-i18n="ele.Chemical">化学</option>
+                                <option value="Electromagnetic" data-i18n="ele.Electromagnetic">电磁</option>
+                                <option value="Energy" data-i18n="ele.Energy">能量</option>
+                                <option value="Explosive" data-i18n="ele.Explosive">爆炸</option>
+                                <option value="Incendiary" data-i18n="ele.Incendiary">燃烧</option>
+                                <option value="Kinetic" data-i18n="ele.Kinetic">动能</option>
                             </select>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="shield_ele1">护盾改造1：</label>
+                            <label for="shield_ele1" data-i18n="label.shield_ele1">护盾改造1：</label>
                             <select id="shield_ele1" name="shield_ele1">
-                                <option value="">无</option>
-                                <option value="Chemical">化学</option>
-                                <option value="Electromagnetic">电磁</option>
-                                <option value="Energy">能量</option>
-                                <option value="Explosive">爆炸</option>
-                                <option value="Incendiary">燃烧</option>
-                                <option value="Kinetic">动能</option>
+                                <option value="" data-i18n="ele.none">无</option>
+                                <option value="Chemical" data-i18n="ele.Chemical">化学</option>
+                                <option value="Electromagnetic" data-i18n="ele.Electromagnetic">电磁</option>
+                                <option value="Energy" data-i18n="ele.Energy">能量</option>
+                                <option value="Explosive" data-i18n="ele.Explosive">爆炸</option>
+                                <option value="Incendiary" data-i18n="ele.Incendiary">燃烧</option>
+                                <option value="Kinetic" data-i18n="ele.Kinetic">动能</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="shield_ele2">护盾改造2：</label>
+                            <label for="shield_ele2" data-i18n="label.shield_ele2">护盾改造2：</label>
                             <select id="shield_ele2" name="shield_ele2">
-                                <option value="">无</option>
-                                <option value="Chemical">化学</option>
-                                <option value="Electromagnetic">电磁</option>
-                                <option value="Energy">能量</option>
-                                <option value="Explosive">爆炸</option>
-                                <option value="Incendiary">燃烧</option>
-                                <option value="Kinetic">动能</option>
+                                <option value="" data-i18n="ele.none">无</option>
+                                <option value="Chemical" data-i18n="ele.Chemical">化学</option>
+                                <option value="Electromagnetic" data-i18n="ele.Electromagnetic">电磁</option>
+                                <option value="Energy" data-i18n="ele.Energy">能量</option>
+                                <option value="Explosive" data-i18n="ele.Explosive">爆炸</option>
+                                <option value="Incendiary" data-i18n="ele.Incendiary">燃烧</option>
+                                <option value="Kinetic" data-i18n="ele.Kinetic">动能</option>
                             </select>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="n_clones">克隆数量：</label>
+                            <label for="n_clones" data-i18n="label.n_clones">克隆数量：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="n_clones">-</button>
                                 <input type="number" id="n_clones" name="n_clones" value="1" min="1" max="10">
@@ -1922,16 +1984,16 @@
                         <div class="form-group" style="align-items: flex-start; justify-content: flex-end;">
                             <label for="vip_status" style="margin-bottom: 0;">
                                 <input type="checkbox" id="vip_status" name="vip_status">
-                                VIP 属性
+                                <span data-i18n="label.vip_status">VIP 属性</span>
                             </label>
                         </div>
                     </div>
                 </div>
                 <div class="mob-block" style="width: 420px; min-width: 420px; max-width: 420px;">
-                    <div class="block-label">科技加成</div>
+                    <div class="block-label" data-i18n="block.tech">科技加成</div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="battling_weapon_boost">武器增幅（威力）:</label>
+                            <label for="battling_weapon_boost" data-i18n="label.battling_weapon_boost">武器增幅（威力）:</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="battling_weapon_boost">-</button>
                                 <input type="number" id="battling_weapon_boost" name="battling_weapon_boost" value="0" min="0" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">%
@@ -1939,7 +2001,7 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="battling_hull_boost">舰体增幅:</label>
+                            <label for="battling_hull_boost" data-i18n="label.battling_hull_boost">舰体增幅:</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="battling_hull_boost">-</button>
                                 <input type="number" id="battling_hull_boost" name="battling_hull_boost" value="0" min="0" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">%
@@ -1949,7 +2011,7 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="battling_precision_boost">命中增幅:</label>
+                            <label for="battling_precision_boost" data-i18n="label.battling_precision_boost">命中增幅:</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="battling_precision_boost">-</button>
                                 <input type="number" id="battling_precision_boost" name="battling_precision_boost" value="0" min="0" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">%
@@ -1957,7 +2019,7 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="battling_evasion_boost">闪避增幅:</label>
+                            <label for="battling_evasion_boost" data-i18n="label.battling_evasion_boost">闪避增幅:</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="battling_evasion_boost">-</button>
                                 <input type="number" id="battling_evasion_boost" name="battling_evasion_boost" value="0" min="0" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">%
@@ -1967,23 +2029,23 @@
                     </div>
                 </div>               
                 <div class="mob-block" style="width: 420px; min-width: 420px; max-width: 420px;">
-                    <div class="block-label">敌人</div>
+                    <div class="block-label" data-i18n="block.enemy">敌人</div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="mob_name">敌人名称：</label>
+                            <label for="mob_name" data-i18n="label.mob_name">敌人名称：</label>
                             <select id="mob_name" name="mob_name">
-                                <option value="Brutes">蛮兵</option>
-                                <option value="Dusters">尘暴兵</option>
-                                <option value="Machiners">机械师</option>
-                                <option value="Toxoids">毒蚀体</option>
-                                <option value="Scorchers">灼烧者</option>
-                                <option value="Glacials">冰川族</option>
-                                <option value="Spectres">幽灵</option>
-                                <option value="Miners">矿工</option>
+                                <option value="Brutes" data-i18n="mob.Brutes">蛮兵</option>
+                                <option value="Dusters" data-i18n="mob.Dusters">尘暴兵</option>
+                                <option value="Machiners" data-i18n="mob.Machiners">机械师</option>
+                                <option value="Toxoids" data-i18n="mob.Toxoids">毒蚀体</option>
+                                <option value="Scorchers" data-i18n="mob.Scorchers">灼烧者</option>
+                                <option value="Glacials" data-i18n="mob.Glacials">冰川族</option>
+                                <option value="Spectres" data-i18n="mob.Spectres">幽灵</option>
+                                <option value="Miners" data-i18n="mob.Miners">矿工</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="mob_level">等级：</label>
+                            <label for="mob_level" data-i18n="label.mob_level">等级：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="mob_level">-</button>
                                 <input type="number" id="mob_level" name="mob_level" value="1" min="1">
@@ -1993,10 +2055,10 @@
                     </div>
                 </div>
                 <div class="mob-block" style="width: 420px; min-width: 420px; max-width: 420px;">
-                    <div class="block-label">舰队BUFF</div>
+                    <div class="block-label" data-i18n="block.fleetbuff">舰队BUFF</div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label id="battle_boost_label" for="battle_boost">战斗加成等级:</label>
+                            <label id="battle_boost_label" for="battle_boost" data-i18n="label.battle_boost">战斗加成等级:</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="battle_boost">-</button>
                                 <input type="number" id="battle_boost" name="battle_boost" value="0" min="0" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
@@ -2004,7 +2066,7 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label id="income_boost_label" for="income_boost">收入加成等级：</label>
+                            <label id="income_boost_label" for="income_boost" data-i18n="label.income_boost">收入加成等级：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="income_boost">-</button>
                                 <input type="number" id="income_boost" name="income_boost" value="0" min="0" max="100" step="0.1" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
@@ -2014,7 +2076,7 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="reputation">声望：</label>
+                            <label for="reputation" data-i18n="label.reputation">声望：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="reputation">-</button>
                                 <input type="number" id="reputation" name="reputation" value="0" min="0" max="100" step="0.1" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
@@ -2029,22 +2091,22 @@
                 <div style="position: relative; width: fit-content;">
                     <div style="position: absolute; left: 180px; top: -2.1em; z-index: 2;">
                         <label style="font-size: 1.08em; display: flex; align-items: center; color: #e6eaf3; background: #23283a; padding: 0.1em 0.7em 0.1em 0.5em; border-radius: 5px; box-shadow: 0 2px 8px 0 rgba(0,0,0,0.04);">
-                            <input type="checkbox" id="modifyAllClones" style="margin-right: 0.5em;"> 同时修改所有克隆
+                            <input type="checkbox" id="modifyAllClones" style="margin-right: 0.5em;"> <span data-i18n="label.modifyAllClones">同时修改所有克隆</span>
                         </label>
                     </div>
                     <div id="cloneModifiersSection" class="clone-modifiers-section"></div>
                 </div>
                 <div style="display: flex; flex-direction: column; align-items: flex-start; margin-left: 7.5em;">
                     <div class="api-block" style="margin-top: 0; margin-left: 5px; min-height: 110px; max-height: 180px; width: 600px; min-width: 450px; max-width: 600px; background: #23283a; border-radius: 6px; border: 1px solid #2c3242; padding: 0.7em 1.2em 0.5em 1.2em; box-sizing: border-box;">
-                        <div class="block-label">导入数据
-                            <span style="color: #4fa3ff; margin-left: 5px; cursor: help;" title="Import your player, mob and clone stats using your API key. This will automatically fill in all your current stats. Your API key is located in Settings">ⓘ</span>
+                        <div class="block-label" data-i18n="block.import">导入数据
+                            <span style="color: #4fa3ff; margin-left: 5px; cursor: help;" data-i18n-title="tooltip.import" title="Import your player, mob and clone stats using your API key. This will automatically fill in all your current stats. Your API key is located in Settings">ⓘ</span>
                         </div>
                         <div class="form-row">
                             <div class="form-group" style="flex: 1;">
-                                <label for="api_key">API Key（游戏设置API Key里Generate后粘贴）：</label>
+                                <label for="api_key" data-i18n="label.api_key">API Key（游戏设置API Key里Generate后粘贴）：</label>
                             </div>
                             <div class="form-group" style="align-items: flex-start; justify-content: flex-start; margin-left: 110px;">
-                                <button id="importBtn" type="button">导入</button>
+                                <button id="importBtn" type="button" data-i18n="btn.import">导入</button>
                             </div>
                         </div>
                         <div class="form-row">
@@ -2054,39 +2116,39 @@
                         </div>
                     </div>
                     <div class="battle-block" style="margin-top: 1.0em; margin-left: 5px; min-height: 230px; max-height: 250px;width: 500px; min-width: 350px; max-width: 500px">
-                        <div class="block-label">战斗模拟器
-                            <span style="color: #4fa3ff; margin-left: 5px; cursor: help;" title="Run a battle simulation with the current configuration. The simulation will execute the specified number of battles (up to 1,000,000) to calculate win probability and resource gains.">ⓘ</span>
+                        <div class="block-label" data-i18n="block.simulator">战斗模拟器
+                            <span style="color: #4fa3ff; margin-left: 5px; cursor: help;" data-i18n-title="tooltip.simulator" title="Run a battle simulation with the current configuration. The simulation will execute the specified number of battles (up to 1,000,000) to calculate win probability and resource gains.">ⓘ</span>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="n_fights">模拟战斗次数：</label>
+                                <label for="n_fights" data-i18n="label.n_fights">模拟战斗次数：</label>
                                 <input type="number" id="n_fights" name="n_fights" value="10000" min="1" max="1000000" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
                             </div>
                             <div class="form-group" style="align-items: flex-start; justify-content: flex-start; margin-left: -30px;">
-                                <button id="simulateBtn" type="button">开始模拟</button>
+                                <button id="simulateBtn" type="button" data-i18n="btn.simulate">开始模拟</button>
                             </div>
                         </div>
                     </div>
                     <div class="optimizer-block" style="margin-top: 1.5em; margin-left: 5px; width: 600px; min-width: 600px; max-width: 600px; min-height: 210px;">
-                        <div class="block-label">优化模拟
-                            <span style="color: #4fa3ff; margin-left: 5px; cursor: help;" title="Find the optimal stat distribution for your current configuration. The optimizer will test various stat combinations using the specified number of simulations (up to 1,000,000). Higher values provide more accurate results but significantly increase computation time and may temporarily freeze the interface. Consider starting with a lower number and increasing it if needed.">ⓘ</span>
+                        <div class="block-label" data-i18n="block.optimizer">优化模拟
+                            <span style="color: #4fa3ff; margin-left: 5px; cursor: help;" data-i18n-title="tooltip.optimizer" title="Find the optimal stat distribution for your current configuration. The optimizer will test various stat combinations using the specified number of simulations (up to 1,000,000). Higher values provide more accurate results but significantly increase computation time and may temporarily freeze the interface. Consider starting with a lower number and increasing it if needed.">ⓘ</span>
                         </div>
                         <div style="display: flex;align-items: baseline;margin-bottom: 1em;justify-content: flex-start;flex-direction: row;">
-                            <span style="margin-right: 10px;">针对性优化:</span>
+                            <span style="margin-right: 10px;" data-i18n="label.targeted_opt">针对性优化:</span>
                             <label style="margin-right: 15px; display: flex; align-items: center;">
-                                <input type="radio" name="optimize_target" value="credits" checked style="margin-right: 5px;"> 货币
+                                <input type="radio" name="optimize_target" value="credits" checked style="margin-right: 5px;"> <span data-i18n="label.opt_credits">货币</span>
                             </label>
                             <label style="display: flex; align-items: center;">
-                                <input type="radio" name="optimize_target" value="exp" style="margin-right: 5px;"> 经验
+                                <input type="radio" name="optimize_target" value="exp" style="margin-right: 5px;"> <span data-i18n="label.opt_exp">经验</span>
                             </label>
                             <label style="display: flex; align-items:flex-start;justify-content:center; margin-left: 40px;">
-                                <input type="checkbox" id="optimize_fill_after" name="optimize_fill_after" checked style="margin-right: 5px;"> 优化后填充属性
+                                <input type="checkbox" id="optimize_fill_after" name="optimize_fill_after" checked style="margin-right: 5px;"> <span data-i18n="label.fill_after">优化后填充属性</span>
                             </label>
                         </div>
                         <div class="form-row" style="margin-bottom: 1em;">
                             <div class="form-group">
-                                <label for="optimizer_htk">击杀所需命中数（HTK）:
-                                    <span style="color: #4fa3ff; margin-left: 5px; cursor: help;" title="Hits to kill: The number of hits needed to defeat the mob">ⓘ</span>
+                                <label for="optimizer_htk"><span data-i18n="label.htk">击杀所需命中数（HTK）:</span>
+                                    <span style="color: #4fa3ff; margin-left: 5px; cursor: help;" data-i18n-title="tooltip.htk" title="Hits to kill: The number of hits needed to defeat the mob">ⓘ</span>
                                 </label>
                                 <div class="input-group">
                                     <button type="button" class="minus-btn" data-target="optimizer_htk">-</button>
@@ -2095,8 +2157,8 @@
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label for="optimizer_htd">死亡所需被击数（HTD）:
-                                    <span style="color: #4fa3ff; margin-left: 5px; cursor: help;" title="Hits to die: The number of hits the mob needs to defeat your clones">ⓘ</span>
+                                <label for="optimizer_htd"><span data-i18n="label.htd">死亡所需被击数（HTD）:</span>
+                                    <span style="color: #4fa3ff; margin-left: 5px; cursor: help;" data-i18n-title="tooltip.htd" title="Hits to die: The number of hits the mob needs to defeat your clones">ⓘ</span>
                                 </label>
                                 <div class="input-group">
                                     <button type="button" class="minus-btn" data-target="optimizer_htd">-</button>
@@ -2107,17 +2169,17 @@
                         </div>
                         <div class="form-row"  style="display: flex; gap: 1em; margin-bottom: 1em; align-items: center;">
                             <div class="form-group">
-                                <label for="optimizer_n_fights">模拟战斗次数：</label>
+                                <label for="optimizer_n_fights" data-i18n="label.optimizer_n_fights">模拟战斗次数：</label>
                                 <input type="number" id="optimizer_n_fights" name="optimizer_n_fights" value="5000" min="1" max="1000000" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
                             </div>
                             <div class="form-group" style="display: flex; flex-direction: row; flex-wrap: wrap; align-items:baseline; margin-left: -250px;">
-                                <button id="optimizerBtn" type="button" style="margin-right: 10px;">简单计算优化</button>
-                                <button id="longOptimizerBtn" type="button" style="margin-right: 10px;" title="Optimize by searching through multiple values of HTK and HTD. It is not advised to use more than 5000 fights">复杂计算优化</button>
-                                <button id="importOptimizedBtn" type="button" style="visibility: hidden;">填充到玩家数据</button>
+                                <button id="optimizerBtn" type="button" data-i18n="btn.opt_simple" style="margin-right: 10px;">简单计算优化</button>
+                                <button id="longOptimizerBtn" type="button" data-i18n="btn.opt_complex" style="margin-right: 10px;" title="Optimize by searching through multiple values of HTK and HTD. It is not advised to use more than 5000 fights">复杂计算优化</button>
+                                <button id="importOptimizedBtn" type="button" data-i18n="btn.opt_fill" style="visibility: hidden;">填充到玩家数据</button>
                                 <br style="flex-basis: 100%; height: 0;">
-                                <button id="incrementalOptimizerBtn" type="button" style="margin-right: 10px;">增量（加点）建议</button>
+                                <button id="incrementalOptimizerBtn" type="button" data-i18n="btn.opt_incremental" style="margin-right: 10px;">增量（加点）建议</button>
                                 <input type="checkbox" id="incrementalTop5Mode" name="incrementalTop5Mode" style="margin-right: 5px;"></input>
-                                <label for="incrementalTop5Mode" style="margin-right: 10px;color: #4fa3ff;" title="在尽可能保证满足10条最优解的情况下进行计算，但是总共计算不会超过50次。">最优5模式 ⓘ</label>
+                                <label for="incrementalTop5Mode" data-i18n="label.top5mode" data-i18n-title="label.top5mode_title" style="margin-right: 10px;color: #4fa3ff;" title="在尽可能保证满足10条最优解的情况下进行计算，但是总共计算不会超过50次。">最优5模式 ⓘ</label>
                             </div>
                         </div>
                         <div id="optimizerProgress" style="height: 50px; margin: 1em 0;">
@@ -2129,17 +2191,17 @@
                         <div id="optimizerResult" style="display: flex; flex-direction: row; gap: 2em; margin-top: 1em;">
                             <div id="optimizerResultInfo" class="form-row">
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.2em 1.2em; width: 180px; font-size: 1em;">
-                                    <div><b>力量</b><br><span id="opt_power">-</span></div>
-                                    <div><b>精准</b><br><span id="opt_precision">-</span></div>
-                                    <div><b>闪避</b><br><span id="opt_evasion">-</span></div>
-                                    <div><b>船体</b><br><span id="opt_hull">-</span></div>
+                                    <div><b data-i18n="opt.power">力量</b><br><span id="opt_power">-</span></div>
+                                    <div><b data-i18n="opt.precision">精准</b><br><span id="opt_precision">-</span></div>
+                                    <div><b data-i18n="opt.evasion">闪避</b><br><span id="opt_evasion">-</span></div>
+                                    <div><b data-i18n="opt.hull">船体</b><br><span id="opt_hull">-</span></div>
                                 </div>
                                 <div style="font-size: 0.98em;">
-                                    <div><b>胜率：</b> <span id="opt_win_chance">-</span></div>
-                                    <div><b>货币／小时：</b> <span id="opt_credits_hour">-</span></div>
-                                    <div><b>货币／天：</b> <span id="opt_credits_day">-</span></div>
-                                    <div><b>经验／小时：</b> <span id="opt_exp_hour">-</span></div>
-                                    <div><b>经验／天：</b> <span id="opt_exp_day">-</span></div>
+                                    <div><b data-i18n="opt.winrate">胜率：</b> <span id="opt_win_chance">-</span></div>
+                                    <div><b data-i18n="opt.credits_hour">货币／小时：</b> <span id="opt_credits_hour">-</span></div>
+                                    <div><b data-i18n="opt.credits_day">货币／天：</b> <span id="opt_credits_day">-</span></div>
+                                    <div><b data-i18n="opt.exp_hour">经验／小时：</b> <span id="opt_exp_hour">-</span></div>
+                                    <div><b data-i18n="opt.exp_day">经验／天：</b> <span id="opt_exp_day">-</span></div>
                                 </div>
                             </div>
                             <div id="IncrementalOptimizeInfo" class="form-row" style="display:none; flex-direction: column;align-items: center;width: 100%;font-size: 1.1em;align-content: center;justify-content: center; ">
@@ -2156,18 +2218,15 @@
         <div class="form-section" style="display: flex; flex-direction: row; gap: 2em;">
             <div class="optimizer-block" style="margin-top: 1.0em; margin-left: 5px; width: 500px; min-width: 500px; max-width: 500px; min-height: 210px; position: relative;">
                 <div style="position: absolute; top: 0.5em; right: 1em; text-align: left; font-size: 0.75em; color: #b0b6c6; line-height: 1.2;">
-                    如需更精确的资源计算<br>
-                    请访问: <a href="https://docs.google.com/spreadsheets/d/1DCpkdBsHL_dqa_Fv13k3M1iKVuBCa4vXbfTjToQ64G8/edit?gid=1892479921#gid=1892479921" target="_blank" style="color: #4fa3ff; text-decoration: none;">Google表单</a>
+                    <span data-i18n="resources.more_precise">如需更精确的资源计算</span><br>
+                    <span data-i18n="resources.visit">请访问:</span> <a href="https://docs.google.com/spreadsheets/d/1DCpkdBsHL_dqa_Fv13k3M1iKVuBCa4vXbfTjToQ64G8/edit?gid=1892479921#gid=1892479921" target="_blank" style="color: #4fa3ff; text-decoration: none;">Google表单</a>
                 </div>
-                <div class="block-label">资源计算器
-                    <span style="color: #4fa3ff; margin-left: 5px; cursor: help;" title="根据当前设置计算资源收集率和达到特定目标所需的时间。
-•‘“资源”和“稀有资源”指的是你当前在当前星球上在每个行动中收集的物品。
-•‘“额外闪避”和“额外稀有资源掉落”仅取决于激光和探测器的改造
-•‘“平均机动性”是指所有无人机的平均机动性能。">ⓘ</span>
+                <div class="block-label" data-i18n="block.resources">资源计算器
+                    <span style="color: #4fa3ff; margin-left: 5px; cursor: help;" data-i18n-title="tooltip.resources" title="根据当前设置计算资源收集率和达到特定目标所需的时间。">ⓘ</span>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="resources_per_action">资源／行动：</label>
+                        <label for="resources_per_action" data-i18n="label.resources_per_action">资源／行动：</label>
                         <div class="input-group">
                             <button type="button" class="minus-btn" data-target="resources_per_action">-</button>
                             <input type="number" id="resources_per_action" name="resources_per_action" value="0" min="0" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
@@ -2175,7 +2234,7 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="rare_resources_per_action">稀有资源／行动：</label>
+                        <label for="rare_resources_per_action" data-i18n="label.rare_resources_per_action">稀有资源／行动：</label>
                         <div class="input-group">
                             <button type="button" class="minus-btn" data-target="rare_resources_per_action">-</button>
                             <input type="number" id="rare_resources_per_action" name="rare_resources_per_action" value="0" min="0" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
@@ -2185,7 +2244,7 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="number_of_drones">无人机数量：</label>
+                        <label for="number_of_drones" data-i18n="label.number_of_drones">无人机数量：</label>
                         <div class="input-group">
                             <button type="button" class="minus-btn" data-target="number_of_drones">-</button>
                             <input type="number" id="number_of_drones" name="number_of_drones" value="1" min="1" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
@@ -2193,7 +2252,7 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="dodge_percentage">额外闪避（装备）：</label>
+                        <label for="dodge_percentage" data-i18n="label.dodge_percentage">额外闪避（装备）：</label>
                         <div class="input-group">
                             <button type="button" class="minus-btn" data-target="dodge_percentage">-</button>
                             <input type="number" id="dodge_percentage" name="dodge_percentage" value="0" min="0" max="100" step="0.1" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
@@ -2204,7 +2263,7 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="rare_drop_increase">额外稀有资源掉落（装备）：</label>
+                        <label for="rare_drop_increase" data-i18n="label.rare_drop_increase">额外稀有资源掉落（装备）：</label>
                         <div class="input-group">
                             <button type="button" class="minus-btn" data-target="rare_drop_increase">-</button>
                             <input type="number" id="rare_drop_increase" name="rare_drop_increase" value="0" min="0" max="100" step="0.1" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
@@ -2213,7 +2272,7 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="maneuverability">平均机动性（无人机升级）：</label>
+                        <label for="maneuverability" data-i18n="label.maneuverability">平均机动性（无人机升级）：</label>
                         <div class="input-group">
                             <button type="button" class="minus-btn" data-target="maneuverability">-</button>
                             <input type="number" id="maneuverability" name="maneuverability" value="0" min="0" max="100" step="0.1" style="width: 5.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
@@ -2224,15 +2283,15 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group" style="align-items: flex-start; justify-content: flex-start; margin-left: 0;">
-                        <button id="calculateResourcesBtn" type="button">计算</button>
+                        <button id="calculateResourcesBtn" type="button" data-i18n="btn.calculate">计算</button>
                     </div>
                 </div>
                 <div id="resourcesResult" style="display: flex; flex-direction: row; gap: 2em; margin-top: 1em;">
                     <div style="font-size: 0.98em;">
-                        <div><b>资源／小时：</b> <span id="resources_per_hour">-</span></div>
-                        <div><b>稀有资源／小时：</b> <span id="rare_resources_per_hour">-</span></div>
-                        <div><b>收集32M资源所需时间：</b> <span id="hours_to_32m">-</span></div>
-                        <div><b>收集800k稀有资源所需时间：</b> <span id="days_to_800k">-</span></div>
+                        <div><b data-i18n="result.resources_hour">资源／小时：</b> <span id="resources_per_hour">-</span></div>
+                        <div><b data-i18n="result.rare_resources_hour">稀有资源／小时：</b> <span id="rare_resources_per_hour">-</span></div>
+                        <div><b data-i18n="result.hours_to_32m">收集32M资源所需时间：</b> <span id="hours_to_32m">-</span></div>
+                        <div><b data-i18n="result.days_to_800k">收集800k稀有资源所需时间：</b> <span id="days_to_800k">-</span></div>
                     </div>
                 </div>
             </div>
@@ -2243,63 +2302,63 @@
         <div style="display: flex; flex-direction: row; padding: 2em; gap: 2em; height: 720px;">
             <div style="display: flex; flex-direction: column; gap: 1em; min-width: 400px; max-width: 400px; margin-top: 18vh; transform: translateY(-50%);">
                 <div style="background: #23283a; border-radius: 6px; border: 1px solid #2c3242; padding: 1.2em; box-sizing: border-box;">
-                    <div style="font-size: 1.22em; font-weight: 700; margin-bottom: 1em; color: #f3f6fa; letter-spacing: 0.01em;">已发现星系</div>
+                    <div style="font-size: 1.22em; font-weight: 700; margin-bottom: 1em; color: #f3f6fa; letter-spacing: 0.01em;" data-i18n="block.discovered">已发现星系</div>
                     <div style="display: flex; flex-direction: column; gap: 1em;">
                         <div>
-                            <label for="systems_api_key" style="display: block; margin-bottom: 0.5em; color: #e6eaf3;">API Key:</label>
+                            <label for="systems_api_key" data-i18n="label.systems_api_key" style="display: block; margin-bottom: 0.5em; color: #e6eaf3;">API Key:</label>
                             <input type="text" id="systems_api_key" style="width: 100%; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.5em; border-radius: 4px; box-sizing: border-box;">
                         </div>
-                        <div style="color: #e6eaf3; font-size: 0.9em; margin-bottom: 0.0em;" id="systemsCount">目前尚无公开发现的星系</div>
-                        <div style="color: #e6eaf3; font-size: 0.9em; margin-bottom: 1.0em;" id="totalDistance">你当前已旅行0光年</div>
+                        <div style="color: #e6eaf3; font-size: 0.9em; margin-bottom: 0.0em;" id="systemsCount" data-i18n="map.no_systems">目前尚无公开发现的星系</div>
+                        <div style="color: #e6eaf3; font-size: 0.9em; margin-bottom: 1.0em;" id="totalDistance" data-i18n="map.distance_zero">你当前已旅行0光年</div>
                         <div style="display: flex; flex-direction: column; gap: 0.5em;">
                             <label style="display: flex; align-items: center; gap: 0.5em; color: #e6eaf3; cursor: pointer;">
                                 <input type="checkbox" id="show_public_systems" style="margin: 0;">
-                                显示公开星系
+                                <span data-i18n="map.show_public">显示公开星系</span>
                             </label>
                             <label style="display: flex; align-items: center; gap: 0.5em; color: #e6eaf3; cursor: pointer;">
                                 <input type="checkbox" id="show_current_position" style="margin: 0;">
-                                显示当前位置（定位）
+                                <span data-i18n="map.show_position">显示当前位置（定位）</span>
                             </label>
                             <label style="display: flex; align-items: center; gap: 0.5em; color: #e6eaf3; cursor: pointer;">
                                 <input type="checkbox" id="show_player_journey" style="margin: 0;">
-                                显示玩家旅行路径
+                                <span data-i18n="map.show_journey">显示玩家旅行路径</span>
                             </label>
                             <label style="display: flex; align-items: center; gap: 0.5em; color: #e6eaf3; cursor: pointer;">
                                 <input type="checkbox" id="show_space_stations" style="margin: 0;">
-                                显示玩家舰队空间站
+                                <span data-i18n="map.show_stations">显示玩家舰队空间站</span>
                             </label>
                             <label style="display: flex; align-items: center; gap: 0.5em; color: #e6eaf3; cursor: pointer;">
                                 <input type="checkbox" id="show_galaxy_explore_boost_in_range" style="margin: 0;">
-                                显示空间站范围内探索增幅星系
+                                <span data-i18n="map.show_boost">显示空间站范围内探索增幅星系</span>
                             </label>
                         </div>
-                        <button id="loadSystemsBtn" type="button" style="background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.5em 1em; border-radius: 4px; cursor: pointer; width: 100%;">载入星图</button>
+                        <button id="loadSystemsBtn" type="button" data-i18n="btn.load_map" style="background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.5em 1em; border-radius: 4px; cursor: pointer; width: 100%;">载入星图</button>
                     </div>
                 </div>
                 <div style="background: #23283a; border-radius: 6px; border: 1px solid #2c3242; padding: 1.2em; box-sizing: border-box;">
                     <div id="pathfinder">
-                        <div style="font-size: 1.22em; font-weight: 700; margin-bottom: 1em; color: #f3f6fa; letter-spacing: 0.01em;">路径计算</div>
+                        <div style="font-size: 1.22em; font-weight: 700; margin-bottom: 1em; color: #f3f6fa; letter-spacing: 0.01em;" data-i18n="block.pathfinder">路径计算</div>
                         <input id="start_at_self" type="checkbox">
-                        <label for="start_at_self">以自身为起点</label>
+                        <label for="start_at_self" data-i18n="label.start_at_self">以自身为起点</label>
                         <div style="display: flex; flex-direction: column; margin-top: 1em;">
                             <div class="form-row">
                                 <div id="starterPointInfo">
-                                    <label for="starterPoint">起始点</label>
+                                    <label for="starterPoint" data-i18n="label.starter_point">起始点</label>
                                     <input type="text" id="starterPoint" style="width: 65%; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.5em; border-radius: 4px; box-sizing: border-box; text-align: center;">
                                 </div>
                                 <div id="destinationInfo">
-                                    <label for="destinationPoint">目标点</label>
+                                    <label for="destinationPoint" data-i18n="label.destination">目标点</label>
                                     <input type="text" id="destinationPoint" style="width: 65%; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.5em; border-radius: 4px; box-sizing: border-box; text-align: center;" value="1499,1499">
                                 </div>
                             </div>
                             <div class="form-row">
-                                <button id="findShortestPath" style="background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.5em 1em; border-radius: 4px; cursor: pointer; width: 100%;">计算路径</button>
-                                <button id="clearShortestPath" style="background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.5em 1em; border-radius: 4px; cursor: pointer; width: 100%;">清除结果</button>
+                                <button id="findShortestPath" data-i18n="btn.find_path" style="background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.5em 1em; border-radius: 4px; cursor: pointer; width: 100%;">计算路径</button>
+                                <button id="clearShortestPath" data-i18n="btn.clear_path" style="background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.5em 1em; border-radius: 4px; cursor: pointer; width: 100%;">清除结果</button>
                             </div>
                             <div class="form-row" id="trajectoryResult" style="margin: 0;">
                                 <div class="winform-list">
                                     <div class="list-header">
-                                        <div>路径列表</div>
+                                        <div data-i18n="path.list_header">路径列表</div>
                                         <div id="totalPathfindingDistance" style="margin-left: auto;"></div>
                                     </div>
                                     <div class="list-content" id="trajectoryListContent">
@@ -2325,7 +2384,7 @@
                         <label for="userData_api_key">API Key：</label>
                     </div>
                     <div class="form-group" style="align-items: flex-end; justify-content: flex-end; margin-right: 0px;">
-                        <button id="userDataImport" type="button">导入数据</button>
+                        <button id="userDataImport" type="button" data-i18n="btn.import_data">导入数据</button>
                     </div>
                 </div>
                 <div class="form-row">
@@ -2337,11 +2396,11 @@
             <div style="display: flex; flex-direction: column;">
                 <div class="optimizer-block" style="display: flex; flex-direction: column; align-items: flex-start; margin-top: 1em; width: 580px; min-width: 580px; max-width: 580px;">
                     <div class="form-row" style="width: 80%;">
-                        <div id="Craftron3000Calculate" style="font-size: 1.22em; font-weight: 700; margin-bottom: 1em; color: #f3f6fa; letter-spacing: 0.01em;">创制者 3000(Craftron 3000) 计算</div>
+                        <div id="Craftron3000Calculate" data-i18n="block.craftron" style="font-size: 1.22em; font-weight: 700; margin-bottom: 1em; color: #f3f6fa; letter-spacing: 0.01em;">创制者 3000(Craftron 3000) 计算</div>
                     </div>
                     <div class="form-row" style="width: 100%;">
                         <div class="form-group">
-                            <label>当前数据以及加成：</label>
+                            <label data-i18n="label.current_data">当前数据以及加成：</label>
                             <div id="boostInfo" style="display: flex; width: 100%; min-height: 160px; flex-direction: column; gap: 3px; margin-top: 1px;">
                             </div>
                         </div>
@@ -2350,12 +2409,12 @@
                 <div class="optimizer-block" style="display: flex; flex-direction: column; align-items: flex-start; margin-top: 1em; width: 580px; min-width: 580px; max-width: 580px;">
                     <div class="form-row" style="width: 100%;">
                         <div class="form-group">
-                            <label>升级计算：</label>
+                            <label data-i18n="block.levelup">升级计算：</label>
                         </div>
                     </div>
                     <div class="form-row" style="width: 100%;">
                         <div class="form-group" style="width: 35%;  align-items:baseline; justify-content: center;">
-                            <label for="fromLevel">当前等级：</label>
+                            <label for="fromLevel" data-i18n="label.from_level">当前等级：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="fromLevel">-</button>
                                 <input type="number" id="fromLevel" name="fromLevel" value="0" min="0">
@@ -2363,7 +2422,7 @@
                             </div>
                         </div>
                         <div class="form-group" style="width: 35%;  align-items:baseline; justify-content: center;">
-                            <label for="targetLevel">目标等级：</label>
+                            <label for="targetLevel" data-i18n="label.target_level">目标等级：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="targetLevel">-</button>
                                 <input type="number" id="targetLevel" name="targetLevel" value="0" min="0">
@@ -2371,8 +2430,8 @@
                             </div>
                         </div>
                         <div class="form-group" style="width: 25%;">
-                            <button id="calculateCraftronUpgrade" type="button" style="width: 80%;">计算</button>
-                            <button id="resetCraftronUpgrade" type="button" style="width: 80%;">重置</button>
+                            <button id="calculateCraftronUpgrade" type="button" data-i18n="btn.calc_levelup" style="width: 80%;">计算</button>
+                            <button id="resetCraftronUpgrade" type="button" data-i18n="btn.reset_levelup" style="width: 80%;">重置</button>
                         </div>
                     </div>
                     <div class="form-row" style="width: 100%;">
@@ -2383,12 +2442,12 @@
                 <div class="optimizer-block" style="display: flex; flex-direction: column; align-items: flex-start; margin-top: 1em; width: 580px; min-width: 580px; max-width: 580px;">
                     <div class="form-row" style="width: 100%;">
                         <div class="form-group">
-                            <label>数量计算升级：</label>
+                            <label data-i18n="block.scrap">数量计算升级：</label>
                         </div>
                     </div>
                     <div class="form-row" style="width: 100%;">
                         <div class="form-group" style="width: 70%; align-items:baseline; justify-content: center;">
-                            <label for="metalScrapAmount">金属碎片数量：</label>
+                            <label for="metalScrapAmount" data-i18n="label.metal_scrap">金属碎片数量：</label>
                             <div class="input-group">
                                 <button type="button" class="minus-btn" data-target="metalScrapAmount">-</button>
                                 <input type="number" id="metalScrapAmount" name="metalScrapAmount" value="0" min="0">
@@ -2396,8 +2455,8 @@
                             </div>
                         </div>
                         <div class="form-group" style="width: 25%; margin-left: 35%;">
-                            <button id="calculateScrapPossibleLevel" type="button" style="width: 80%;">计算</button>
-                            <button id="resetScrapPossibleLevel" type="button" style="width: 80%;">重置</button>
+                            <button id="calculateScrapPossibleLevel" type="button" data-i18n="btn.calc_scrap" style="width: 80%;">计算</button>
+                            <button id="resetScrapPossibleLevel" type="button" data-i18n="btn.reset_scrap" style="width: 80%;">重置</button>
                         </div>
                     </div>
                     <div class="form-row" style="width: 100%;">
@@ -2413,6 +2472,7 @@
         // 从模块中导入你需要的类
         import { CalculateUtils } from './calculateUtils.js';
         import { Craftron3000Calculator } from './calculateUtils.js';
+        import { tSync as t } from './i18n.js';
 
         // 注意：模块脚本默认是 defer 的，所以 DOM 通常已就绪
         // 但为了保险，也可以监听 DOMContentLoaded（不过通常不需要）
@@ -2441,7 +2501,7 @@
             userDataImportBtn.addEventListener('click', async () => {
                 const apiKey = apiKeyInput.value.trim();
                 if (!apiKey) {
-                    alert('请输入API Key');
+                    alert(t('alert.input_api_key_short'));
                     return;
                 }
 
@@ -2465,7 +2525,7 @@
                     setInfo(data);
                 } catch (error) {
                     console.error('数据导入失败:', error);
-                    alert('导入数据时出错: ' + error.message);
+                    alert(t('alert.import_error', { msg: error.message }));
                 }
             });
         }
@@ -2475,22 +2535,22 @@
         } else {
             calculateCraftronUpgradeBtn.addEventListener('click', () => {
                 if (!craftronCalculator) {
-                    alert('请先导入玩家数据');
+                    alert(t('alert.import_player_first'));
                     return;
                 }
                 const fromLevel = parseInt(levelFrom.value);
                 const toLevel = parseInt(levelTo.value);
                 if (isNaN(fromLevel) || isNaN(toLevel) || fromLevel < 0 || toLevel < 0 || toLevel <= fromLevel) {
-                    alert('请输入有效的等级范围，且目标等级必须大于当前等级');
+                    alert(t('alert.invalid_level_range'));
                     return;
                 }
                 const result = craftronCalculator.calculateInputLevelRangeNeeds(fromLevel, toLevel);
-                let prepareHTML = `<div>从等级 ${fromLevel} 升级到 ${toLevel} 需要最少: <b>${result.totalNeeds}</b> 个金属碎片</div>`;
-                if (result.results.length >1) {
-                    prepareHTML += `<div>以下是每个等级的详细需求:</div>\n<ul>`;
+                let prepareHTML = `<div>${t('craftron.levelup_total', { from: fromLevel, to: toLevel, total: result.totalNeeds })}</div>`;
+                if (result.results.length > 1) {
+                    prepareHTML += `<div>${t('craftron.levelup_detail_title')}</div>\n<ul>`;
                     result.results.forEach(item => {
                         let currentLevelMultiplier = craftronCalculator.BaseCalculator.formatPercent((craftronCalculator.multiplierFromAllFactors(item.level).rate - 1) * 100);
-                        prepareHTML += `<li>从 ${item.level} 升级到 ${item.level + 1} 需要 <b>${item.amount}</b> 个金属碎片 (总加成为：${currentLevelMultiplier}%)</li>\n`;
+                        prepareHTML += `<li>${t('craftron.levelup_item', { from: item.level, to: item.level + 1, amount: item.amount, pct: currentLevelMultiplier })}</li>\n`;
                     });
                     prepareHTML += `</ul>`;
                 }
@@ -2513,23 +2573,25 @@
         } else {
             calculateScrapPossibleLevelBtn.addEventListener('click', () => {
                 if (!craftronCalculator) {
-                    alert('请先导入玩家数据');
+                    alert(t('alert.import_player_first'));
                     return;
                 }
                 const scrapAmount = parseInt(metalScrapAmountInput.value);
                 if (isNaN(scrapAmount) || scrapAmount < 0) {
-                    alert('请输入有效的金属碎片数量');
+                    alert(t('alert.invalid_scrap'));
                     return;
                 }
                 const result = craftronCalculator.calculateMaxLevelFromQuantity(scrapAmount, craftronCalculator.CraftLevel);
-                let overflowMsg = (result.overflowExp > 0) ? `，并有 <b>${result.overflowExp}</b> 点溢出经验（可能会有几个金属碎片的经验出入）。` : '';
-                let prepareHTML = `<div>使用 ${scrapAmount} 个金属碎片可以从当前等级 ${craftronCalculator.CraftLevel} 升级到 <b>${result.level}</b> 级${overflowMsg}</div>`;
+                let overflowMsg = (result.overflowExp > 0)
+                    ? t('craftron.overflow', { exp: result.overflowExp })
+                    : '';
+                let prepareHTML = `<div>${t('craftron.scrap_result', { amount: scrapAmount, from: craftronCalculator.CraftLevel, to: result.level, overflow: overflowMsg })}</div>`;
                 if (result.levelUpConsumptions.length > 0) {
-                    prepareHTML += `<div>以下是每个等级的详细需求:</div>\n<ul>`;
+                    prepareHTML += `<div>${t('craftron.scrap_detail_title')}</div>\n<ul>`;
                     result.levelUpConsumptions.forEach(item => {
                         if (item.level === result.level) return; // 跳过最后一项，因为它是溢出经验
                         let currentLevelMultiplier = craftronCalculator.BaseCalculator.formatPercent((craftronCalculator.multiplierFromAllFactors(item.level).rate - 1) * 100);
-                        prepareHTML += `<li>从 ${item.level} 升级到 ${item.level + 1} 需要 <b>${item.consumedQty}</b> 个金属碎片 (总加成为：${currentLevelMultiplier}%)</li>\n`;
+                        prepareHTML += `<li>${t('craftron.scrap_item', { from: item.level, to: item.level + 1, amount: item.consumedQty, pct: currentLevelMultiplier })}</li>\n`;
                     });
                     prepareHTML += `</ul>`;
                 }
@@ -2548,29 +2610,29 @@
     <div id="probabilities-tab" class="tab-content">
         <div class="form-section" style="display: flex; flex-direction: row; gap: 2em;">
             <div class="optimizer-block" style="margin-top: 1.0em; margin-left: 5px; width: 500px; min-width: 500px; max-width: 500px; min-height: 210px; max-height: 600px;">
-                <div class="block-label">
+                <div class="block-label" data-i18n="block.probability">
                     星系概率计算器
                     <span style="color: #4fa3ff; margin-left: 5px; cursor: help;" title="Calculate the probability of observing a system with specific characteristics. This tool uses complex probability calculations involving multiple parameters (nodes, categories, qualities) and their interactions. Due to the mathematical complexity of these calculations, some results may require further refinement. The current implementation is being continuously improved for accuracy.">ⓘ</span>
                     <span style="color: #ff4f4f; margin-left: 5px; font-size: 0.8em; font-weight: normal;">beta</span>
                 </div>
                 <div class="form-row" style="margin-bottom: 1em;">
                     <div class="form-group">
-                        <label for="inhabited_system" style="color: #e6eaf3;">星系状态：</label>
+                        <label for="inhabited_system" data-i18n="label.inhabited" style="color: #e6eaf3;">星系状态：</label>
                         <select id="inhabited_system" name="inhabited_system" style="width: 12em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.2em; border-radius: 4px;">
-                            <option value="any">任意</option>
-                            <option value="inhabited">星系有人居住</option>
-                            <option value="uninhabited">星系无人居住</option>
+                            <option value="any" data-i18n="opt.inhabited.any">任意</option>
+                            <option value="inhabited" data-i18n="opt.inhabited.yes">星系有人居住</option>
+                            <option value="uninhabited" data-i18n="opt.inhabited.no">星系无人居住</option>
                         </select>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="n_nodes">节点数量：</label>
+                        <label for="n_nodes" data-i18n="label.n_nodes">节点数量：</label>
                         <div class="input-group">
                             <select id="n_nodes_type" name="n_nodes_type" style="width: 6em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; margin-right: 0.5em;">
-                                <option value="exactly">精确</option>
-                                <option value="at least">至少</option>
-                                <option value="any">任意</option>
+                                <option value="exactly" data-i18n="prob.exactly">精确</option>
+                                <option value="at least" data-i18n="prob.at_least">至少</option>
+                                <option value="any" data-i18n="prob.any">任意</option>
                             </select>
                             <input type="number" id="n_nodes" name="n_nodes" value="1" min="1" max="5" style="width: 3.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
                         </div>
@@ -2578,12 +2640,12 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="n_gatherable">采集节点数量：</label>
+                        <label for="n_gatherable" data-i18n="label.n_gatherable">采集节点数量：</label>
                         <div class="input-group">
                             <select id="n_gatherable_type" name="n_gatherable_type" style="width: 6em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; margin-right: 0.5em;">
-                                <option value="exactly">精确</option>
-                                <option value="at least">至少</option>
-                                <option value="any">任意</option>
+                                <option value="exactly" data-i18n="prob.exactly">精确</option>
+                                <option value="at least" data-i18n="prob.at_least">至少</option>
+                                <option value="any" data-i18n="prob.any">任意</option>
                             </select>
                             <input type="number" id="n_gatherable" name="n_gatherable" value="1" min="0" max="5" style="width: 3.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
                         </div>
@@ -2591,12 +2653,12 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="n_categories">不同类别数量：</label>
+                        <label for="n_categories" data-i18n="label.n_categories">不同类别数量：</label>
                         <div class="input-group">
                             <select id="n_categories_type" name="n_categories_type" style="width: 6em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; margin-right: 0.5em;">
-                                <option value="exactly">精确</option>
-                                <option value="at least">至少</option>
-                                <option value="any">任意</option>
+                                <option value="exactly" data-i18n="prob.exactly">精确</option>
+                                <option value="at least" data-i18n="prob.at_least">至少</option>
+                                <option value="any" data-i18n="prob.any">任意</option>
                             </select>
                             <input type="number" id="n_categories" name="n_categories" value="1" min="1" max="4" style="width: 3.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242;">
                         </div>
@@ -2604,9 +2666,9 @@
                 </div>
                 <div id="quality-selections" style="margin-top: 0.5em; display: flex; flex-direction: column; gap: 0.3em;">
                     <div class="form-row" style="display: flex; align-items: center; gap: 0.5em; margin-bottom: 0;">
-                        <label style="color: #e6eaf3; min-width: 180px;">采集节点 1 品质:</label>
+                        <label style="color: #e6eaf3; min-width: 180px;" id="quality-label-1">采集节点 1 品质:</label>
                         <select style="width: 8em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.2em; border-radius: 4px;">
-                            <option value="any">任意</option>
+                            <option value="any" data-i18n="prob.any">任意</option>
                             <option value="1-30">1-30</option>
                             <option value="31-70">31-70</option>
                             <option value="71-90">71-90</option>
@@ -2627,11 +2689,15 @@
 
     <!-- Tab bar -->
     <div class="tab-container">
-        <div class="tab active" data-tab="battling-tab">战斗</div>
-        <div class="tab" data-tab="gathering-tab">采集</div>
-        <div class="tab" data-tab="universe-map-tab">星图/寻路</div>
-        <div class="tab" data-tab="calculate-utils">计算工具</div>
-        <div class="tab" data-tab="probabilities-tab">概率</div>
+        <div class="tab active" data-tab="battling-tab" data-i18n="tab.battling">战斗</div>
+        <div class="tab" data-tab="gathering-tab" data-i18n="tab.gathering">采集</div>
+        <div class="tab" data-tab="universe-map-tab" data-i18n="tab.universemap">星图/寻路</div>
+        <div class="tab" data-tab="calculate-utils" data-i18n="tab.calcutils">计算工具</div>
+        <div class="tab" data-tab="probabilities-tab" data-i18n="tab.probabilities">概率</div>
+        <div style="display: flex; align-items: center; gap: 0.5em; margin-left: 1em;">
+            <button id="langZh" type="button" class="lang-btn active">中文</button>
+            <button id="langEn" type="button" class="lang-btn">EN</button>
+        </div>
     </div>
 
     <div id="playerResult"></div>
@@ -2686,15 +2752,15 @@
         //     const pad = n => n.toString().padStart(2, '0');
             const dateStr = "2025-10-02";
             const timeStr = "12:41 GMT+8";
-            lastUpdated.textContent = `最后更新: ${dateStr} ${timeStr}`;
+            lastUpdated.textContent = `Last updated: ${dateStr} ${timeStr}`;
         }
     </script>
     <!-- Changelog Modal -->
     <div id="changelogModal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); align-items:center; justify-content:center;">
       <div style="background:#222; color:#fff; padding:1.5em; border-radius:10px; max-width:650px; width:117vw; max-width:65vw; max-height:70vh; overflow:auto; box-shadow:0 4px 32px #000; position:relative;">
         <button id="closeChangelog" style="position:absolute; top:0.5em; right:0.5em; background:none; border:none; color:#fff; font-size:1.5em; cursor:pointer;">&times;</button>
-        <h2 style="margin-top:0;">版本改动</h2>
-        <div id="changelogContent" style="white-space:pre-wrap; background:#181818; padding:1em; border-radius:6px; max-height:50vh; overflow:auto; font-size:1em; font-family:inherit;">载入中...</div>
+        <h2 style="margin-top:0;">Changelog</h2>
+        <div id="changelogContent" style="white-space:pre-wrap; background:#181818; padding:1em; border-radius:6px; max-height:50vh; overflow:auto; font-size:1em; font-family:inherit;">Loading...</div>
       </div>
     </div>
     <script>
@@ -2742,8 +2808,13 @@
     <script type="module">
         // Import probability functions
         import { probability_of_observation_with_per_gatherable_qualities } from './probabilities.js';
+        import { tSync as t } from './i18n.js';
 
         document.addEventListener('DOMContentLoaded', function() {
+            // 更新第一个质量标签
+            const firstQualityLabel = document.getElementById('quality-label-1');
+            if (firstQualityLabel) firstQualityLabel.textContent = t('prob.quality_label', { n: 1 });
+
             // Declare variables at the top
             const nNodesType = document.getElementById('n_nodes_type');
             const nNodes = document.getElementById('n_nodes');
@@ -2789,7 +2860,7 @@
                     selectionDiv.style.gap = '0.5em';
                     
                     const label = document.createElement('label');
-                    label.textContent = `采集节点 ${i + 1} 质量：`;
+                    label.textContent = t('prob.quality_label', { n: i + 1 });
                     label.style.color = '#e6eaf3';
                     label.style.minWidth = '180px';
                     
@@ -2804,7 +2875,7 @@
                     // Add "Any" option
                     const anyOption = document.createElement('option');
                     anyOption.value = 'any';
-                    anyOption.textContent = '任意';
+                    anyOption.textContent = t('prob.any');
                     select.appendChild(anyOption);
                     
                     // Add quality range options
