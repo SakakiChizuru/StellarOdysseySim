@@ -245,7 +245,7 @@ const zh = {
     'prob.exactly': '精确',
     'prob.at_least': '至少',
     'prob.any': '任意',
-    'prob.quality_label': '采集节点 {n} 质量：',
+    'prob.quality_label': '采集节点质量：',
 
     // ── 状态/按钮文本 ─────────────────────────────────
     'status.calculating': '正在计算...',
