@@ -118,6 +118,8 @@ async function setLanguage(lang) {
     currentLang = lang;
     localStorage.setItem('so_lang', lang);
     applyTranslations();
+    // 触发自定义事件，通知其他模块语言已切换
+    document.dispatchEvent(new CustomEvent('languageChanged', { detail: { lang } }));
 }
 
 /**

@@ -2691,6 +2691,101 @@
         </div>
     </div>
 
+    <!-- Runes Tab -->
+    <div id="runes-tab" class="tab-content">
+        <div class="form-section"
+            style="display: flex; flex-direction: column; gap: 2em; padding: 2em; height: 720px; box-sizing: border-box;">
+
+            <!-- Top Explanation Card -->
+            <div class="optimizer-block" style="width: 100%; min-width: 100%; height: auto; min-height: auto;">
+                <div class="block-label" data-i18n="block.runes">符文路径优化器</div>
+                <div style="color: #b0b6c6; font-size: 1.05em; margin-top: 1.5em; line-height: 0.8; margin-bottom: 1.0em;">
+                    <p style="margin-top: 0;" data-i18n="runes.desc1">符文通过探索你尚未访问过的特殊星系来发现。</p>
+                    <p data-i18n="runes.desc2">此界面计算通往最近特殊星系的最优旅行路线，最小化你的总飞行距离。</p>
+                </div>
+            </div>
+
+            <!-- Bottom Row: Star Types, Output and Timer -->
+            <div style="display: flex; flex-direction: row; gap: 2em; flex: 1;">
+
+                <!-- Left Card: Special Star Types -->
+                <div class="optimizer-block"
+                    style="width: 250px; min-width: 250px; min-height: 510px; display: flex; flex-direction: column; height: 510px;">
+                    <div class="block-label" style="margin-bottom: 1em;" data-i18n="runes.star_types">特殊星系类型</div>
+                    <div
+                        style="display: flex; flex-direction: column; gap: 0.8em; color: #e6eaf3; font-size: 1em; margin-bottom: 1.5em;">
+                        <label style="display: flex; align-items: center; gap: 0.5em; cursor: pointer;">
+                            <input type="checkbox" id="runesFilterRingedDwarf" style="margin: 0;" checked>
+                            <span data-i18n="runes.filter_ringed_dwarf">环状矮星</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5em; cursor: pointer;">
+                            <input type="checkbox" id="runesFilterBinaryStars" style="margin: 0;" checked>
+                            <span data-i18n="runes.filter_binary_stars">双星</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5em; cursor: pointer;">
+                            <input type="checkbox" id="runesFilterBlackHole" style="margin: 0;" checked>
+                            <span data-i18n="runes.filter_black_hole">黑洞</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5em; cursor: pointer;">
+                            <input type="checkbox" id="runesFilterNeutronStar" style="margin: 0;" checked>
+                            <span data-i18n="runes.filter_neutron_star">中子星</span>
+                        </label>
+                    </div>
+                    <!-- Find Path Button inside the card -->
+                    <div style="width: 100%;">
+                        <button id="runesFindPathBtn" type="button" style="width: 100%;" data-i18n="runes.find_path">查找路径</button>
+                    </div>
+
+                    <!-- Progress bar -->
+                    <div id="runesPathProgress" style="height: 50px; margin-top: 1.5em;">
+                        <div
+                            style="width: 100%; background: #36405a; border-radius: 4px; height: 20px; overflow: hidden;">
+                            <div id="runesPathProgressBar"
+                                style="width: 0%; height: 100%; background: #4fa3ff; transition: width 0.3s ease;">
+                            </div>
+                        </div>
+                        <div id="runesPathProgressText"
+                            style="text-align: center; margin-top: 0.5em; font-size: 0.9em; color: #b0b6c6;">0%</div>
+                    </div>
+
+                    <!-- Timer UI -->
+                    <div style="margin-top: 2em; display: flex; flex-direction: column; gap: 0.5em;">
+                        <div style="color: #b0b6c6; font-size: 0.95em;" data-i18n="runes.timer_label">计时器</div>
+                        <div style="display: flex; align-items: center; gap: 0.5em;">
+                            <input type="number" id="runesTimerMinutes" min="0" max="99" value="05" 
+                                style="width: 3.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; border-radius: 4px; padding: 0.4em; text-align: center; font-size: 1.05em;">
+                            <span style="color: #e6eaf3; font-weight: bold; font-size: 1.2em;">:</span>
+                            <input type="number" id="runesTimerSeconds" min="0" max="59" value="00" 
+                                style="width: 3.5em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; border-radius: 4px; padding: 0.4em; text-align: center; font-size: 1.05em;">
+                        </div>
+                        <label style="display: flex; align-items: center; gap: 0.5em; cursor: pointer; color: #e6eaf3; font-size: 0.95em; margin-top: 0.5em;">
+                            <input type="checkbox" id="runesTimerNotification" style="margin: 0;">
+                            <span data-i18n="runes.timer_notification">发送桌面通知</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Right Card: Output -->
+                <div class="optimizer-block"
+                    style="flex: 1; min-height: auto; display: flex; flex-direction: column; min-width: 754px; height: 510px;">
+                    <div class="block-label" data-i18n="runes.output_path">输出路径</div>
+                    <div id="runesOutput"
+                        style="color: #ffffff; margin-top: 1em; white-space: pre-wrap; font-family: monospace; font-size: 1.15em; overflow: auto; flex: 1;">
+                    </div>
+                </div>
+
+                <!-- Far Right Card: Active Timer -->
+                <div class="optimizer-block"
+                    style="width: 250px; min-width: 250px; min-height: 200px; max-height: 200px; display: flex; flex-direction: column; height: 510px;">
+                    <div class="block-label" data-i18n="runes.timer">计时器</div>
+                    <div id="runesActiveTimerDisplay" style="font-size: 3.5em; color: #4fa3ff; font-weight: bold; text-align: center; margin-top: auto; margin-bottom: auto; font-family: monospace;">05:00</div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- End Runes Tab -->
+
     <!-- Tab bar -->
     <div class="tab-container">
         <div class="tab active" data-tab="battling-tab" data-i18n="tab.battling">战斗</div>
@@ -2698,6 +2793,7 @@
         <div class="tab" data-tab="universe-map-tab" data-i18n="tab.universemap">星图/寻路</div>
         <div class="tab" data-tab="calculate-utils" data-i18n="tab.calcutils">计算工具</div>
         <div class="tab" data-tab="probabilities-tab" data-i18n="tab.probabilities">概率</div>
+        <div class="tab" data-tab="runes-tab" data-i18n="tab.runes">符文</div>
         <div style="display: flex; align-items: center; gap: 0.5em; margin-left: 1em;">
             <button id="langZh" type="button" class="lang-btn active">中文</button>
             <button id="langEn" type="button" class="lang-btn">EN</button>
@@ -2808,6 +2904,9 @@
     
     <!-- Implenting UniverseGrid -->
     <script src="universe_map.js"></script>
+
+    <!-- Runes Path Optimizer -->
+    <script src="runes.js"></script>
 
     <script type="module">
         // Import probability functions
