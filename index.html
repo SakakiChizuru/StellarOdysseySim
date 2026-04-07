@@ -680,12 +680,16 @@
                 // 语言切换后重绘克隆体区块（JS动态生成）
                 if (typeof renderCloneModifiers === 'function') renderCloneModifiers();
                 DisplayBoostPercent();
+                // 更新概率页面质量标签
+                if (typeof window.updateProbQualityLabels === 'function') window.updateProbQualityLabels();
             });
             document.getElementById('langEn').addEventListener('click', async () => {
                 await setLanguage('en');
                 updateLangButtons();
                 if (typeof renderCloneModifiers === 'function') renderCloneModifiers();
                 DisplayBoostPercent();
+                // 更新概率页面质量标签
+                if (typeof window.updateProbQualityLabels === 'function') window.updateProbQualityLabels();
             });
             // ── i18n 初始化结束 ───────────────────────────────────────
 
@@ -2666,7 +2670,7 @@
                 </div>
                 <div id="quality-selections" style="margin-top: 0.5em; display: flex; flex-direction: column; gap: 0.3em;">
                     <div class="form-row" style="display: flex; align-items: center; gap: 0.5em; margin-bottom: 0;">
-                        <label style="color: #e6eaf3; min-width: 180px;" id="quality-label-1">采集节点 1 品质:</label>
+                        <label style="color: #e6eaf3; min-width: 180px;" id="quality-label-1" data-i18n="prob.quality_label" data-i18n-n="1">采集节点 1 品质:</label>
                         <select style="width: 8em; background: #36405a; color: #e6eaf3; border: 1px solid #2c3242; padding: 0.2em; border-radius: 4px;">
                             <option value="any" data-i18n="prob.any">任意</option>
                             <option value="1-30">1-30</option>
@@ -2810,87 +2814,85 @@
         import { probability_of_observation_with_per_gatherable_qualities } from './probabilities.js';
         import { tSync as t } from './i18n.js';
 
-        document.addEventListener('DOMContentLoaded', function() {
-            // 更新第一个质量标签
-            const firstQualityLabel = document.getElementById('quality-label-1');
-            if (firstQualityLabel) firstQualityLabel.textContent = t('prob.quality_label', { n: 1 });
+        // Declare variables at the top
+        const nNodesType = document.getElementById('n_nodes_type');
+        const nNodes = document.getElementById('n_nodes');
+        const nGatherableType = document.getElementById('n_gatherable_type');
+        const nGatherable = document.getElementById('n_gatherable');
+        const nCategoriesType = document.getElementById('n_categories_type');
+        const nCategories = document.getElementById('n_categories');
+        const qualitySelections = document.getElementById('quality-selections');
 
-            // Declare variables at the top
-            const nNodesType = document.getElementById('n_nodes_type');
-            const nNodes = document.getElementById('n_nodes');
-            const nGatherableType = document.getElementById('n_gatherable_type');
-            const nGatherable = document.getElementById('n_gatherable');
-            const nCategoriesType = document.getElementById('n_categories_type');
-            const nCategories = document.getElementById('n_categories');
-            const qualitySelections = document.getElementById('quality-selections');
+        // Quality ranges based on the probabilities.js file
+        const qualityRanges = [
+            { label: "1-30", value: "1-30" },
+            { label: "31-70", value: "31-70" },
+            { label: "71-90", value: "71-90" },
+            { label: "91-100", value: "91-100" }
+        ];
 
-            // Quality ranges based on the probabilities.js file
-            const qualityRanges = [
-                { label: "1-30", value: "1-30" },
-                { label: "31-70", value: "31-70" },
-                { label: "71-90", value: "71-90" },
-                { label: "91-100", value: "91-100" }
-            ];
-
-            function updateQualitySelections() {
-                const numGatherable = parseInt(nGatherable.value) || 0;
-                const isAny = nGatherableType.value === 'any';
-                
-                // Keep the first selection row
-                const firstSelection = qualitySelections.firstElementChild;
-                qualitySelections.innerHTML = '';
-                if (firstSelection) {
-                    qualitySelections.appendChild(firstSelection);
-                }
-                
-                if (isAny || numGatherable === 0) {
-                    qualitySelections.style.display = 'none';
-                    return;
-                }
-
-                qualitySelections.style.display = 'flex';
-
-                // Add additional selections starting from index 1
-                for (let i = 1; i < numGatherable; i++) {
-                    const selectionDiv = document.createElement('div');
-                    selectionDiv.className = 'form-row';
-                    selectionDiv.style.marginBottom = '0';
-                    selectionDiv.style.display = 'flex';
-                    selectionDiv.style.alignItems = 'center';
-                    selectionDiv.style.gap = '0.5em';
-                    
-                    const label = document.createElement('label');
-                    label.textContent = t('prob.quality_label', { n: i + 1 });
-                    label.style.color = '#e6eaf3';
-                    label.style.minWidth = '180px';
-                    
-                    const select = document.createElement('select');
-                    select.style.width = '8em';
-                    select.style.background = '#36405a';
-                    select.style.color = '#e6eaf3';
-                    select.style.border = '1px solid #2c3242';
-                    select.style.padding = '0.2em';
-                    select.style.borderRadius = '4px';
-                    
-                    // Add "Any" option
-                    const anyOption = document.createElement('option');
-                    anyOption.value = 'any';
-                    anyOption.textContent = t('prob.any');
-                    select.appendChild(anyOption);
-                    
-                    // Add quality range options
-                    qualityRanges.forEach(range => {
-                        const option = document.createElement('option');
-                        option.value = range.value;
-                        option.textContent = range.label;
-                        select.appendChild(option);
-                    });
-                    
-                    selectionDiv.appendChild(label);
-                    selectionDiv.appendChild(select);
-                    qualitySelections.appendChild(selectionDiv);
-                }
+        function updateQualitySelections() {
+            const numGatherable = parseInt(nGatherable.value) || 0;
+            const isAny = nGatherableType.value === 'any';
+            
+            // Keep the first selection row
+            const firstSelection = qualitySelections.firstElementChild;
+            qualitySelections.innerHTML = '';
+            if (firstSelection) {
+                qualitySelections.appendChild(firstSelection);
             }
+            
+            if (isAny || numGatherable === 0) {
+                qualitySelections.style.display = 'none';
+                return;
+            }
+
+            qualitySelections.style.display = 'flex';
+
+            // Add additional selections starting from index 1
+            for (let i = 1; i < numGatherable; i++) {
+                const selectionDiv = document.createElement('div');
+                selectionDiv.className = 'form-row';
+                selectionDiv.style.marginBottom = '0';
+                selectionDiv.style.display = 'flex';
+                selectionDiv.style.alignItems = 'center';
+                selectionDiv.style.gap = '0.5em';
+                
+                const label = document.createElement('label');
+                label.textContent = t('prob.quality_label', { n: i + 1 });
+                label.style.color = '#e6eaf3';
+                label.style.minWidth = '180px';
+                
+                const select = document.createElement('select');
+                select.style.width = '8em';
+                select.style.background = '#36405a';
+                select.style.color = '#e6eaf3';
+                select.style.border = '1px solid #2c3242';
+                select.style.padding = '0.2em';
+                select.style.borderRadius = '4px';
+                
+                // Add "Any" option
+                const anyOption = document.createElement('option');
+                anyOption.value = 'any';
+                anyOption.textContent = t('prob.any');
+                select.appendChild(anyOption);
+                
+                // Add quality range options
+                qualityRanges.forEach(range => {
+                    const option = document.createElement('option');
+                    option.value = range.value;
+                    option.textContent = range.label;
+                    select.appendChild(option);
+                });
+                
+                selectionDiv.appendChild(label);
+                selectionDiv.appendChild(select);
+                qualitySelections.appendChild(selectionDiv);
+            }
+        }
+        
+        // 暴露到全局供语言切换时调用
+        window.updateProbQualityLabels = updateQualitySelections;
 
             function handleTypeChange(selectElement, inputElement) {
                 const isAny = selectElement.value === 'any';

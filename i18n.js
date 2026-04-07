@@ -122,11 +122,24 @@ function getLanguage() {
  * data-i18n="key"           → textContent
  * data-i18n-title="key"     → title 属性
  * data-i18n-placeholder="key" → placeholder 属性
+ * data-i18n-n="value"       → 变量 {n}
+ * data-i18n-vars='{"k":"v"}' → 自定义变量
  */
 function applyTranslations() {
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
-        el.textContent = tSync(key);
+        const vars = {};
+        // 支持 data-i18n-n 简写
+        const n = el.getAttribute('data-i18n-n');
+        if (n !== null) vars.n = n;
+        // 支持 data-i18n-vars JSON 自定义变量
+        const varsJson = el.getAttribute('data-i18n-vars');
+        if (varsJson) {
+            try {
+                Object.assign(vars, JSON.parse(varsJson));
+            } catch (e) { /* ignore */ }
+        }
+        el.textContent = tSync(key, vars);
     });
     document.querySelectorAll('[data-i18n-title]').forEach(el => {
         const key = el.getAttribute('data-i18n-title');

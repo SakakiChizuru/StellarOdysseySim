@@ -245,7 +245,7 @@ const en = {
     'prob.exactly': 'Exactly',
     'prob.at_least': 'At Least',
     'prob.any': 'Any',
-    'prob.quality_label': 'Gatherable Node Quality:',
+    'prob.quality_label': 'Gatherable Node {n} Quality:',
 
     // ── Status/Button Text ─────────────────────────────────
     'status.calculating': 'Calculating...',
