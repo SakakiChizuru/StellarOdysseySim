@@ -82,6 +82,381 @@
             color: #fff;
             border-color: #4fa3ff;
         }
+
+        /* ── 副本及符文 ListView 样式 ────────────────────────── */
+        .solodungeons-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.2em;
+            margin-bottom: 0.75em;
+            padding: 0.5em 0;
+            border-bottom: 1px solid #2c3242;
+        }
+        .summary-item {
+            color: #b0b6c6;
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+        .summary-item strong,
+        .summary-item b {
+            color: #4fa3ff;
+        }
+
+        /* 外层容器：固定高度 + 滚动 */
+        .solodungeons-listview {
+            display: flex;
+            flex-direction: column;
+            max-height: 560px;
+            border: 1px solid #2c3242;
+            border-radius: 6px;
+            overflow: hidden;
+            font-size: 0.84em;
+        }
+
+        /* 固定表头区 */
+        .solodungeons-listview-header {
+            flex-shrink: 0;
+            overflow: hidden;
+            background: #23283a;
+            border-bottom: 2px solid #4fa3ff;
+        }
+        .solodungeons-listview-header table {
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: collapse;
+        }
+        .solodungeons-listview-header th {
+            color: #4fa3ff;
+            padding: 0.55em 0.9em;
+            text-align: left;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* 可滚动数据区 */
+        .solodungeons-listview-body {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        .solodungeons-listview-body table {
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: collapse;
+        }
+        .solodungeons-listview-body td {
+            padding: 0.45em 0.9em;
+            border-bottom: 1px solid #1e2333;
+            color: #e0e0e0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* 行交互 */
+        .solodungeons-listview-body tr {
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .solodungeons-listview-body tr:hover td {
+            background: #262d42;
+        }
+        .solodungeons-listview-body tr.selected td {
+            background: #1e3a5f;
+            outline: 1px solid #4fa3ff;
+        }
+        .solodungeons-listview-body tr.unreachable td {
+            opacity: 0.45;
+        }
+
+        /* 列宽定义 - 卡片式布局 (适配 480px panel) */
+        .sdt-dungeons th.sdt-col-score, .sdt-dungeons td.sdt-score { width: 55px; text-align: center; vertical-align: middle; }
+        .sdt-dungeons th.sdt-col-info, .sdt-dungeons td.sdt-info { width: auto; }
+        .sdt-dungeons th.sdt-col-action, .sdt-dungeons td.sdt-action { width: 32px; text-align: center; vertical-align: middle; }
+        .sdt-runes th.sdt-col-score, .sdt-runes td.sdt-score { width: 55px; text-align: center; vertical-align: middle; }
+        .sdt-runes th.sdt-col-info, .sdt-runes td.sdt-info { width: auto; }
+        .sdt-runes th.sdt-col-action, .sdt-runes td.sdt-action { width: 32px; text-align: center; vertical-align: middle; }
+
+        /* 向右箭头按钮样式 */
+        .sdt-action-btn {
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.15s, transform 0.15s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            border-radius: 4px;
+        }
+        .sdt-action-btn:hover {
+            opacity: 1;
+            transform: translateX(2px);
+            background: rgba(79, 163, 255, 0.15);
+        }
+        .sdt-action-btn.disabled {
+            opacity: 0.3;
+            cursor: default;
+            pointer-events: none;
+        }
+        .sdt-action-btn svg {
+            width: 16px;
+            height: 16px;
+            fill: #4fa3ff;
+        }
+
+        /* 已选路线列表样式 */
+        .solodungeons-routelist {
+            max-height: 700px;
+            overflow-y: auto;
+        }
+        .route-list-item {
+            display: flex;
+            align-items: center;
+            padding: 0.6em 0.8em;
+            border-bottom: 1px solid #1e2333;
+            gap: 0.8em;
+            transition: background 0.1s;
+        }
+        .route-list-item:hover {
+            background: #262d42;
+        }
+        .route-list-item .route-score {
+            font-size: 0.9em;
+            min-width: 45px;
+            text-align: center;
+        }
+        .route-list-item .route-info {
+            flex: 1;
+            font-size: 0.85em;
+        }
+        .route-list-item .route-coords {
+            font-family: monospace;
+            color: #a78bfa;
+            margin-bottom: 0.2em;
+        }
+        .route-list-item .route-type {
+            font-size: 0.8em;
+            color: #9ca3af;
+        }
+        .route-list-item .route-remove {
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.15s;
+            padding: 4px;
+        }
+        .route-list-item .route-remove:hover {
+            opacity: 1;
+        }
+        .route-list-item .route-remove svg {
+            width: 14px;
+            height: 14px;
+            fill: #ef4444;
+        }
+        .route-list-empty {
+            text-align: center;
+            color: #6b7280;
+            padding: 2em 1em;
+            font-size: 0.9em;
+        }
+
+        /* 路线条目选中高亮 */
+        .route-list-item.route-item-selected {
+            background: #1e2d4a;
+            border-left: 3px solid #4fa3ff;
+        }
+        .route-list-item.route-item-selected .route-coords {
+            color: #93c5fd;
+        }
+
+        /* 详细寻路面板 */
+        .route-path-detail-content {
+            margin-top: 0.8em;
+            max-height: 700px;
+            overflow-y: auto;
+        }
+        .route-path-detail-empty {
+            text-align: center;
+            color: #6b7280;
+            padding: 2em 1em;
+            font-size: 0.9em;
+        }
+        /* 寻路目标信息头 */
+        .rpd-header {
+            padding: 0.6em 0.8em;
+            background: #1a2035;
+            border-radius: 4px;
+            margin-bottom: 0.5em;
+            font-size: 0.85em;
+        }
+        .rpd-header-row {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5em;
+            flex-wrap: wrap;
+        }
+        .rpd-header-row + .rpd-header-row {
+            margin-top: 0.3em;
+        }
+        .rpd-label {
+            color: #6b7280;
+            font-size: 0.9em;
+            min-width: 40px;
+        }
+        .rpd-coord {
+            color: #a78bfa;
+            font-family: monospace;
+        }
+        .rpd-total-dist {
+            margin-left: auto;
+            color: #4fa3ff;
+            font-size: 0.9em;
+        }
+        /* 路径点列表（复用星图样式） */
+        .rpd-list {
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .rpd-list .list-item {
+            height: auto;
+            min-height: 52px;
+            padding: 8px 14px;
+        }
+        .rpd-list .list-item:hover {
+            background: rgba(79, 172, 254, 0.15);
+            border-left: 3px solid #4facfe;
+        }
+        .rpd-list .item-title {
+            font-size: 0.82em;
+            margin-bottom: 4px;
+        }
+        .rpd-list .item-description {
+            font-size: 0.82em;
+        }
+        .rpd-no-path {
+            text-align: center;
+            color: #ef4444;
+            padding: 1.5em 1em;
+            font-size: 0.85em;
+        }
+
+        /* 路线按钮样式 */
+        .btn-danger {
+            background: #dc2626;
+            color: #fff;
+            border: 1px solid #b91c1c;
+        }
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+        .btn-secondary {
+            background: #4b5563;
+            color: #fff;
+            border: 1px solid #374151;
+        }
+        .btn-secondary:hover {
+            background: #374151;
+        }
+
+        /* 卡片式信息布局 */
+        .sdt-info {
+            padding: 0.5em 0.9em !important;
+        }
+        .sdt-info-row {
+            display: flex;
+            align-items: center;
+            gap: 1.2em;
+            line-height: 1.6;
+        }
+        .sdt-coords-line {
+            font-family: monospace;
+            color: #a78bfa;
+            font-size: 1.05em;
+            margin-bottom: 0.3em;
+        }
+        .sdt-stats-line {
+            margin-bottom: 0.3em;
+        }
+        .sdt-dist-line {
+            font-size: 0.92em;
+            color: #9ca3af;
+        }
+        .sdt-stat {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3em;
+        }
+        .sdt-label {
+            color: #6b7280;
+            font-size: 0.9em;
+        }
+        .sdt-info .sdt-dist {
+            font-family: monospace;
+            color: #93c5fd;
+        }
+        .sdt-info .sdt-pfdist {
+            font-family: monospace;
+            color: #67e8f9;
+        }
+        .sdt-info .sdt-time {
+            color: #fbbf24;
+        }
+        .sdt-info .sdt-time.expired {
+            color: #ef4444;
+        }
+
+        /* 单元格颜色类 */
+        .sdt-score { font-weight: bold; text-align: center; }
+        .sdt-score.high  { color: #4ade80; }
+        .sdt-score.med   { color: #fbbf24; }
+        .sdt-score.low   { color: #f87171; }
+        .sdt-coords  { font-family: monospace; color: #a78bfa; }
+        .sdt-dist    { font-family: monospace; color: #93c5fd; }
+        .sdt-pfdist  { font-family: monospace; color: #67e8f9; }  /* pathfinder 距离 */
+        .sdt-time.expired { color: #f87171; }
+        .sdt-reward  { font-weight: 600; }
+        .sdt-diff    { font-weight: 600; }
+        .sdt-attempts { text-align: center; }
+        .sdt-quality { color: #f472b6; }
+        .sdt-tier    { text-align: center; color: #a78bfa; }
+
+        /* 分组标题 */
+        .sdt-section-title {
+            font-size: 0.95em;
+            font-weight: 600;
+            color: #93c5fd;
+            margin: 1.2em 0 0.4em;
+            padding-left: 0.2em;
+            letter-spacing: 0.03em;
+            display: flex;
+            align-items: center;
+            gap: 0.5em;
+        }
+        .sdt-section-title::before {
+            content: '';
+            display: inline-block;
+            width: 3px;
+            height: 1em;
+            background: #4fa3ff;
+            border-radius: 2px;
+        }
+
+        .loading {
+            color: #4fa3ff;
+            padding: 1em;
+        }
+        .error {
+            color: #f87171;
+            padding: 1em;
+        }
+        .empty-message {
+            color: #6b7280;
+            padding: 2em;
+            text-align: center;
+        }
+
         .tab-content {
             display: none;
             margin-bottom: 3em; /* Space for tabs */
@@ -682,6 +1057,11 @@
                 DisplayBoostPercent();
                 // 更新概率页面质量标签
                 if (typeof window.updateProbQualityLabels === 'function') window.updateProbQualityLabels();
+                // 更新副本TAB（使用缓存数据，只重新渲染 HTML，无 API 请求）
+                const sdOutput = document.getElementById('solodungeonsOutput');
+                if (sdOutput && sdOutput.innerHTML.trim() && typeof window.SoloDungeonsModule !== 'undefined') {
+                    window.SoloDungeonsModule.loadSoloDungeonsAndRunes(sdOutput, false); // false = 使用缓存
+                }
             });
             document.getElementById('langEn').addEventListener('click', async () => {
                 await setLanguage('en');
@@ -690,6 +1070,11 @@
                 DisplayBoostPercent();
                 // 更新概率页面质量标签
                 if (typeof window.updateProbQualityLabels === 'function') window.updateProbQualityLabels();
+                // 更新副本TAB（使用缓存数据，只重新渲染 HTML，无 API 请求）
+                const sdOutput = document.getElementById('solodungeonsOutput');
+                if (sdOutput && sdOutput.innerHTML.trim() && typeof window.SoloDungeonsModule !== 'undefined') {
+                    window.SoloDungeonsModule.loadSoloDungeonsAndRunes(sdOutput, false); // false = 使用缓存
+                }
             });
             // ── i18n 初始化结束 ───────────────────────────────────────
 
@@ -2786,6 +3171,47 @@
     </div>
     <!-- End Runes Tab -->
 
+    <!-- 副本及符文 Tab -->
+    <div id="solodungeons-tab" class="tab-content">
+        <div class="form-section" style="padding: 2em; display: flex; gap: 1em; flex-wrap: nowrap; overflow-x: auto; max-width: 100%;">
+            <!-- 左侧：副本及符文列表 -->
+            <div class="optimizer-block" style="width: 480px; min-width: 480px; max-width: 480px;">
+                <div class="block-label" data-i18n="block.dungeons_runes">副本及符文</div>
+                <div class="form-row">
+                    <button type="button" id="fetchSoloDungeonsBtn" class="btn-primary" data-i18n="btn.fetch_dungeons_runes">获取副本及符文</button>
+                </div>
+                <div id="solodungeonsOutput" style="margin-top: 1em; font-family: monospace; font-size: 0.9em; color: #e0e0e0; max-height: 700px; overflow: auto;"></div>
+            </div>
+            <!-- 右侧：已选路线列表 -->
+            <div class="optimizer-block" style="width: 480px; min-width: 480px; max-width: 480px;">
+                <div class="block-label" data-i18n="block.solodungeons_routelist">已选路线列表</div>
+                <!-- 保存/载入按钮 -->
+                <div class="route-actions" style="margin-top: 0.8em; display: flex; gap: 0.5em; flex-wrap: wrap; align-items: center;">
+                    <button type="button" id="saveRouteBtn" class="btn-primary" style="padding: 0.4em 0.8em; font-size: 0.85em;" data-i18n="solodungeons.save_route">保存路线</button>
+                    <select id="loadRouteSelect" class="route-select" style="flex: 1; min-width: 120px; padding: 0.4em; font-size: 0.85em;">
+                        <option value="" data-i18n="solodungeons.route_select_placeholder">-- 选择路线 --</option>
+                    </select>
+                    <button type="button" id="loadRouteBtn" class="btn-secondary" style="padding: 0.4em 0.8em; font-size: 0.85em;" data-i18n="solodungeons.load_route">载入</button>
+                    <button type="button" id="deleteRouteBtn" class="btn-danger" style="padding: 0.4em 0.8em; font-size: 0.85em;" data-i18n="solodungeons.delete_route">删除</button>
+                    <button type="button" id="clearRouteBtn" class="btn-secondary" style="padding: 0.4em 0.8em; font-size: 0.85em;" data-i18n="solodungeons.clear_route">清空</button>
+                </div>
+                <!-- 路线名称输入 -->
+                <div id="routeNameInput" style="margin-top: 0.5em; display: none;">
+                    <input type="text" id="newRouteName" data-i18n-placeholder="solodungeons.route_name_placeholder" placeholder="路线名称" style="width: 100%; padding: 0.4em; font-size: 0.85em;" />
+                </div>
+                <div id="solodungeonsRouteList" class="solodungeons-routelist" style="margin-top: 0.8em; font-family: monospace; font-size: 0.85em; color: #e0e0e0;"></div>
+            </div>
+            <!-- 最右侧：详细寻路面板 -->
+            <div class="optimizer-block" id="routePathDetailPanel" style="width: 480px; min-width: 480px; max-width: 480px;">
+                <div class="block-label" data-i18n="block.route_path_detail">详细寻路</div>
+                <div id="routePathDetailContent" class="route-path-detail-content">
+                    <div class="route-path-detail-empty" data-i18n="solodungeons.path_detail_hint">点击已选路线中的条目查看寻路详情</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End 副本及符文 Tab -->
+
     <!-- Tab bar -->
     <div class="tab-container">
         <div class="tab active" data-tab="battling-tab" data-i18n="tab.battling">战斗</div>
@@ -2794,6 +3220,7 @@
         <div class="tab" data-tab="calculate-utils" data-i18n="tab.calcutils">计算工具</div>
         <div class="tab" data-tab="probabilities-tab" data-i18n="tab.probabilities">概率</div>
         <div class="tab" data-tab="runes-tab" data-i18n="tab.runes">符文</div>
+        <div class="tab" data-tab="solodungeons-tab" data-i18n="tab.solodungeons">副本及符文</div>
         <div style="display: flex; align-items: center; gap: 0.5em; margin-left: 1em;">
             <button id="langZh" type="button" class="lang-btn active">中文</button>
             <button id="langEn" type="button" class="lang-btn">EN</button>
@@ -2844,6 +3271,10 @@
             }
         });
     </script>
+
+    <!-- Solo Dungeons Module -->
+    <script src="solodungeons.js"></script>
+
     <script>
         // Set last updated date/time
         const lastUpdated = document.getElementById('lastUpdated');
@@ -2903,6 +3334,7 @@
     <script src="script.js"></script>
     
     <!-- Implenting UniverseGrid -->
+    <script src="pathfinder.js"></script>
     <script src="universe_map.js"></script>
 
     <!-- Runes Path Optimizer -->

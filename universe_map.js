@@ -253,6 +253,13 @@ class UniverseMap {
 
 	setPlayerPosition(position) {
 		this.playerPosition = position;
+		// 保存玩家位置到 localStorage，供其他模块使用
+		if (position && typeof position.coordinate_x === 'number' && typeof position.coordinate_y === 'number') {
+			localStorage.setItem('player_position', JSON.stringify({
+				x: position.coordinate_x,
+				y: position.coordinate_y
+			}));
+		}
 		if (this.pulseAnimation) {
 			cancelAnimationFrame(this.pulseAnimation);
 		}
@@ -1149,7 +1156,7 @@ class UniverseMapExtended extends UniverseMap {
 		this.trajectoryAnimation = null;
 		this.trajectoryHueOffset = null;
 		this.hueShiftSpeed = 2;
-		this.universeGrid = new UniverseGrid(2000, 2000);
+		this.universeGrid = new PathfinderGrid(2000, 2000);
 	}
 
 	pushTrajectories(trajectories) {
@@ -1472,350 +1479,9 @@ class UniverseMapExtended extends UniverseMap {
 	}
 }
 
-class CoordinateParser {
-	static parse(input) {
+// CoordinateParser is now in pathfinder.js
 
-		if (typeof input === "object") {
-			if (Array.isArray(input)) {
-				if (input.length !== 2)
-					throw new Error("Array must have two elements.");
-				return { x: Number(input[0]), y: Number(input[1]) };
-			} else if (input !== null && "x" in input && "y" in input) {
-				return { x: Number(input.x), y: Number(input.y) };
-			} else if (
-				input !== null &&
-				"coordinate_x" in input &&
-				"coordinate_y" in input
-			) {
-				return `[${input.coordinate_x},${input.coordinate_y}]`;
-			} else {
-				throw new Error("Object must contain x and y properties.");
-			}
-		}
-
-		if (typeof input !== "string") {
-			throw new Error("Unsupported input type.");
-		}
-
-		// 统一处理字符串
-		const normalized = this.#normalizeString(input);
-		const match = normalized.match(/(-?\d+(\.\d+)?)[,.;\s](-?\d+(\.\d+)?)/);
-		if (match) {
-			return {
-				x: Number(match[1]),
-				y: Number(match[3]),
-			};
-		}
-
-		// 处理 x=100,y=200 格式
-		const objMatch = normalized.match(
-			/x\s*[=:]?\s*(-?\d+(\.\d+)?)[,;]\s*y\s*[=:]?\s*(-?\d+(\.\d+)?)/
-		);
-		if (objMatch) {
-			return {
-				x: Number(objMatch[1]),
-				y: Number(objMatch[3]),
-			};
-		}
-
-		throw new Error("Unable to parse coordinate string: " + input);
-	}
-
-	// 统一字符串标准化处理
-	static #normalizeString(str) {
-		// 全角转半角
-		str = str.replace(/[\uFF01-\uFF5E]/g, (ch) =>
-			String.fromCharCode(ch.charCodeAt(0) - 0xfee0)
-		);
-		str = str.replace(/\u3000/g, " "); // 全角空格
-
-		// 全角逗号分号替换为半角
-		str = str.replace(/[，、；]/g, (s) => {
-			if (s === "，") return ",";
-			return ";";
-		});
-
-		// 替换其他分隔符为统一格式
-		str = str.replace(/[;、]/g, ","); // 全部变成逗号
-
-		// 把空白替换为逗号
-		str = str.replace(/\s+/g, ",");
-
-		// 可能出现连续逗号，合并之
-		str = str.replace(/,+/g, ",");
-
-		// 去掉前后逗号
-		str = str.replace(/^,|,$/g, "");
-
-		return str.toLowerCase();
-	}
-
-	static isValidCoordinator(input) {
-		return (
-			input &&
-			typeof input === "object" &&
-			typeof input.x === "number" &&
-			typeof input.y === "number"
-		);
-	}
-
-	static normalize(input) {
-		return this.isValidCoordinator(input) ? input : this.parse(input);
-	}
-}
-
-class UniverseGrid {
-	constructor(maxX, maxY) {
-		const step = 250,
-			gap = 750,
-			unitDistance = 10;
-		this.unitDistance = unitDistance;
-
-		this.initialPoints = [];
-		this.pathfinderPaths = [];
-
-		for (let x = step; x <= maxX; x += gap) {
-			for (let y = step; y <= maxY; y += gap) {
-				this.initialPoints.push({ x, y });
-			}
-		}
-		this.portedSpaceStations = new Set();
-		this.kdTree = this.#buildKDTree(this.initialPoints);
-	}
-
-	// 核心通用坐标解析
-	#parsePoint(input) {
-		return CoordinateParser.parse(input);
-	}
-
-	#parseMultiplyPoints(...args) {
-		if (args.length === 1) {
-			if (Array.isArray(args[0])) {
-				return args[0].map((ele) => this.#parsePoint(ele));
-			} else if (typeof args[0] === "object") {
-				return Object.values(args[0]).map((value) =>
-					this.#parsePoint(value)
-				);
-			}
-		} else if (
-			args.length === 4 &&
-			args.every((a) => typeof a === "number")
-		) {
-			return [
-				{ x: args[0], y: args[1] },
-				{ x: args[2], y: args[3] },
-			];
-		} else if (args.length === 2) {
-			return [this.#parsePoint(args[0]), this.#parsePoint(args[1])];
-		} else {
-			throw new Error("Invalid arguments for two points");
-		}
-	}
-
-	calculateDistance(...args) {
-		const [p1, p2] = this.#parseMultiplyPoints(...args);
-		return Math.hypot(p1.x - p2.x, p1.y - p2.y) * this.unitDistance;
-	}
-
-	#addPortedSpaceStation(...args) {
-		if (args.length === 0) return;
-		const point = this.#parsePoint(...args);
-		if (point.x < 0 || point.x > 2000 || point.y < 0 || point.y > 2000) {
-			throw new Error(`坐标超出范围: (${point.x}, ${point.y})`);
-		}
-		this.portedSpaceStations.add(point);
-	}
-
-
-	addPortedSpaceStations(stationInfos) {
-		if (Array.isArray(stationInfos)) {
-			stationInfos.forEach((info) => {
-				if (info.space_portal && info.space_portal == true) {	
-					const coordPoints = {x : info.system.coordinate_x, y : info.system.coordinate_y};				
-					this.#addPortedSpaceStation(coordPoints);
-				}
-			});
-		}
-	}
-
-	clearSpaceStations() {
-		this.portedSpaceStations = new Set();
-	}
-
-	findNearestPoint(input) {
-		const target = this.#parsePoint(input);
-		const kdResult = this.#searchKDTree(target);
-		const starterSystemOnly = {
-			nearest: kdResult.point,
-			distance: kdResult.distance * this.unitDistance,
-		};
-
-		let best = { point: kdResult.point, distance: kdResult.distance };
-		for (const station of this.portedSpaceStations) {
-			const d = Math.hypot(target.x - station.x, target.y - station.y);
-			if (d < best.distance) {
-				best = { point: station, distance: d };
-			}
-		}
-		const withSpaceStation = {
-			nearest: best.point,
-			distance: best.distance * this.unitDistance,
-		};
-
-		return { starterSystemOnly, withSpaceStation };
-	}
-
-	findShortestPath(startInput, endInput) {
-		const start = this.#parsePoint(startInput);
-		const end = this.#parsePoint(endInput);
-
-		const starterPath = this.#runShortestPath(start, end, true);
-		const fullPath = this.#runShortestPath(start, end, false);
-
-		return {
-			starterSystemOnly: starterPath,
-			withSpaceStation: fullPath,
-		};
-	}
-
-	#calculateSegmentDistance(from, to, starterOnly) {
-		if (this.isStarter(from) && this.isStarter(to)) return 0;
-		if (!starterOnly && this.isStation(from) && this.isStation(to))
-			return 0;
-		return Math.hypot(from.x - to.x, from.y - to.y) * this.unitDistance;
-	}
-
-	#runShortestPath(start, end, starterOnly) {
-		const nodes = [start, end, ...this.initialPoints];
-		if (!starterOnly) nodes.push(...this.portedSpaceStations);
-
-		const edges = new Map();
-
-		for (let i = 0; i < nodes.length; i++) {
-			edges.set(i, []);
-			for (let j = 0; j < nodes.length; j++) {
-				if (i === j) continue;
-
-				let dist;
-				if (this.isStarter(nodes[i]) && this.isStarter(nodes[j])) {
-					dist = 0;
-				} else if (
-					!starterOnly &&
-					this.isStation(nodes[i]) &&
-					this.isStation(nodes[j])
-				) {
-					dist = 0;
-				} else {
-					dist =
-						Math.hypot(
-							nodes[i].x - nodes[j].x,
-							nodes[i].y - nodes[j].y
-						) * this.unitDistance;
-				}
-				edges.get(i).push({ to: j, cost: dist });
-			}
-		}
-
-		const { distance, path } = this.#dijkstra(edges, 0, 1, nodes);
-		const pathPoints = path.map((idx) => nodes[idx]);
-
-		const trajectories = [];
-		for (let i = 0; i < pathPoints.length - 1; i++) {
-			const from = pathPoints[i];
-			const to = pathPoints[i + 1];
-			const segDistance = this.#calculateSegmentDistance(
-				from,
-				to,
-				starterOnly
-			);
-
-			trajectories.push({ from, to, distance: segDistance });
-		}
-
-		return { distance, path: pathPoints, trajectories };
-	}
-
-	#dijkstra(edges, startIdx, endIdx, nodes) {
-		const dist = Array(nodes.length).fill(Infinity);
-		const prev = Array(nodes.length).fill(null);
-		const visited = new Set();
-		dist[startIdx] = 0;
-
-		while (visited.size < nodes.length) {
-			let u = -1,
-				minDist = Infinity;
-			for (let i = 0; i < nodes.length; i++) {
-				if (!visited.has(i) && dist[i] < minDist) {
-					minDist = dist[i];
-					u = i;
-				}
-			}
-			if (u === -1) break;
-
-			visited.add(u);
-			for (const edge of edges.get(u)) {
-				if (dist[u] + edge.cost < dist[edge.to]) {
-					dist[edge.to] = dist[u] + edge.cost;
-					prev[edge.to] = u;
-				}
-			}
-		}
-
-		const path = [];
-		for (let at = endIdx; at !== null; at = prev[at]) {
-			path.push(at);
-		}
-		path.reverse();
-
-		return { distance: dist[endIdx], path };
-	}
-
-	isStarter(p) {
-		const pReal = CoordinateParser.normalize(p);
-		return this.initialPoints.some(
-			(pt) => pt.x === pReal.x && pt.y === pReal.y
-		);
-	}
-
-	isStation(p) {
-		const pReal = CoordinateParser.normalize(p);
-		return Array.from(this.portedSpaceStations).some(
-			(pt) => pt.x === pReal.x && pt.y === pReal.y
-		);
-	}
-
-	#buildKDTree(points, depth = 0) {
-		if (points.length === 0) return null;
-		const axis = depth % 2 ? "y" : "x";
-		points.sort((a, b) => a[axis] - b[axis]);
-		const median = Math.floor(points.length / 2);
-		return {
-			point: points[median],
-			left: this.#buildKDTree(points.slice(0, median), depth + 1),
-			right: this.#buildKDTree(points.slice(median + 1), depth + 1),
-			axis,
-		};
-	}
-
-	#searchKDTree(target) {
-		let best = { point: null, distance: Infinity };
-		const search = (node) => {
-			if (!node) return;
-			const d = Math.hypot(
-				target.x - node.point.x,
-				target.y - node.point.y
-			);
-			if (d < best.distance) best = { point: node.point, distance: d };
-			const diff = target[node.axis] - node.point[node.axis];
-			const primary = diff < 0 ? node.left : node.right;
-			const secondary = diff < 0 ? node.right : node.left;
-			search(primary);
-			if (Math.abs(diff) < best.distance) search(secondary);
-		};
-		search(this.kdTree);
-		return best;
-	}
-}
+// UniverseGrid is now PathfinderGrid in pathfinder.js
 
 // Initialize the map when the DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
@@ -2019,6 +1685,8 @@ document.addEventListener("DOMContentLoaded", () => {
 				}
 
 				const journalData = await journalResponse.json();
+				// 暴露到全局，供其他模块使用
+				window.stellarOdysseyJournalData = journalData;
 				if (
 					journalData.fullJournal &&
 					journalData.fullJournal.length > 0
@@ -2047,8 +1715,8 @@ document.addEventListener("DOMContentLoaded", () => {
 					);
 				}
 
-				const systemsData = await systemsResponse.json();
-				universeMap.loadSystems(systemsData);
+                const systemsData = await systemsResponse.json();
+                universeMap.loadSystems(systemsData);
 
 
                 const userResponse = await fetch('https://api.stellarodyssey.app/api/public/user', {
@@ -2066,7 +1734,18 @@ document.addEventListener("DOMContentLoaded", () => {
                             y: ss.system.coordinate_y
                         }));
 
-						universeMap.universeGrid.addPortedSpaceStations(userData.data.squadronSpaceStations);
+                        // 通过 PathfinderService 统一管理空间站（单例，各 TAB 共享）
+                        // T0 级模块强制重新初始化（force=true），会覆盖之前的数据
+                        if (window.PathfinderService) {
+                            window.PathfinderService.initFromUserData(userData.data.squadronSpaceStations, true);
+                            // 让 universeMap 复用同一个 grid 实例，保持星图寻路与副本模块一致
+                            universeMap.universeGrid = window.PathfinderService.getGrid();
+                        } else {
+                            // 兜底：PathfinderService 未加载时沿用旧逻辑
+                            universeMap.universeGrid.clearSpaceStations();
+                            universeMap.universeGrid.addPortedSpaceStations(userData.data.squadronSpaceStations);
+                            window.stellarOdysseyPathfinderGrid = universeMap.universeGrid;
+                        }
                     }
                 }
 
