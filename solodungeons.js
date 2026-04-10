@@ -862,14 +862,19 @@
             return;
         }
 
+        // 确保 playerPos 有值（可能数据已加载但 playerPos 尚未同步）
+        let pos = playerPos;
+        if (!pos) {
+            pos = getPlayerPosition();
+        }
+
         let totalDist = 0;
-        let lastPos = playerPos;
         for (const route of selectedRoutes) {
             const coords = getCoordinates(route);
-            if (coords && lastPos) {
-                const pfResult = getPathfinderDistance(lastPos.x, lastPos.y, coords.x, coords.y);
+            if (coords && pos) {
+                const pfResult = getPathfinderDistance(pos.x, pos.y, coords.x, coords.y);
                 totalDist += pfResult.distance;
-                lastPos = coords;
+                pos = coords;
             } else {
                 break;
             }
