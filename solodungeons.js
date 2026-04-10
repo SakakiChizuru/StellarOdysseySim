@@ -493,10 +493,12 @@
         const container = document.getElementById('solodungeonsOutput');
         if (!container) return;
 
+        const startPos = getCurrentStartPos();
         console.log('[SoloDungeons] recalculateAndRender:', {
             remainingDungeonsCount: remainingDungeons.length,
             remainingRunesCount: remainingRunes.length,
-            selectedRoutesCount: selectedRoutes.length
+            selectedRoutesCount: selectedRoutes.length,
+            startPos
         });
 
         // 检测 pathfinder 是否可用
@@ -505,7 +507,6 @@
             : window.stellarOdysseyPathfinderGrid;
         const pfAvailable = !!(pfGrid && typeof pfGrid.findShortestPath === 'function');
 
-        const startPos = getCurrentStartPos();
         const playerPosStr = startPos ? `[${startPos.x}, ${startPos.y}]` : t('solodungeons.unknown', '未知');
 
         let html = '';
