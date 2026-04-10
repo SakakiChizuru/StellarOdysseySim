@@ -626,9 +626,9 @@
         })();
         const timeScore = Math.min(100, Math.max(0, timeRemainingHours / 19 * 100)); // open window: 6-19h -> 19h=100分
         const rewardMod = item.reward_modifier || 0;
-        const rewardScore = Math.min(100, Math.max(0, (rewardMod + 50) / 100 * 100));
+        const rewardScore = Math.min(100, Math.max(0, (rewardMod + 28) / 78 * 100)); // range: -28% ~ +50%
         const diffMod = item.difficulty_modifier || 0;
-        const difficultyScore = Math.min(100, Math.max(0, (50 - diffMod) / 100 * 100));
+        const difficultyScore = Math.min(100, Math.max(0, (20 - diffMod) / 40 * 100)); // range: -20% ~ +20%
         const attempts = item.attempts || 0;
         const attemptsScore = Math.min(100, attempts * (100 / 12)); // max attempts: 2-12 -> 12次=100分
 
