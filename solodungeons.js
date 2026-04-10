@@ -512,7 +512,8 @@
 
         // 单人副本部分
         if (remainingDungeons.length > 0) {
-            const scoredDungeons = remainingDungeons.map(d => ({ ...d, ...calculateScore(d, startPos) }))
+            const dungeonBounds = computeDistanceBounds(remainingDungeons, startPos);
+            const scoredDungeons = remainingDungeons.map(d => ({ ...d, ...calculateScore(d, startPos, dungeonBounds) }))
                 .sort((a, b) => b.score - a.score);
             const reachable = scoredDungeons.filter(d => d.details.canReach).length;
             html += `<div class="sdt-section-title">${t('block.solodungeons', '单人副本')}</div>`;
@@ -526,7 +527,8 @@
 
         // 掉落符文部分
         if (remainingRunes.length > 0) {
-            const scoredRunes = remainingRunes.map(r => ({ ...r, ...calculateScore(r, startPos) }))
+            const runeBounds = computeDistanceBounds(remainingRunes, startPos);
+            const scoredRunes = remainingRunes.map(r => ({ ...r, ...calculateScore(r, startPos, runeBounds) }))
                 .sort((a, b) => b.score - a.score);
             const reachable = scoredRunes.filter(r => r.details.canReach).length;
             html += `<div class="sdt-section-title" style="margin-top:1.4em">${t('block.runedrops', '掉落符文')}</div>`;
@@ -561,9 +563,35 @@
     }
 
     /**
-     * 计算副本评分（使用寻路距离）
+     * 计算一批条目的距离上下限（用于距离评分归一化）
+     * @param {Array} items     - 条目列表
+     * @param {Object} startPos - 起点 {x, y}
+     * @returns {{ minDist: number, maxDist: number }}
      */
-    function calculateScore(item, playerPos) {
+    function computeDistanceBounds(items, startPos) {
+        if (!startPos || items.length === 0) return { minDist: 0, maxDist: 1 };
+        let minDist = Infinity, maxDist = -Infinity;
+        for (const item of items) {
+            const coords = getCoordinates(item);
+            if (!coords) continue;
+            const pfResult = getPathfinderDistance(startPos.x, startPos.y, coords.x, coords.y);
+            const d = pfResult.distance;
+            if (d < minDist) minDist = d;
+            if (d > maxDist) maxDist = d;
+        }
+        if (!isFinite(minDist)) return { minDist: 0, maxDist: 1 };
+        // 避免 min === max 时除以零
+        if (minDist === maxDist) return { minDist, maxDist: maxDist + 1 };
+        return { minDist, maxDist };
+    }
+
+    /**
+     * 计算副本评分（使用寻路距离）
+     * @param {Object} item       - 副本/符文条目
+     * @param {Object} playerPos  - 起点 {x, y}
+     * @param {Object} distBounds - 当前列表的距离上下限 { minDist, maxDist }
+     */
+    function calculateScore(item, playerPos, distBounds) {
         if (!playerPos) {
             return { score: 0, details: { canReach: false, noPlayerPos: true } };
         }
@@ -585,7 +613,16 @@
             return { score: -1, details: { linearDistance, distance, isPathfinder: pfResult.isPathfinder, timeRemainingHours, canReach: false } };
         }
 
-        const distanceScore = Math.max(0, 100 * Math.exp(-distance / 500));
+        const distanceScore = (() => {
+            if (!distBounds) {
+                // 无 bounds 时降级为指数衰减（兼容外部调用）
+                return Math.max(0, 100 * Math.exp(-distance / 500));
+            }
+            const { minDist, maxDist } = distBounds;
+            if (maxDist === minDist) return 100;
+            // 最近=100, 最远=0，线性归一
+            return Math.max(0, Math.min(100, (maxDist - distance) / (maxDist - minDist) * 100));
+        })();
         const timeScore = Math.min(100, Math.max(0, timeRemainingHours / 19 * 100)); // open window: 6-19h -> 19h=100分
         const rewardMod = item.reward_modifier || 0;
         const rewardScore = Math.min(100, Math.max(0, (rewardMod + 50) / 100 * 100));
@@ -683,7 +720,8 @@
 
         // 单人副本部分
         if (remainingDungeons.length > 0) {
-            scoredDungeons = remainingDungeons.map(d => ({ ...d, ...calculateScore(d, startPos) }))
+            const dungeonBounds = computeDistanceBounds(remainingDungeons, startPos);
+            scoredDungeons = remainingDungeons.map(d => ({ ...d, ...calculateScore(d, startPos, dungeonBounds) }))
                 .sort((a, b) => b.score - a.score);
 
             const reachable = scoredDungeons.filter(d => d.details.canReach).length;
@@ -698,7 +736,8 @@
 
         // 掉落符文部分
         if (remainingRunes.length > 0) {
-            scoredRunes = remainingRunes.map(r => ({ ...r, ...calculateScore(r, startPos) }))
+            const runeBounds = computeDistanceBounds(remainingRunes, startPos);
+            scoredRunes = remainingRunes.map(r => ({ ...r, ...calculateScore(r, startPos, runeBounds) }))
                 .sort((a, b) => b.score - a.score);
 
             const reachable = scoredRunes.filter(r => r.details.canReach).length;
