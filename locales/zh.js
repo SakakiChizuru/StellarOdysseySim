@@ -279,6 +279,7 @@ const zh = {
     'solodungeons.route_select_placeholder': '-- 选择路线 --',
     'solodungeons.route_name_placeholder': '路线名称',
     'solodungeons.route_items_count': '项',
+    'solodungeons.total_distance': '总寻路距离',
     // 详细寻路面板
     'block.route_path_detail': '详细寻路',
     'solodungeons.path_detail_hint': '点击已选路线中的条目查看寻路详情',

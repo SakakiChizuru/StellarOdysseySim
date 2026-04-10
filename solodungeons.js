@@ -851,6 +851,34 @@
     }
 
     /**
+     * 计算并更新已选路线标题右侧的"总寻路距离"
+     */
+    function updateRouteListTotalDistance() {
+        const el = document.getElementById('routeListTotalDistance');
+        if (!el) return;
+
+        if (selectedRoutes.length === 0) {
+            el.textContent = '';
+            return;
+        }
+
+        let totalDist = 0;
+        let lastPos = playerPos;
+        for (const route of selectedRoutes) {
+            const coords = getCoordinates(route);
+            if (coords && lastPos) {
+                const pfResult = getPathfinderDistance(lastPos.x, lastPos.y, coords.x, coords.y);
+                totalDist += pfResult.distance;
+                lastPos = coords;
+            } else {
+                break;
+            }
+        }
+
+        el.textContent = `${t('solodungeons.total_distance', '总寻路距离')}: ${Math.round(totalDist)}`;
+    }
+
+    /**
      * 渲染已选路线列表
      */
     function renderRouteList() {
@@ -894,6 +922,9 @@
                 }
             });
         });
+
+        // 更新标题右侧的总寻路距离
+        updateRouteListTotalDistance();
 
         // 绑定条目点击事件（点击整行触发详细寻路，排除点击删除按钮的情况）
         container.querySelectorAll('.route-list-item').forEach((item, index) => {
@@ -1555,6 +1586,7 @@
                     }
                     selectedRoutes = [];
                     recalculateAndRender();
+                    updateRouteListTotalDistance();
                 }
             });
         }

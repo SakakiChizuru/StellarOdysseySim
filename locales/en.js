@@ -279,6 +279,7 @@ const en = {
     'solodungeons.route_select_placeholder': '-- Select Route --',
     'solodungeons.route_name_placeholder': 'Route name',
     'solodungeons.route_items_count': ' items',
+    'solodungeons.total_distance': 'Total Distance',
     // Path Detail Panel
     'block.route_path_detail': 'Path Detail',
     'solodungeons.path_detail_hint': 'Click a route item to view pathfinding details',
