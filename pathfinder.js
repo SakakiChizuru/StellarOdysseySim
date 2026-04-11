@@ -227,6 +227,14 @@ class PathfinderGrid {
 
     /**
      * 查找最短路径
+     * 
+     * 核心逻辑（3种方案取最优）：
+     * 1. 网格点网络：起点 → 最近网格点 [飞行] → 网格点跳转 [0距离] → 最近网格点 → 终点 [飞行]
+     * 2. 空间站网络：起点 → 最近空间站 [飞行] → 空间站跳转 [0距离] → 最近空间站 → 终点 [飞行]
+     * 3. 直接飞行：起点 → 终点 [飞行]
+     * 
+     * 两个0距离网络完全隔离，不能互通。
+     * 
      * @param {any} startInput - 起点坐标
      * @param {any} endInput - 终点坐标
      * @returns {Object} 包含 starterSystemOnly 和 withSpaceStation 两种路径结果
@@ -244,96 +252,229 @@ class PathfinderGrid {
         };
     }
 
-    #calculateSegmentDistance(from, to, starterOnly) {
-        if (this.isStarter(from) && this.isStarter(to)) return 0;
-        if (!starterOnly && this.isStation(from) && this.isStation(to))
-            return 0;
-        return Math.hypot(from.x - to.x, from.y - to.y) * this.unitDistance;
-    }
-
+    /**
+     * 重构后的最短路径算法
+     * 
+     * @param {Object} start - 起点坐标
+     * @param {Object} end - 终点坐标
+     * @param {boolean} starterOnly - 是否只使用网格点网络
+     * @returns {Object} { distance, path, trajectories }
+     */
     #runShortestPath(start, end, starterOnly) {
-        const nodes = [start, end, ...this.initialPoints];
-        if (!starterOnly) nodes.push(...this.portedSpaceStations);
-
-        const edges = new Map();
-
-        for (let i = 0; i < nodes.length; i++) {
-            edges.set(i, []);
-            for (let j = 0; j < nodes.length; j++) {
-                if (i === j) continue;
-
-                let dist;
-                if (this.isStarter(nodes[i]) && this.isStarter(nodes[j])) {
-                    dist = 0;
-                } else if (
-                    !starterOnly &&
-                    this.isStation(nodes[i]) &&
-                    this.isStation(nodes[j])
-                ) {
-                    dist = 0;
-                } else {
-                    dist =
-                        Math.hypot(
-                            nodes[i].x - nodes[j].x,
-                            nodes[i].y - nodes[j].y
-                        ) * this.unitDistance;
-                }
-                edges.get(i).push({ to: j, cost: dist });
-            }
+        // 方案C：直接飞行
+        const directDistance = Math.hypot(end.x - start.x, end.y - start.y) * this.unitDistance;
+        
+        // 方案A：网格点网络
+        const starterResult = this.#calcNetworkPath(start, end, 'starter', starterOnly);
+        
+        // 方案B：空间站网络（如果不禁用）
+        const stationResult = starterOnly ? null : this.#calcNetworkPath(start, end, 'station', false);
+        
+        // 比较所有方案
+        const candidates = [
+            { type: 'direct', distance: directDistance, path: [start, end] },
+            { type: 'starter-network', ...starterResult },
+        ];
+        if (stationResult) {
+            candidates.push({ type: 'station-network', ...stationResult });
         }
-
-        const { distance, path } = this.#dijkstra(edges, 0, 1, nodes);
-        const pathPoints = path.map((idx) => nodes[idx]);
-
-        const trajectories = [];
-        for (let i = 0; i < pathPoints.length - 1; i++) {
-            const from = pathPoints[i];
-            const to = pathPoints[i + 1];
-            const segDistance = this.#calculateSegmentDistance(
-                from,
-                to,
-                starterOnly
-            );
-
-            trajectories.push({ from, to, distance: segDistance });
-        }
-
-        return { distance, path: pathPoints, trajectories };
+        
+        // 选择最短方案
+        const best = candidates.reduce((a, b) => a.distance <= b.distance ? a : b);
+        
+        // 构建轨迹
+        const trajectories = this.#buildTrajectories(best.path, best.type, starterOnly);
+        
+        return {
+            distance: best.distance,
+            path: best.path,
+            trajectories,
+        };
     }
 
-    #dijkstra(edges, startIdx, endIdx, nodes) {
-        const dist = Array(nodes.length).fill(Infinity);
-        const prev = Array(nodes.length).fill(null);
-        const visited = new Set();
-        dist[startIdx] = 0;
-
-        while (visited.size < nodes.length) {
-            let u = -1,
-                minDist = Infinity;
-            for (let i = 0; i < nodes.length; i++) {
-                if (!visited.has(i) && dist[i] < minDist) {
-                    minDist = dist[i];
-                    u = i;
-                }
-            }
-            if (u === -1) break;
-
-            visited.add(u);
-            for (const edge of edges.get(u)) {
-                if (dist[u] + edge.cost < dist[edge.to]) {
-                    dist[edge.to] = dist[u] + edge.cost;
-                    prev[edge.to] = u;
-                }
+    /**
+     * 计算网络路径的总距离和路径点
+     * 
+     * @param {Object} start - 起点
+     * @param {Object} end - 终点
+     * @param {'starter'|'station'} networkType - 网络类型
+     * @param {boolean} starterOnly - 是否只使用网格点（用于网格点网络）
+     * @returns {Object} { distance, path }
+     */
+    #calcNetworkPath(start, end, networkType, starterOnly) {
+        let networkNodes, isOnNetworkFn;
+        
+        if (networkType === 'starter') {
+            networkNodes = this.initialPoints;
+            isOnNetworkFn = (p) => this.isStarter(p);
+        } else {
+            networkNodes = Array.from(this.portedSpaceStations);
+            isOnNetworkFn = (p) => this.isStation(p);
+        }
+        
+        if (networkNodes.length === 0) {
+            return { distance: Infinity, path: [] };
+        }
+        
+        // STEP1: 找起点最近的入口节点 + 距离
+        let entryNode = null, entryDist = Infinity;
+        for (const node of networkNodes) {
+            const d = Math.hypot(node.x - start.x, node.y - start.y) * this.unitDistance;
+            if (d < entryDist) {
+                entryDist = d;
+                entryNode = node;
             }
         }
-
-        const path = [];
-        for (let at = endIdx; at !== null; at = prev[at]) {
-            path.push(at);
+        
+        // STEP2: 找离终点最近的出口节点 + 距离
+        let exitNode = null, exitDist = Infinity;
+        for (const node of networkNodes) {
+            const d = Math.hypot(node.x - end.x, node.y - end.y) * this.unitDistance;
+            if (d < exitDist) {
+                exitDist = d;
+                exitNode = node;
+            }
         }
-        path.reverse();
+        
+        // 如果起点/终点已经在网络上，对应距离为0
+        if (isOnNetworkFn(start)) {
+            // 起点在网络上，找离起点最近的网络节点（可能是自己）
+            entryDist = 0;
+            entryNode = this.#findNearestNode(start, networkNodes);
+        }
+        if (isOnNetworkFn(end)) {
+            exitDist = 0;
+            exitNode = this.#findNearestNode(end, networkNodes);
+        }
+        
+        // STEP3: 在网络内跳转（0距离）
+        const networkPath = this.#findNetworkPath(entryNode, exitNode, networkType, starterOnly);
+        
+        // 总距离
+        const totalDist = entryDist + exitDist; // 网络内跳转 = 0
+        
+        // 完整路径：起点 → 入口 → 网络路径 → 出口 → 终点
+        const fullPath = [start];
+        if (entryNode && (entryDist > 0 || !this.#pointsEqual(entryNode, start))) {
+            fullPath.push(entryNode);
+        }
+        // 插入网络路径（跳过重复的端点）
+        for (const node of networkPath) {
+            if (!this.#pointsEqual(node, fullPath[fullPath.length - 1])) {
+                fullPath.push(node);
+            }
+        }
+        if (exitNode && !this.#pointsEqual(exitNode, fullPath[fullPath.length - 1])) {
+            fullPath.push(exitNode);
+        }
+        if (!this.#pointsEqual(end, fullPath[fullPath.length - 1])) {
+            fullPath.push(end);
+        }
+        
+        return { distance: totalDist, path: fullPath };
+    }
 
-        return { distance: dist[endIdx], path };
+    /**
+     * 在网络内找两点之间的路径
+     * 
+     * @param {Object} start - 网络起点
+     * @param {Object} end - 网络终点
+     * @param {'starter'|'station'} networkType - 网络类型
+     * @param {boolean} starterOnly - 是否只使用网格点
+     * @returns {Array} 网络内的路径点数组
+     */
+    #findNetworkPath(start, end, networkType, starterOnly) {
+        // 如果是网格点网络：网格点之间0距离
+        // 如果是空间站网络：空间站之间0距离
+        // 两个网络完全隔离
+        
+        // 这里使用简化逻辑：对于0距离网络，两点之间可以"直接跳转"
+        // 返回路径为 [start, end]（中间可能有其他节点用于展示）
+        
+        // 简单情况：起点=终点
+        if (this.#pointsEqual(start, end)) {
+            return [start];
+        }
+        
+        // 对于0距离网络，我们可以在任意两个节点间跳转
+        // 为了展示目的，可以选择经过其他节点，但实际上0距离怎么走都一样
+        
+        // 简单实现：直接返回 [start, end]
+        // 如果需要更详细的路径，可以在将来扩展
+        return [start, end];
+    }
+
+    /**
+     * 查找最近的节点
+     */
+    #findNearestNode(point, nodes) {
+        let nearest = null, minDist = Infinity;
+        for (const node of nodes) {
+            const d = Math.hypot(node.x - point.x, node.y - point.y);
+            if (d < minDist) {
+                minDist = d;
+                nearest = node;
+            }
+        }
+        return nearest;
+    }
+
+    /**
+     * 比较两个点是否相等
+     */
+    #pointsEqual(a, b) {
+        return Math.abs(a.x - b.x) < 0.001 && Math.abs(a.y - b.y) < 0.001;
+    }
+
+    /**
+     * 构建轨迹数组
+     */
+    #buildTrajectories(path, pathType, starterOnly) {
+        const trajectories = [];
+        
+        for (let i = 0; i < path.length - 1; i++) {
+            const from = path[i];
+            const to = path[i + 1];
+            
+            // 判断这一跳的类型
+            let hopType, dist;
+            if (pathType === 'direct') {
+                hopType = 'direct';
+                dist = Math.hypot(to.x - from.x, to.y - from.y) * this.unitDistance;
+            } else if (pathType === 'starter-network') {
+                hopType = this.#classifyHop(from, to, 'starter');
+                // 网格点之间0距离
+                dist = (hopType === 'starter-jump') ? 0 : 
+                    Math.hypot(to.x - from.x, to.y - from.y) * this.unitDistance;
+            } else if (pathType === 'station-network') {
+                hopType = this.#classifyHop(from, to, 'station');
+                // 空间站之间0距离
+                dist = (hopType === 'station-jump') ? 0 : 
+                    Math.hypot(to.x - from.x, to.y - from.y) * this.unitDistance;
+            } else {
+                hopType = 'flight';
+                dist = Math.hypot(to.x - from.x, to.y - from.y) * this.unitDistance;
+            }
+            
+            // 跳过距离为0的轨迹（除非是明确标注的网络跳转）
+            if (dist > 0 || hopType === 'starter-jump' || hopType === 'station-jump') {
+                trajectories.push({ from, to, distance: dist, hopType });
+            }
+        }
+        
+        return trajectories;
+    }
+
+    /**
+     * 分类单跳的类型
+     */
+    #classifyHop(from, to, networkType) {
+        if (networkType === 'starter') {
+            if (this.isStarter(from) && this.isStarter(to)) return 'starter-jump';
+        } else if (networkType === 'station') {
+            if (this.isStation(from) && this.isStation(to)) return 'station-jump';
+        }
+        return 'flight';
     }
 
     /**
@@ -437,198 +578,295 @@ class PathfinderGrid {
     }
 
     /**
-     * 步进限制寻路（贪心算法）
-     * 寻路规则：
-     * 1. 初始星系间互相跳跃视为"0距离"
-     * 2. 拥有"传送门"的空间站之间相互跳跃视为"0距离"
-     * 3. 每跳最大距离 ≤ stepLimit，尽可能远地朝向终点
+     * 步进限制寻路
+     * 
+     * 核心逻辑：
+     * 1. 先用 findShortestPath 找最优方案（S/P/D）
+     * 2. 只拆分"飞行段"：按 stepLimit 贪心拆分
+     * 3. 0距离段直接保留，不拆分
+     * 
      * @param {any} startInput - 起点
      * @param {any} endInput - 终点
-     * @param {number|null} stepLimit - 每跳最大距离（光年），null 表示无限制（用 Dijkstra）
-     * @returns {Object} { distance, path, trajectories }
+     * @param {number|null} stepLimit - 每跳最大距离（光年），null 表示无限制
+     * @returns {Object} { distance, path, trajectories, reached }
      */
     findStepLimitedPath(startInput, endInput, stepLimit = null) {
         const start = this.#parsePoint(startInput);
         const end = this.#parsePoint(endInput);
 
-        // 无限制 → 退化到标准 Dijkstra
+        // 无限制 → 退化到标准最短路径
         if (stepLimit === null || stepLimit === undefined) {
             const result = this.findShortestPath(start, end).withSpaceStation;
             return { ...result, reached: true };
         }
 
-        const pathPoints = [start];
-        const trajectories = [];
+        // 特殊情况：起点=终点
+        if (start.x === end.x && start.y === end.y) {
+            return { distance: 0, path: [start], trajectories: [], reached: true };
+        }
+
+        // 计算三种方案的距离
+        const directDist = this.#calcDirectDistance(start, end);
+        const starterDist = this.#calcNetworkDistance(start, end, 'starter', true);
+        const stationDist = this.#calcNetworkDistance(start, end, 'station', false);
+
+        // 选择最优方案
+        let bestType, bestPath, bestTrajectories;
+        
+        if (starterDist <= directDist && starterDist <= stationDist) {
+            bestType = 'starter-network';
+            bestTrajectories = this.#splitPathForStepLimit(
+                this.#buildNetworkTrajectories(start, end, 'starter', true),
+                stepLimit
+            );
+        } else if (stationDist <= directDist && stationDist <= starterDist) {
+            bestType = 'station-network';
+            bestTrajectories = this.#splitPathForStepLimit(
+                this.#buildNetworkTrajectories(start, end, 'station', false),
+                stepLimit
+            );
+        } else {
+            bestType = 'direct';
+            bestTrajectories = this.#splitPathForStepLimit([
+                { from: start, to: end, distance: directDist, hopType: 'direct-flight' }
+            ], stepLimit);
+        }
+
+        // 构建路径点
+        const path = [start];
         let totalDist = 0;
-        const visited = new Set();
-        const key = (p) => `${Math.round(p.x)},${Math.round(p.y)}`;
-        visited.add(key(start));
-        const MAX_ITERATIONS = 500;
-        let iter = 0;
-        let current = start;
-
-        // 步骤1: 如果起点不在零距离网络上，先跳到最近的网络节点（0距离）
-        const nearestToStart = this.#findNearestNetworkNode(current);
-        if (nearestToStart && !(nearestToStart.x === current.x && nearestToStart.y === current.y)) {
-            const d = Math.hypot(nearestToStart.x - current.x, nearestToStart.y - current.y);
-            trajectories.push({ from: current, to: nearestToStart, distance: 0 });
-            totalDist += 0;
-            pathPoints.push(nearestToStart);
-            visited.add(key(nearestToStart));
-            current = nearestToStart;
+        for (const t of bestTrajectories) {
+            if (!this.#pointsEqual(path[path.length - 1], t.from)) {
+                path.push(t.from);
+            }
+            path.push(t.to);
+            totalDist += t.distance;
         }
 
-        // 步骤2: 通过零距离网络移动到尽可能接近终点的位置
-        let currentToEnd = Math.hypot(end.x - current.x, end.y - current.y) * this.unitDistance;
-        let changed = true;
-        const maxNetworkHops = 50; // 限制网络跳转次数
-        let networkHops = 0;
-
-        // 反复在零距离网络上移动，直到无法再接近终点
-        while (changed && networkHops < maxNetworkHops) {
-            changed = false;
-            networkHops++;
-
-            // 收集当前可跳转的零距离节点（同一网络上任意距离）
-            const zeroDistCandidates = [];
-
-            // 初始星系网络（所有初始网格点互连）
-            for (const pt of this.initialPoints) {
-                const k = key(pt);
-                if (!visited.has(k)) {
-                    zeroDistCandidates.push({ point: pt, onNetwork: 'starter', distFromCurrent: 0 });
-                }
-            }
-
-            // 空间站网络（同上，传送门节点互连）
-            for (const station of this.portedSpaceStations) {
-                const k = key(station);
-                if (!visited.has(k)) {
-                    zeroDistCandidates.push({ point: station, onNetwork: 'station', distFromCurrent: 0 });
-                }
-            }
-
-            // 找能最接近终点的零距离节点
-            let best = null;
-            for (const cand of zeroDistCandidates) {
-                const distToEnd = Math.hypot(end.x - cand.point.x, end.y - cand.point.y) * this.unitDistance;
-                if (!best || distToEnd < best.distToEnd) {
-                    best = { ...cand, distToEnd };
-                }
-            }
-
-            // 如果找到更接近终点的零距离节点，跳过去
-            if (best && best.distToEnd < currentToEnd) {
-                trajectories.push({ from: current, to: best.point, distance: 0, network: best.onNetwork });
-                pathPoints.push(best.point);
-                visited.add(key(best.point));
-                current = best.point;
-                currentToEnd = best.distToEnd;
-                changed = true;
-            }
-        }
-
-        // 步骤3: 如果现在终点在步进范围内，直接跳过去
-        if (Math.hypot(end.x - current.x, end.y - current.y) * this.unitDistance <= stepLimit) {
-            const d = Math.hypot(end.x - current.x, end.y - current.y) * this.unitDistance;
-            trajectories.push({ from: current, to: end, distance: d });
-            totalDist += d;
-            pathPoints.push(end);
-            return { distance: totalDist, path: pathPoints, trajectories, reached: true };
-        }
-
-        // 步骤4: 使用贪心算法继续跳跃，每次选择能最接近终点的点
-        while ((Math.abs(current.x - end.x) > 0.001 || Math.abs(current.y - end.y) > 0.001) && iter < MAX_ITERATIONS) {
-            iter++;
-
-            const reachable = [];
-
-            // 收集半径内可达的网格点
-            const maxDist = stepLimit / this.unitDistance;
-            const ptsInRadius = this.#findPointsInRadius(current, maxDist);
-            for (const { point, distance } of ptsInRadius) {
-                const k = key(point);
-                if (!visited.has(k)) {
-                    reachable.push({ point, distFromCurrent: distance * this.unitDistance, onNetwork: 'starter' });
-                }
-            }
-
-            // 收集可达的空间站
-            for (const station of this.portedSpaceStations) {
-                const k = key(station);
-                if (visited.has(k)) continue;
-                const d = Math.hypot(current.x - station.x, current.y - station.y);
-                if (d <= maxDist) {
-                    reachable.push({ point: station, distFromCurrent: d * this.unitDistance, onNetwork: 'station' });
-                }
-            }
-
-            // 如果终点在范围内，直接到达
-            const distToEnd = Math.hypot(end.x - current.x, end.y - current.y) * this.unitDistance;
-            if (distToEnd <= stepLimit) {
-                trajectories.push({ from: current, to: end, distance: distToEnd });
-                totalDist += distToEnd;
-                pathPoints.push(end);
-                return { distance: totalDist, path: pathPoints, trajectories, reached: true };
-            }
-
-            // 如果没有可达点，直接用直线（因为所有坐标都是可达的）
-            if (reachable.length === 0) {
-                trajectories.push({ from: current, to: end, distance: distToEnd });
-                totalDist += distToEnd;
-                pathPoints.push(end);
-                return { distance: totalDist, path: pathPoints, trajectories, reached: true };
-            }
-
-            // 选择最优下一跳：离终点最近的点
-            let best = null;
-            for (const cand of reachable) {
-                const remainingDist = Math.hypot(end.x - cand.point.x, end.y - cand.point.y) * this.unitDistance;
-                if (!best || remainingDist < best.remainingDist) {
-                    best = { ...cand, remainingDist };
-                }
-            }
-
-            if (!best) break;
-
-            trajectories.push({ from: current, to: best.point, distance: best.distFromCurrent });
-            totalDist += best.distFromCurrent;
-            pathPoints.push(best.point);
-            visited.add(key(best.point));
-            current = best.point;
-        }
-
-        return { distance: totalDist, path: pathPoints, trajectories, reached: true };
+        return { 
+            distance: totalDist, 
+            path: this.#deduplicatePath(path),
+            trajectories: bestTrajectories,
+            reached: true,
+            planType: bestType
+        };
     }
 
     /**
-     * 找到距离指定坐标最近的零距离网络节点（初始星系或空间站）
-     * @param {Object} pos - 坐标 {x, y}
-     * @returns {Object|null} 最近的网络节点
+     * 计算直接飞行距离
      */
-    #findNearestNetworkNode(pos) {
-        let nearest = null;
-        let minDist = Infinity;
+    #calcDirectDistance(start, end) {
+        return Math.hypot(end.x - start.x, end.y - start.y) * this.unitDistance;
+    }
 
-        // 检查初始星系
-        for (const pt of this.initialPoints) {
-            const d = Math.hypot(pt.x - pos.x, pt.y - pos.y);
-            if (d < minDist) {
-                minDist = d;
-                nearest = pt;
+    /**
+     * 计算网络方案的总距离（不包含出口到终点的段）
+     */
+    #calcNetworkDistance(start, end, networkType, starterOnly) {
+        let networkNodes;
+        if (networkType === 'starter') {
+            networkNodes = this.initialPoints;
+        } else {
+            networkNodes = Array.from(this.portedSpaceStations);
+        }
+
+        if (networkNodes.length === 0) return Infinity;
+
+        // 找最近的入口和出口
+        let entryDist = Infinity, entryNode = null;
+        for (const node of networkNodes) {
+            const d = Math.hypot(node.x - start.x, node.y - start.y) * this.unitDistance;
+            if (d < entryDist) {
+                entryDist = d;
+                entryNode = node;
             }
         }
 
-        // 检查空间站
-        for (const station of this.portedSpaceStations) {
-            const d = Math.hypot(station.x - pos.x, station.y - pos.y);
-            if (d < minDist) {
-                minDist = d;
-                nearest = station;
+        let exitDist = Infinity, exitNode = null;
+        for (const node of networkNodes) {
+            const d = Math.hypot(node.x - end.x, node.y - end.y) * this.unitDistance;
+            if (d < exitDist) {
+                exitDist = d;
+                exitNode = node;
             }
         }
 
-        return nearest;
+        // 如果起点/终点已经在网络上
+        if (networkType === 'starter' && this.isStarter(start)) {
+            entryDist = 0;
+        }
+        if (networkType === 'starter' && this.isStarter(end)) {
+            exitDist = 0;
+        }
+        if (networkType === 'station' && this.isStation(start)) {
+            entryDist = 0;
+        }
+        if (networkType === 'station' && this.isStation(end)) {
+            exitDist = 0;
+        }
+
+        // 网络内跳转 = 0距离
+        return entryDist + exitDist;
+    }
+
+    /**
+     * 构建网络方案的轨迹（未拆分）
+     */
+    #buildNetworkTrajectories(start, end, networkType, starterOnly) {
+        const trajectories = [];
+        const isStarterNet = (networkType === 'starter');
+        const isStationNet = (networkType === 'station');
+
+        let networkNodes = isStarterNet ? this.initialPoints : Array.from(this.portedSpaceStations);
+        if (networkNodes.length === 0) return [];
+
+        // 找入口节点
+        let entryDist = Infinity, entryNode = null;
+        for (const node of networkNodes) {
+            const d = Math.hypot(node.x - start.x, node.y - start.y) * this.unitDistance;
+            if (d < entryDist) {
+                entryDist = d;
+                entryNode = node;
+            }
+        }
+
+        // 找出口节点
+        let exitDist = Infinity, exitNode = null;
+        for (const node of networkNodes) {
+            const d = Math.hypot(node.x - end.x, node.y - end.y) * this.unitDistance;
+            if (d < exitDist) {
+                exitDist = d;
+                exitNode = node;
+            }
+        }
+
+        // 如果起点就是网络节点，跳过入口段
+        if (isStarterNet && this.isStarter(start)) {
+            entryDist = 0;
+            entryNode = this.#findNearestNode(start, networkNodes);
+        }
+        if (isStationNet && this.isStation(start)) {
+            entryDist = 0;
+            entryNode = this.#findNearestNode(start, networkNodes);
+        }
+        if (isStarterNet && this.isStarter(end)) {
+            exitDist = 0;
+            exitNode = this.#findNearestNode(end, networkNodes);
+        }
+        if (isStationNet && this.isStation(end)) {
+            exitDist = 0;
+            exitNode = this.#findNearestNode(end, networkNodes);
+        }
+
+        // 起点 → 入口
+        if (entryDist > 0) {
+            trajectories.push({
+                from: start,
+                to: entryNode,
+                distance: entryDist,
+                hopType: isStarterNet ? 'starter-entry' : 'station-entry'
+            });
+        }
+
+        // 入口 ↔ 出口（0距离）
+        if (!this.#pointsEqual(entryNode, exitNode)) {
+            trajectories.push({
+                from: entryNode,
+                to: exitNode,
+                distance: 0,
+                hopType: isStarterNet ? 'starter-jump' : 'station-jump'
+            });
+        }
+
+        // 出口 → 终点
+        if (exitDist > 0) {
+            trajectories.push({
+                from: exitNode,
+                to: end,
+                distance: exitDist,
+                hopType: isStarterNet ? 'starter-exit' : 'station-exit'
+            });
+        }
+
+        return trajectories;
+    }
+
+    /**
+     * 将飞行段按步进限制拆分
+     * 
+     * @param {Array} trajectories - 原始轨迹数组
+     * @param {number} stepLimit - 每跳最大距离（光年）
+     * @returns {Array} 拆分后的轨迹数组
+     */
+    #splitPathForStepLimit(trajectories, stepLimit) {
+        const result = [];
+
+        for (const seg of trajectories) {
+            // 0距离段直接保留
+            if (seg.distance === 0) {
+                result.push(seg);
+                continue;
+            }
+
+            // 拆分飞行段
+            const subHops = this.#splitSegment(seg.from, seg.to, seg.distance, stepLimit, seg.hopType);
+            result.push(...subHops);
+        }
+
+        return result;
+    }
+
+    /**
+     * 将一段飞行拆分为多段
+     */
+    #splitSegment(from, to, totalDist, stepLimit, hopType) {
+        const result = [];
+        let current = { ...from };
+        let remaining = totalDist;
+
+        while (remaining > stepLimit) {
+            // 朝着目标方向飞行 stepLimit 距离
+            const dx = to.x - current.x;
+            const dy = to.y - current.y;
+            const ratio = stepLimit / (remaining);
+            const nextX = current.x + dx * ratio;
+            const nextY = current.y + dy * ratio;
+            
+            result.push({
+                from: current,
+                to: { x: nextX, y: nextY },
+                distance: stepLimit,
+                hopType: hopType + '-segment'
+            });
+
+            current = { x: nextX, y: nextY };
+            remaining -= stepLimit;
+        }
+
+        // 最后一段
+        if (remaining > 0.001) {
+            result.push({
+                from: current,
+                to: to,
+                distance: remaining,
+                hopType: hopType
+            });
+        }
+
+        return result;
+    }
+
+    /**
+     * 去重路径点
+     */
+    #deduplicatePath(path) {
+        const result = [path[0]];
+        for (let i = 1; i < path.length; i++) {
+            if (!this.#pointsEqual(path[i], result[result.length - 1])) {
+                result.push(path[i]);
+            }
+        }
+        return result;
     }
 }
 
