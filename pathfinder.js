@@ -450,11 +450,13 @@ class PathfinderGrid {
 
         // 无限制 → 退化到标准 Dijkstra
         if (stepLimit === null || stepLimit === undefined) {
-            return this.findShortestPath(start, end).withSpaceStation;
+            const result = this.findShortestPath(start, end).withSpaceStation;
+            return { ...result, reached: true };
         }
 
         // stepLimit 是光年，grid 坐标单位是 unitDistance
         const maxDist = stepLimit / this.unitDistance;
+        let reached = false;  // 标记是否成功到达终点
 
         const pathPoints = [start];
         let current = start;
@@ -505,7 +507,7 @@ class PathfinderGrid {
                 trajectories.push({ from: current, to: end, distance: distToEnd });
                 totalDist += distToEnd;
                 pathPoints.push(end);
-                current = end;
+                reached = true;
                 break;
             }
 
@@ -515,6 +517,7 @@ class PathfinderGrid {
                 trajectories.push({ from: current, to: end, distance: distToEnd });
                 totalDist += distToEnd;
                 pathPoints.push(end);
+                reached = false;
                 break;
             }
 
@@ -536,7 +539,7 @@ class PathfinderGrid {
             current = best.point;
         }
 
-        return { distance: totalDist, path: pathPoints, trajectories };
+        return { distance: totalDist, path: pathPoints, trajectories, reached };
     }
 }
 

@@ -515,7 +515,7 @@
         // 单人副本部分
         if (remainingDungeons.length > 0) {
             const dungeonBounds = computeDistanceBounds(remainingDungeons, startPos);
-            const scoredDungeons = remainingDungeons.map(d => ({ ...d, ...calculateScore(d, startPos, dungeonBounds) }))
+            const scoredDungeons = remainingDungeons.map(d => ({ ...d, ...calculateScore(d, startPos, dungeonBounds, _stepLimit) }))
                 .sort((a, b) => b.score - a.score);
             const reachable = scoredDungeons.filter(d => d.details.canReach).length;
             html += `<div class="sdt-section-title">${t('block.solodungeons', '单人副本')}</div>`;
@@ -530,7 +530,7 @@
         // 掉落符文部分
         if (remainingRunes.length > 0) {
             const runeBounds = computeDistanceBounds(remainingRunes, startPos);
-            const scoredRunes = remainingRunes.map(r => ({ ...r, ...calculateScore(r, startPos, runeBounds) }))
+            const scoredRunes = remainingRunes.map(r => ({ ...r, ...calculateScore(r, startPos, runeBounds, _stepLimit) }))
                 .sort((a, b) => b.score - a.score);
             const reachable = scoredRunes.filter(r => r.details.canReach).length;
             html += `<div class="sdt-section-title" style="margin-top:1.4em">${t('block.runedrops', '掉落符文')}</div>`;
@@ -592,8 +592,9 @@
      * @param {Object} item       - 副本/符文条目
      * @param {Object} playerPos  - 起点 {x, y}
      * @param {Object} distBounds - 当前列表的距离上下限 { minDist, maxDist }
+     * @param {number|null} stepLimit - 每跳最大距离（光年），null 表示无限制
      */
-    function calculateScore(item, playerPos, distBounds) {
+    function calculateScore(item, playerPos, distBounds, stepLimit) {
         if (!playerPos) {
             return { score: 0, details: { canReach: false, noPlayerPos: true } };
         }
@@ -604,15 +605,67 @@
         }
 
         const linearDistance = calculateDistance(playerPos.x, playerPos.y, coords.x, coords.y);
-        const pfResult = getPathfinderDistance(playerPos.x, playerPos.y, coords.x, coords.y);
-        const distance = pfResult.distance;  // 评分使用寻路距离
+
+        // 根据步进限制选择寻路方式
+        let distance = linearDistance * 10;
+        let isPathfinder = false;
+        let stepLimited = false;
+        let canReachUnderLimit = false;
+
+        const pfGrid = (window.PathfinderService && typeof window.PathfinderService.getGrid === 'function')
+            ? window.PathfinderService.getGrid()
+            : window.stellarOdysseyPathfinderGrid;
+
+        if (stepLimit && pfGrid && typeof pfGrid.findStepLimitedPath === 'function') {
+            // 步进限制模式
+            try {
+                const result = pfGrid.findStepLimitedPath(
+                    { x: playerPos.x, y: playerPos.y },
+                    { x: coords.x, y: coords.y },
+                    stepLimit
+                );
+                const lastPoint = result.path[result.path.length - 1];
+                const reached = lastPoint &&
+                    Math.abs(lastPoint.x - coords.x) < 0.001 &&
+                    Math.abs(lastPoint.y - coords.y) < 0.001;
+                distance = result.distance;
+                isPathfinder = true;
+                stepLimited = true;
+                canReachUnderLimit = reached;
+            } catch (e) {
+                // 降级到直线
+                distance = linearDistance * 10;
+            }
+        } else {
+            // 标准模式（无步进限制）
+            const pfResult = getPathfinderDistance(playerPos.x, playerPos.y, coords.x, coords.y);
+            distance = pfResult.distance;
+            isPathfinder = pfResult.isPathfinder;
+            canReachUnderLimit = true;
+        }
 
         const now = new Date();
         const expiry = new Date(item.closesAt * 1000);
         const timeRemainingHours = (expiry - now) / (1000 * 60 * 60);
 
         if (timeRemainingHours <= 0) {
-            return { score: -1, details: { linearDistance, distance, isPathfinder: pfResult.isPathfinder, timeRemainingHours, canReach: false } };
+            return { score: -1, details: { linearDistance, distance, isPathfinder, timeRemainingHours, canReach: false } };
+        }
+
+        // 步进限制下不可达 → 直接标记不可达，不参与评分
+        if (stepLimited && !canReachUnderLimit) {
+            return {
+                score: -1,
+                details: {
+                    linearDistance,
+                    distance: Math.round(distance),
+                    isPathfinder,
+                    stepLimited,
+                    canReach: false,
+                    unreachableUnderStepLimit: true,
+                    timeRemainingHours
+                }
+            };
         }
 
         const distanceScore = (() => {
@@ -646,7 +699,8 @@
             details: {
                 linearDistance: Math.round(linearDistance),
                 distance: Math.round(distance),
-                isPathfinder: pfResult.isPathfinder,
+                isPathfinder,
+                stepLimited,
                 distanceScore: Math.round(distanceScore),
                 timeRemainingHours: Math.round(timeRemainingHours * 10) / 10,
                 timeScore: Math.round(timeScore),
@@ -723,7 +777,7 @@
         // 单人副本部分
         if (remainingDungeons.length > 0) {
             const dungeonBounds = computeDistanceBounds(remainingDungeons, startPos);
-            scoredDungeons = remainingDungeons.map(d => ({ ...d, ...calculateScore(d, startPos, dungeonBounds) }))
+            scoredDungeons = remainingDungeons.map(d => ({ ...d, ...calculateScore(d, startPos, dungeonBounds, _stepLimit) }))
                 .sort((a, b) => b.score - a.score);
 
             const reachable = scoredDungeons.filter(d => d.details.canReach).length;
@@ -739,7 +793,7 @@
         // 掉落符文部分
         if (remainingRunes.length > 0) {
             const runeBounds = computeDistanceBounds(remainingRunes, startPos);
-            scoredRunes = remainingRunes.map(r => ({ ...r, ...calculateScore(r, startPos, runeBounds) }))
+            scoredRunes = remainingRunes.map(r => ({ ...r, ...calculateScore(r, startPos, runeBounds, _stepLimit) }))
                 .sort((a, b) => b.score - a.score);
 
             const reachable = scoredRunes.filter(r => r.details.canReach).length;
@@ -869,19 +923,33 @@
             pos = getPlayerPosition();
         }
 
+        const pfGrid = (window.PathfinderService && typeof window.PathfinderService.getGrid === 'function')
+            ? window.PathfinderService.getGrid()
+            : window.stellarOdysseyPathfinderGrid;
+
         let totalDist = 0;
         for (const route of selectedRoutes) {
             const coords = getCoordinates(route);
             if (coords && pos) {
-                const pfResult = getPathfinderDistance(pos.x, pos.y, coords.x, coords.y);
-                totalDist += pfResult.distance;
+                if (_stepLimit && pfGrid && typeof pfGrid.findStepLimitedPath === 'function') {
+                    const result = pfGrid.findStepLimitedPath(
+                        { x: pos.x, y: pos.y },
+                        { x: coords.x, y: coords.y },
+                        _stepLimit
+                    );
+                    totalDist += result.distance;
+                } else {
+                    const pfResult = getPathfinderDistance(pos.x, pos.y, coords.x, coords.y);
+                    totalDist += pfResult.distance;
+                }
                 pos = coords;
             } else {
                 break;
             }
         }
 
-        el.textContent = `${t('solodungeons.total_distance', '总寻路距离')}: ${Math.round(totalDist)}`;
+        const limitLabel = _stepLimit ? `[${_stepLimit}ly]` : '';
+        el.textContent = `${t('solodungeons.total_distance', '总寻路距离')} ${limitLabel}: ${Math.round(totalDist)}`;
     }
 
     /**
@@ -993,7 +1061,7 @@
         }
 
         // 保存激活状态（语言切换时重新渲染用），trajectories/totalDistance 待 pathfinder 计算后补充
-        _activePathDetail = { startPos, endPos, index, route, trajectories: null, totalDistance: null };
+        _activePathDetail = { startPos, endPos, index, route, trajectories: null, totalDistance: null, pathReached: null };
 
         // 获取 Pathfinder Grid
         const pfGrid = (window.PathfinderService && typeof window.PathfinderService.getGrid === 'function')
@@ -1011,6 +1079,7 @@
         // 步进限制变化时重新计算
         let trajectories = _activePathDetail.trajectories;
         let totalDistance = _activePathDetail.totalDistance;
+        let pathReached = _activePathDetail.pathReached !== undefined ? _activePathDetail.pathReached : null;
         let isPf = !!trajectories;
         const needRecalc = !trajectories ||
             _activePathDetail.stepLimit !== _stepLimit ||
@@ -1029,10 +1098,12 @@
                 if (chosen && chosen.trajectories) {
                     trajectories = chosen.trajectories;
                     totalDistance = chosen.distance;
+                    pathReached = chosen.reached !== undefined ? chosen.reached : true;
                     isPf = true;
-                    // 缓存结果（含 stepLimit 标记）
+                    // 缓存结果（含 stepLimit 标记和 reached 状态）
                     _activePathDetail.trajectories = trajectories;
                     _activePathDetail.totalDistance = totalDistance;
+                    _activePathDetail.pathReached = pathReached;
                     _activePathDetail.stepLimit = _stepLimit;
                     _activePathDetail.startPos = { x: startPos.x, y: startPos.y };
                     _activePathDetail.endPos = { x: endPos.x, y: endPos.y };
@@ -1095,6 +1166,11 @@
         }).join('');
 
         const totalDistStr = _t('path.total', { d: totalDistance.toFixed(2) });
+        const unreachableWarning = (pathReached === false)
+            ? `<div style="background:#7f1d1d;color:#fca5a5;padding:0.5em 0.8em;border-radius:4px;margin-bottom:0.5em;font-size:0.85em;">
+                ${_t('solodungeons.path_unreachable', '⚠ 无法在当前步进限制内到达目标，终点可能超出可达范围')}
+               </div>`
+            : '';
 
         panel.innerHTML = `
             <div class="rpd-header">
@@ -1111,6 +1187,7 @@
                     <span style="color:#6b7280; margin-left:0.5em; font-size:0.82em">${_t('solodungeons.path_segment_count', '共 {n} 段').replace('{n}', trajectories.length)}</span>
                 </div>
             </div>
+            ${unreachableWarning}
             <div class="rpd-list">${listItems}</div>`;
 
         // 绑定复制坐标事件
@@ -1361,6 +1438,7 @@
         remainingDungeons = [];
         remainingRunes = [];
         playerPos = null;
+        _activePathDetail = null;
     }
 
     // ==================== 路线保存/载入 ====================
@@ -1622,16 +1700,13 @@
             stepLimitSelect.addEventListener('change', function() {
                 _stepLimit = this.value === '' ? null : parseInt(this.value, 10);
                 localStorage.setItem('solodungeons_step_limit', this.value);
-                // 如果当前有激活的路径详情，重新渲染
+                // 清除详细寻路缓存
                 if (_activePathDetail) {
-                    const route = selectedRoutes[_activePathDetail.index];
-                    if (route) {
-                        // 清除缓存，强制重新计算
-                        _activePathDetail.trajectories = null;
-                        _activePathDetail.totalDistance = null;
-                        renderPathDetail(_activePathDetail.startPos, _activePathDetail.endPos, route, _activePathDetail.index);
-                    }
+                    _activePathDetail.trajectories = null;
+                    _activePathDetail.totalDistance = null;
                 }
+                // 重新计算评分（使用新的步进限制）
+                recalculateAndRender();
             });
         }
 
