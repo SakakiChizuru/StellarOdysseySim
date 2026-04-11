@@ -818,7 +818,7 @@ class PathfinderGrid {
 
     /**
      * 将一段飞行拆分为多段
-     * 坐标取整到整数，避免浮点数误差
+     * 策略：圆形内贪心搜索，每跳在 stepLimit 半径内选择到终点最近的整数坐标点
      */
     #splitSegment(from, to, totalDist, stepLimit, hopType) {
         const result = [];
@@ -828,35 +828,76 @@ class PathfinderGrid {
         const toPt = { x: Math.round(to.x), y: Math.round(to.y) };
         
         let current = { ...fromPt };
-        let remaining = Math.hypot(toPt.x - fromPt.x, toPt.y - fromPt.y) * this.unitDistance;
+        const radius = stepLimit / this.unitDistance; // 转换为坐标单位
 
-        while (remaining > stepLimit + 0.001) {
-            // 朝着目标方向飞行 stepLimit 距离
-            const dx = toPt.x - current.x;
-            const dy = toPt.y - current.y;
-            const ratio = stepLimit / (remaining);
-            const nextX = Math.round(current.x + dx * ratio);
-            const nextY = Math.round(current.y + dy * ratio);
+        while (true) {
+            const distToGoal = Math.hypot(toPt.x - current.x, toPt.y - current.y);
             
-            result.push({
-                from: { ...current },
-                to: { x: nextX, y: nextY },
-                distance: stepLimit,
-                hopType: hopType + '-segment'
-            });
-
-            current = { x: nextX, y: nextY };
-            remaining -= stepLimit;
-        }
-
-        // 最后一段
-        if (remaining > 0.001) {
-            result.push({
-                from: { ...current },
-                to: { ...toPt },
-                distance: remaining,
-                hopType: hopType
-            });
+            // 如果可以直接到达终点
+            if (distToGoal * this.unitDistance <= stepLimit + 0.001) {
+                const finalDist = distToGoal * this.unitDistance;
+                if (finalDist > 0.001) {
+                    result.push({
+                        from: { ...current },
+                        to: { ...toPt },
+                        distance: finalDist,
+                        hopType: hopType
+                    });
+                }
+                break;
+            }
+            
+            // 在圆形内找所有整数坐标点，选择到终点最近的
+            let bestNext = null;
+            let bestDistToGoal = Infinity;
+            
+            // 搜索范围：以 current 为中心，radius 为半径的正方形
+            const minX = Math.floor(current.x - radius);
+            const maxX = Math.ceil(current.x + radius);
+            const minY = Math.floor(current.y - radius);
+            const maxY = Math.ceil(current.y + radius);
+            
+            for (let x = minX; x <= maxX; x++) {
+                for (let y = minY; y <= maxY; y++) {
+                    // 跳过当前点
+                    if (x === current.x && y === current.y) continue;
+                    
+                    const dist = Math.hypot(x - current.x, y - current.y);
+                    
+                    // 必须在圆内（距离 <= radius）
+                    if (dist > radius + 0.001) continue;
+                    
+                    // 计算到终点的距离
+                    const distGoal = Math.hypot(toPt.x - x, toPt.y - y);
+                    
+                    // 选择到终点最近的点
+                    if (distGoal < bestDistToGoal) {
+                        bestDistToGoal = distGoal;
+                        bestNext = { x, y };
+                    }
+                }
+            }
+            
+            if (bestNext) {
+                const hopDist = Math.hypot(bestNext.x - current.x, bestNext.y - current.y) * this.unitDistance;
+                result.push({
+                    from: { ...current },
+                    to: bestNext,
+                    distance: hopDist,
+                    hopType: hopType + '-segment'
+                });
+                current = bestNext;
+            } else {
+                // 没有找到合适的点，直接飞向终点
+                const finalDist = distToGoal * this.unitDistance;
+                result.push({
+                    from: { ...current },
+                    to: { ...toPt },
+                    distance: finalDist,
+                    hopType: hopType
+                });
+                break;
+            }
         }
 
         return result;
