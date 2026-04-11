@@ -284,7 +284,7 @@ const zh = {
     'solodungeons.step_unlimited': '无限制',
     'solodungeons.step_100': '100 ly',
     'solodungeons.step_120': '120 ly',
-    'solodungeons.path_unreachable': '⚠ 无法在当前步进限制内到达目标，终点可能超出可达范围',
+
     // 详细寻路面板
     'block.route_path_detail': '详细寻路',
     'solodungeons.path_detail_hint': '点击已选路线中的条目查看寻路详情',

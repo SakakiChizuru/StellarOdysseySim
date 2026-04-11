@@ -284,7 +284,7 @@ const en = {
     'solodungeons.step_unlimited': 'Unlimited',
     'solodungeons.step_100': '100 ly',
     'solodungeons.step_120': '120 ly',
-    'solodungeons.path_unreachable': '⚠ Cannot reach destination within current hop limit.',
+
     // Path Detail Panel
     'block.route_path_detail': 'Path Detail',
     'solodungeons.path_detail_hint': 'Click a route item to view pathfinding details',

@@ -511,13 +511,16 @@ class PathfinderGrid {
                 break;
             }
 
+            // 所有坐标都是可达的，步进限制只是分段方式
+            // 即使 reachable.length === 0，也用直线方式连接（坐标都是整数，一定能到达）
             if (reachable.length === 0) {
-                // 无可达点，降级到直线（不可达警告）
-                console.warn('[PathfinderGrid] Step-limited path: no reachable points from', current, 'limit:', stepLimit);
+                console.warn('[PathfinderGrid] Step-limited path: no intermediate points, using direct line from', current, 'to', end, 'limit:', stepLimit);
+                // 用直线方式直接到达（步进限制外的最后一段）
                 trajectories.push({ from: current, to: end, distance: distToEnd });
                 totalDist += distToEnd;
                 pathPoints.push(end);
-                reached = false;
+                // reached 始终为 true，因为所有坐标都是可达的
+                reached = true;
                 break;
             }
 

@@ -517,11 +517,9 @@
             const dungeonBounds = computeDistanceBounds(remainingDungeons, startPos);
             const scoredDungeons = remainingDungeons.map(d => ({ ...d, ...calculateScore(d, startPos, dungeonBounds, _stepLimit) }))
                 .sort((a, b) => b.score - a.score);
-            const reachable = scoredDungeons.filter(d => d.details.canReach).length;
             html += `<div class="sdt-section-title">${t('block.solodungeons', '单人副本')}</div>`;
             html += `<div class="solodungeons-summary">
                 <span class="summary-item">${t('solodungeons.total', '总计')}: <b>${scoredDungeons.length}</b></span>
-                <span class="summary-item">${t('solodungeons.reachable', '可到达')}: <b>${reachable}</b></span>
                 <span class="summary-item">${t('solodungeons.player_pos', '起点')}: <b>${playerPosStr}</b></span>
             </div>`;
             html += buildListView('sdt-dungeons', renderDungeonsHeader(pfAvailable), renderDungeonsRows(scoredDungeons, pfAvailable));
@@ -532,11 +530,9 @@
             const runeBounds = computeDistanceBounds(remainingRunes, startPos);
             const scoredRunes = remainingRunes.map(r => ({ ...r, ...calculateScore(r, startPos, runeBounds, _stepLimit) }))
                 .sort((a, b) => b.score - a.score);
-            const reachable = scoredRunes.filter(r => r.details.canReach).length;
             html += `<div class="sdt-section-title" style="margin-top:1.4em">${t('block.runedrops', '掉落符文')}</div>`;
             html += `<div class="solodungeons-summary">
                 <span class="summary-item">${t('runedrops.total', '总计')}: <b>${scoredRunes.length}</b></span>
-                <span class="summary-item">${t('runedrops.reachable', '可到达')}: <b>${reachable}</b></span>
                 <span class="summary-item">${t('solodungeons.player_pos', '起点')}: <b>${playerPosStr}</b></span>
             </div>`;
             html += buildListView('sdt-runes', renderRunesHeader(pfAvailable), renderRunesRows(scoredRunes, pfAvailable));
@@ -607,10 +603,10 @@
         const linearDistance = calculateDistance(playerPos.x, playerPos.y, coords.x, coords.y);
 
         // 根据步进限制选择寻路方式
+        // 所有坐标都是可达的，步进限制只是分段方式
         let distance = linearDistance * 10;
         let isPathfinder = false;
         let stepLimited = false;
-        let canReachUnderLimit = false;
 
         const pfGrid = (window.PathfinderService && typeof window.PathfinderService.getGrid === 'function')
             ? window.PathfinderService.getGrid()
@@ -624,14 +620,9 @@
                     { x: coords.x, y: coords.y },
                     stepLimit
                 );
-                const lastPoint = result.path[result.path.length - 1];
-                const reached = lastPoint &&
-                    Math.abs(lastPoint.x - coords.x) < 0.001 &&
-                    Math.abs(lastPoint.y - coords.y) < 0.001;
                 distance = result.distance;
                 isPathfinder = true;
                 stepLimited = true;
-                canReachUnderLimit = reached;
             } catch (e) {
                 // 降级到直线
                 distance = linearDistance * 10;
@@ -641,31 +632,15 @@
             const pfResult = getPathfinderDistance(playerPos.x, playerPos.y, coords.x, coords.y);
             distance = pfResult.distance;
             isPathfinder = pfResult.isPathfinder;
-            canReachUnderLimit = true;
         }
 
         const now = new Date();
         const expiry = new Date(item.closesAt * 1000);
         const timeRemainingHours = (expiry - now) / (1000 * 60 * 60);
 
+        // 过期的不参与评分
         if (timeRemainingHours <= 0) {
             return { score: -1, details: { linearDistance, distance, isPathfinder, timeRemainingHours, canReach: false } };
-        }
-
-        // 步进限制下不可达 → 直接标记不可达，不参与评分
-        if (stepLimited && !canReachUnderLimit) {
-            return {
-                score: -1,
-                details: {
-                    linearDistance,
-                    distance: Math.round(distance),
-                    isPathfinder,
-                    stepLimited,
-                    canReach: false,
-                    unreachableUnderStepLimit: true,
-                    timeRemainingHours
-                }
-            };
         }
 
         const distanceScore = (() => {
@@ -710,7 +685,8 @@
                 difficultyScore: Math.round(difficultyScore),
                 attempts,
                 attemptsScore: Math.round(attemptsScore),
-                canReach: true
+                canReach: true,
+                stepLimited
             }
         };
     }
@@ -780,11 +756,9 @@
             scoredDungeons = remainingDungeons.map(d => ({ ...d, ...calculateScore(d, startPos, dungeonBounds, _stepLimit) }))
                 .sort((a, b) => b.score - a.score);
 
-            const reachable = scoredDungeons.filter(d => d.details.canReach).length;
             html += `<div class="sdt-section-title">${t('block.solodungeons', '单人副本')}</div>`;
             html += `<div class="solodungeons-summary">
                 <span class="summary-item">${t('solodungeons.total', '总计')}: <b>${scoredDungeons.length}</b></span>
-                <span class="summary-item">${t('solodungeons.reachable', '可到达')}: <b>${reachable}</b></span>
                 <span class="summary-item">${t('solodungeons.player_pos', '玩家位置')}: <b>${playerPosStr}</b></span>
             </div>`;
             html += buildListView('sdt-dungeons', renderDungeonsHeader(pfAvailable), renderDungeonsRows(scoredDungeons, pfAvailable));
@@ -796,11 +770,9 @@
             scoredRunes = remainingRunes.map(r => ({ ...r, ...calculateScore(r, startPos, runeBounds, _stepLimit) }))
                 .sort((a, b) => b.score - a.score);
 
-            const reachable = scoredRunes.filter(r => r.details.canReach).length;
             html += `<div class="sdt-section-title" style="margin-top:1.4em">${t('block.runedrops', '掉落符文')}</div>`;
             html += `<div class="solodungeons-summary">
                 <span class="summary-item">${t('runedrops.total', '总计')}: <b>${scoredRunes.length}</b></span>
-                <span class="summary-item">${t('runedrops.reachable', '可到达')}: <b>${reachable}</b></span>
                 <span class="summary-item">${t('solodungeons.player_pos', '玩家位置')}: <b>${playerPosStr}</b></span>
             </div>`;
             html += buildListView('sdt-runes', renderRunesHeader(pfAvailable), renderRunesRows(scoredRunes, pfAvailable));
@@ -1166,11 +1138,6 @@
         }).join('');
 
         const totalDistStr = _t('path.total', { d: totalDistance.toFixed(2) });
-        const unreachableWarning = (pathReached === false)
-            ? `<div style="background:#7f1d1d;color:#fca5a5;padding:0.5em 0.8em;border-radius:4px;margin-bottom:0.5em;font-size:0.85em;">
-                ${_t('solodungeons.path_unreachable', '⚠ 无法在当前步进限制内到达目标，终点可能超出可达范围')}
-               </div>`
-            : '';
 
         panel.innerHTML = `
             <div class="rpd-header">
@@ -1187,7 +1154,6 @@
                     <span style="color:#6b7280; margin-left:0.5em; font-size:0.82em">${_t('solodungeons.path_segment_count', '共 {n} 段').replace('{n}', trajectories.length)}</span>
                 </div>
             </div>
-            ${unreachableWarning}
             <div class="rpd-list">${listItems}</div>`;
 
         // 绑定复制坐标事件
@@ -1225,8 +1191,6 @@
     function renderDungeonsRows(dungeons, pfAvailable) {
         return dungeons.map(d => {
             const scoreClass = d.score >= 80 ? 'high' : d.score >= 50 ? 'med' : 'low';
-            const canReach = d.details.canReach;
-            const rowClass = canReach ? '' : 'unreachable';
             const coords = getCoordinates(d);
             const coordsStr = coords ? `[${coords.x},${coords.y}]` : '—';
             const scoreDisplay = d.score > 0 ? d.score : (d.score === -1 ? '!' : '—');
@@ -1243,7 +1207,7 @@
             const actionBtnClass = isSelected ? 'sdt-action-btn disabled' : 'sdt-action-btn';
             const arrowSvg = `<svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>`;
             
-            return `<tr class="${rowClass}" data-id="${itemKey}" data-type="dungeon" data-data="${encodeURIComponent(JSON.stringify(d))}">
+            return `<tr data-id="${itemKey}" data-type="dungeon" data-data="${encodeURIComponent(JSON.stringify(d))}">
                 <td class="sdt-score ${scoreClass}">${scoreDisplay}</td>
                 <td class="sdt-info">
                     <div class="sdt-info-row sdt-coords-line">${coordsStr}</div>
@@ -1255,7 +1219,7 @@
                     <div class="sdt-info-row sdt-dist-line">
                         <span class="sdt-stat"><span class="sdt-label">${t('solodungeons.col_linear_dist', '直线')}:</span> <span class="sdt-dist">${linearDist}</span></span>
                         <span class="sdt-stat"><span class="sdt-label">${pfAvailable ? t('solodungeons.col_pf_distance', '寻路') : t('solodungeons.col_distance', '距离')}:</span> <span class="sdt-pfdist">${pfDist}</span></span>
-                        <span class="sdt-stat"><span class="sdt-label">${t('solodungeons.col_time_left', '剩余')}:</span> <span class="sdt-time ${canReach ? '' : 'expired'}">${timeLeft}</span></span>
+                        <span class="sdt-stat"><span class="sdt-label">${t('solodungeons.col_time_left', '剩余')}:</span> <span class="sdt-time">${timeLeft}</span></span>
                     </div>
                 </td>
                 <td class="sdt-action">
@@ -1275,8 +1239,6 @@
     function renderRunesRows(runes, pfAvailable) {
         return runes.map(r => {
             const scoreClass = r.score >= 80 ? 'high' : r.score >= 50 ? 'med' : 'low';
-            const canReach = r.details.canReach;
-            const rowClass = canReach ? '' : 'unreachable';
             const coords = getCoordinates(r);
             const coordsStr = coords ? `[${coords.x},${coords.y}]` : '—';
             const linearDist = r.details.linearDistance != null ? `${r.details.linearDistance} ly` : '—';
@@ -1291,8 +1253,8 @@
             const actionBtnClass = isSelected ? 'sdt-action-btn disabled' : 'sdt-action-btn';
             const arrowSvg = `<svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>`;
 
-            return `<tr class="${rowClass}" data-id="${itemKey}" data-type="rune" data-data="${encodeURIComponent(JSON.stringify(r))}">
-                <td class="sdt-score ${scoreClass}">${canReach ? r.score : '—'}</td>
+            return `<tr data-id="${itemKey}" data-type="rune" data-data="${encodeURIComponent(JSON.stringify(r))}">
+                <td class="sdt-score ${scoreClass}">${r.score > 0 ? r.score : (r.score === -1 ? '!' : '—')}</td>
                 <td class="sdt-info">
                     <div class="sdt-info-row sdt-coords-line">${coordsStr}</div>
                     <div class="sdt-info-row sdt-stats-line">
@@ -1302,7 +1264,7 @@
                     <div class="sdt-info-row sdt-dist-line">
                         <span class="sdt-stat"><span class="sdt-label">${t('solodungeons.col_linear_dist', '直线')}:</span> <span class="sdt-dist">${linearDist}</span></span>
                         <span class="sdt-stat"><span class="sdt-label">${pfAvailable ? t('solodungeons.col_pf_distance', '寻路') : t('solodungeons.col_distance', '距离')}:</span> <span class="sdt-pfdist">${pfDist}</span></span>
-                        <span class="sdt-stat"><span class="sdt-label">${t('solodungeons.col_time_left', '剩余')}:</span> <span class="sdt-time ${canReach ? '' : 'expired'}">${timeLeft}</span></span>
+                        <span class="sdt-stat"><span class="sdt-label">${t('solodungeons.col_time_left', '剩余')}:</span> <span class="sdt-time">${timeLeft}</span></span>
                     </div>
                 </td>
                 <td class="sdt-action">
