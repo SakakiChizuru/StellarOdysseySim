@@ -280,6 +280,10 @@ const zh = {
     'solodungeons.route_name_placeholder': '路线名称',
     'solodungeons.route_items_count': '项',
     'solodungeons.total_distance': '总寻路距离',
+    'solodungeons.step_limit': '每跳限制:',
+    'solodungeons.step_unlimited': '无限制',
+    'solodungeons.step_100': '100 ly',
+    'solodungeons.step_120': '120 ly',
     // 详细寻路面板
     'block.route_path_detail': '详细寻路',
     'solodungeons.path_detail_hint': '点击已选路线中的条目查看寻路详情',

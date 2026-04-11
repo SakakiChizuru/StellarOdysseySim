@@ -29,7 +29,8 @@
     let cachedApiKey = null; // 用于检测 API Key 变化
 
     // 详细寻路面板激活状态（语言切换时用于重新渲染）
-    let _activePathDetail = null; // { startPos, endPos, index, totalDistance }
+    let _activePathDetail = null; // { startPos, endPos, index, route, trajectories, totalDistance, stepLimit }
+    let _stepLimit = null; // 每跳最大距离（光年），null 表示无限制
 
     // 已选路线列表
     let selectedRoutes = [];
@@ -1007,28 +1008,37 @@
         const endCoordStr   = `[${endPos.x}, ${endPos.y}]`;
 
         // 路径计算（优先复用缓存结果，避免重复 pathfinding）
+        // 步进限制变化时重新计算
         let trajectories = _activePathDetail.trajectories;
         let totalDistance = _activePathDetail.totalDistance;
         let isPf = !!trajectories;
+        const needRecalc = !trajectories ||
+            _activePathDetail.stepLimit !== _stepLimit ||
+            _activePathDetail.startPos.x !== startPos.x ||
+            _activePathDetail.startPos.y !== startPos.y ||
+            _activePathDetail.endPos.x !== endPos.x ||
+            _activePathDetail.endPos.y !== endPos.y;
 
-        if (!trajectories && pfGrid && typeof pfGrid.findShortestPath === 'function') {
+        if (needRecalc && pfGrid && typeof pfGrid.findStepLimitedPath === 'function') {
             try {
-                const result = pfGrid.findShortestPath(
+                const chosen = pfGrid.findStepLimitedPath(
                     { x: startPos.x, y: startPos.y },
-                    { x: endPos.x, y: endPos.y }
+                    { x: endPos.x, y: endPos.y },
+                    _stepLimit
                 );
-                const hasStations = pfGrid.portedSpaceStations && pfGrid.portedSpaceStations.size > 0;
-                const chosen = hasStations ? result.withSpaceStation : result.starterSystemOnly;
                 if (chosen && chosen.trajectories) {
                     trajectories = chosen.trajectories;
                     totalDistance = chosen.distance;
                     isPf = true;
-                    // 缓存结果，语言切换时直接复用
+                    // 缓存结果（含 stepLimit 标记）
                     _activePathDetail.trajectories = trajectories;
                     _activePathDetail.totalDistance = totalDistance;
+                    _activePathDetail.stepLimit = _stepLimit;
+                    _activePathDetail.startPos = { x: startPos.x, y: startPos.y };
+                    _activePathDetail.endPos = { x: endPos.x, y: endPos.y };
                 }
             } catch (e) {
-                console.warn('[SoloDungeons] PathDetail: pathfinder failed', e);
+                console.warn('[SoloDungeons] PathDetail: step pathfinder failed', e);
             }
         }
 
@@ -1598,6 +1608,32 @@
 
         // 初始化路线选择下拉框
         refreshRouteSelect();
+
+        // 步进限制选择器
+        const stepLimitSelect = document.getElementById('routeStepLimitSelect');
+        if (stepLimitSelect) {
+            // 恢复 localStorage 保存的值
+            const savedLimit = localStorage.getItem('solodungeons_step_limit');
+            if (savedLimit !== null) {
+                stepLimitSelect.value = savedLimit;
+                _stepLimit = savedLimit === '' ? null : parseInt(savedLimit, 10);
+            }
+
+            stepLimitSelect.addEventListener('change', function() {
+                _stepLimit = this.value === '' ? null : parseInt(this.value, 10);
+                localStorage.setItem('solodungeons_step_limit', this.value);
+                // 如果当前有激活的路径详情，重新渲染
+                if (_activePathDetail) {
+                    const route = selectedRoutes[_activePathDetail.index];
+                    if (route) {
+                        // 清除缓存，强制重新计算
+                        _activePathDetail.trajectories = null;
+                        _activePathDetail.totalDistance = null;
+                        renderPathDetail(_activePathDetail.startPos, _activePathDetail.endPos, route, _activePathDetail.index);
+                    }
+                }
+            });
+        }
 
         // 语言切换时重新渲染详细寻路面板（如果有激活状态）
         document.addEventListener('languageChanged', function() {

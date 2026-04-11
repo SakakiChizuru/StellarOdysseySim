@@ -391,6 +391,153 @@ class PathfinderGrid {
         search(this.kdTree);
         return best;
     }
+
+    /**
+     * 查找所有在半径内的初始网格点（KD-tree 范围搜索）
+     * @param {Object} center - 圆心 {x, y}
+     * @param {number} radius - 半径（单位：坐标单位，非光年）
+     * @returns {Array} [{ point, distance }, ...]
+     */
+    #findPointsInRadius(center, radius) {
+        const results = [];
+        const search = (node) => {
+            if (!node) return;
+            // 计算当前节点边界（简化：检查是否可能与圆相交）
+            // KD-tree 节点边界近似：沿当前分割轴的距离
+            const diff = center[node.axis] - node.point[node.axis];
+            // 先搜索更近的一侧
+            const primary = diff < 0 ? node.left : node.right;
+            const secondary = diff < 0 ? node.right : node.left;
+            // 如果 primary 侧完全在圆外，跳过
+            const primaryBound = diff < 0 ? center[node.axis] - radius : center[node.axis] + radius;
+            const mustSearchPrimary = diff < 0
+                ? node.point[node.axis] >= center[node.axis] - radius
+                : node.point[node.axis] <= center[node.axis] + radius;
+            const mustSearchSecondary = Math.abs(diff) < radius;
+
+            if (mustSearchPrimary) search(primary);
+            if (mustSearchSecondary) search(secondary);
+        };
+        search(this.kdTree);
+
+        // 手动检查每个找到的点是否真的在圆内（因为 KD-tree 不精确）
+        for (const node of this.#collectAllNodes(this.kdTree)) {
+            const d = Math.hypot(center.x - node.point.x, center.y - node.point.y);
+            if (d <= radius) {
+                results.push({ point: node.point, distance: d });
+            }
+        }
+        return results;
+    }
+
+    /** 收集 KD-tree 所有节点 */
+    #collectAllNodes(node) {
+        if (!node) return [];
+        return [node, ...this.#collectAllNodes(node.left), ...this.#collectAllNodes(node.right)];
+    }
+
+    /**
+     * 步进限制寻路（贪心算法）
+     * 每跳最大距离 ≤ stepLimit，尽可能远地朝向终点
+     * @param {any} startInput - 起点
+     * @param {any} endInput - 终点
+     * @param {number|null} stepLimit - 每跳最大距离（光年），null 表示无限制（用 Dijkstra）
+     * @returns {Object} { distance, path, trajectories }
+     */
+    findStepLimitedPath(startInput, endInput, stepLimit = null) {
+        const start = this.#parsePoint(startInput);
+        const end = this.#parsePoint(endInput);
+
+        // 无限制 → 退化到标准 Dijkstra
+        if (stepLimit === null || stepLimit === undefined) {
+            return this.findShortestPath(start, end).withSpaceStation;
+        }
+
+        // stepLimit 是光年，grid 坐标单位是 unitDistance
+        const maxDist = stepLimit / this.unitDistance;
+
+        const pathPoints = [start];
+        let current = start;
+        let totalDist = 0;
+        const trajectories = [];
+        const MAX_ITERATIONS = 200; // 防止死循环
+        let iter = 0;
+
+        while ((Math.abs(current.x - end.x) > 0.001 || Math.abs(current.y - end.y) > 0.001) && iter < MAX_ITERATIONS) {
+            iter++;
+
+            // 收集当前可直达的所有点（初始网格点 + 空间站）
+            const reachable = [];
+
+            // 1) 初始网格点在半径内
+            const ptsInRadius = this.#findPointsInRadius(current, maxDist);
+            for (const { point, distance } of ptsInRadius) {
+                // 排除起点本身
+                if (point.x === current.x && point.y === current.y) continue;
+                reachable.push({
+                    point,
+                    distFromCurrent: distance * this.unitDistance,
+                    isStation: false,
+                    isStarter: true
+                });
+            }
+
+            // 2) 空间站（传送，零距离）
+            for (const station of this.portedSpaceStations) {
+                const d = Math.hypot(current.x - station.x, current.y - station.y);
+                if (d <= maxDist && !(station.x === current.x && station.y === current.y)) {
+                    // 检查是否已访问（避免循环）
+                    const alreadyVisited = pathPoints.some(p => p.x === station.x && p.y === station.y);
+                    if (!alreadyVisited) {
+                        reachable.push({
+                            point: station,
+                            distFromCurrent: d * this.unitDistance,
+                            isStation: true,
+                            isStarter: false
+                        });
+                    }
+                }
+            }
+
+            // 3) 如果终点在范围内，直接到达
+            const distToEnd = Math.hypot(end.x - current.x, end.y - current.y) * this.unitDistance;
+            if (distToEnd <= stepLimit) {
+                trajectories.push({ from: current, to: end, distance: distToEnd });
+                totalDist += distToEnd;
+                pathPoints.push(end);
+                current = end;
+                break;
+            }
+
+            if (reachable.length === 0) {
+                // 无可达点，降级到直线（不可达警告）
+                console.warn('[PathfinderGrid] Step-limited path: no reachable points from', current, 'limit:', stepLimit);
+                trajectories.push({ from: current, to: end, distance: distToEnd });
+                totalDist += distToEnd;
+                pathPoints.push(end);
+                break;
+            }
+
+            // 4) 选择最优下一跳：在可达点中，挑选「离终点最近」的点（即贪心最优）
+            //    若距离相同，优先选「跳得更远」的（减少总跳数）
+            let best = null;
+            for (const candidate of reachable) {
+                const remainingDist = Math.hypot(end.x - candidate.point.x, end.y - candidate.point.y) * this.unitDistance;
+                if (!best ||
+                    remainingDist < best.remainingDist ||
+                    (remainingDist === best.remainingDist && candidate.distFromCurrent > best.distFromCurrent)) {
+                    best = { ...candidate, remainingDist };
+                }
+            }
+
+            trajectories.push({ from: current, to: best.point, distance: best.distFromCurrent });
+            totalDist += best.distFromCurrent;
+            pathPoints.push(best.point);
+            current = best.point;
+        }
+
+        return { distance: totalDist, path: pathPoints, trajectories };
+    }
 }
 
 // 导出模块
