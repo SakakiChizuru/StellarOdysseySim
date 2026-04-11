@@ -7,3 +7,4 @@
 - [Workerpool Support](docs/WorkerpoolSupport.md)
 - [Pathfinder](docs/pathfinder.md)
 - [Solo Dungeons & Rune Drops](docs/solodungeons.md)
+- [i18n - Internationalization](docs/i18n.md)
