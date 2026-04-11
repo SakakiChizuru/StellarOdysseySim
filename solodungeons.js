@@ -1672,8 +1672,11 @@
             });
         }
 
-        // 语言切换时重新渲染详细寻路面板（如果有激活状态）
+        // 语言切换时重新渲染 UI
         document.addEventListener('languageChanged', function() {
+            // 更新路线选择下拉列表
+            refreshRouteSelect();
+            // 更新详细寻路面板（如果有激活状态）
             if (!_activePathDetail) return;
             // 路线列表可能已重新渲染，从 selectedRoutes 中重新获取当前条目
             const route = selectedRoutes[_activePathDetail.index];
