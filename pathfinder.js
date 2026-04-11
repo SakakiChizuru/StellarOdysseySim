@@ -438,7 +438,10 @@ class PathfinderGrid {
 
     /**
      * 步进限制寻路（贪心算法）
-     * 每跳最大距离 ≤ stepLimit，尽可能远地朝向终点
+     * 寻路规则：
+     * 1. 初始星系间互相跳跃视为"0距离"
+     * 2. 拥有"传送门"的空间站之间相互跳跃视为"0距离"
+     * 3. 每跳最大距离 ≤ stepLimit，尽可能远地朝向终点
      * @param {any} startInput - 起点
      * @param {any} endInput - 终点
      * @param {number|null} stepLimit - 每跳最大距离（光年），null 表示无限制（用 Dijkstra）
@@ -454,95 +457,178 @@ class PathfinderGrid {
             return { ...result, reached: true };
         }
 
-        // stepLimit 是光年，grid 坐标单位是 unitDistance
-        const maxDist = stepLimit / this.unitDistance;
-        let reached = false;  // 标记是否成功到达终点
-
         const pathPoints = [start];
-        let current = start;
-        let totalDist = 0;
         const trajectories = [];
-        const MAX_ITERATIONS = 200; // 防止死循环
+        let totalDist = 0;
+        const visited = new Set();
+        const key = (p) => `${Math.round(p.x)},${Math.round(p.y)}`;
+        visited.add(key(start));
+        const MAX_ITERATIONS = 500;
         let iter = 0;
+        let current = start;
 
-        while ((Math.abs(current.x - end.x) > 0.001 || Math.abs(current.y - end.y) > 0.001) && iter < MAX_ITERATIONS) {
-            iter++;
+        // 步骤1: 如果起点不在零距离网络上，先跳到最近的网络节点（0距离）
+        const nearestToStart = this.#findNearestNetworkNode(current);
+        if (nearestToStart && !(nearestToStart.x === current.x && nearestToStart.y === current.y)) {
+            const d = Math.hypot(nearestToStart.x - current.x, nearestToStart.y - current.y);
+            trajectories.push({ from: current, to: nearestToStart, distance: 0 });
+            totalDist += 0;
+            pathPoints.push(nearestToStart);
+            visited.add(key(nearestToStart));
+            current = nearestToStart;
+        }
 
-            // 收集当前可直达的所有点（初始网格点 + 空间站）
-            const reachable = [];
+        // 步骤2: 通过零距离网络移动到尽可能接近终点的位置
+        let currentToEnd = Math.hypot(end.x - current.x, end.y - current.y) * this.unitDistance;
+        let changed = true;
+        const maxNetworkHops = 50; // 限制网络跳转次数
+        let networkHops = 0;
 
-            // 1) 初始网格点在半径内
-            const ptsInRadius = this.#findPointsInRadius(current, maxDist);
-            for (const { point, distance } of ptsInRadius) {
-                // 排除起点本身
-                if (point.x === current.x && point.y === current.y) continue;
-                reachable.push({
-                    point,
-                    distFromCurrent: distance * this.unitDistance,
-                    isStation: false,
-                    isStarter: true
-                });
-            }
+        // 反复在零距离网络上移动，直到无法再接近终点
+        while (changed && networkHops < maxNetworkHops) {
+            changed = false;
+            networkHops++;
 
-            // 2) 空间站（传送，零距离）
-            for (const station of this.portedSpaceStations) {
-                const d = Math.hypot(current.x - station.x, current.y - station.y);
-                if (d <= maxDist && !(station.x === current.x && station.y === current.y)) {
-                    // 检查是否已访问（避免循环）
-                    const alreadyVisited = pathPoints.some(p => p.x === station.x && p.y === station.y);
-                    if (!alreadyVisited) {
-                        reachable.push({
-                            point: station,
-                            distFromCurrent: d * this.unitDistance,
-                            isStation: true,
-                            isStarter: false
-                        });
-                    }
+            // 收集当前可跳转的零距离节点（同一网络上任意距离）
+            const zeroDistCandidates = [];
+
+            // 初始星系网络（所有初始网格点互连）
+            for (const pt of this.initialPoints) {
+                const k = key(pt);
+                if (!visited.has(k)) {
+                    zeroDistCandidates.push({ point: pt, onNetwork: 'starter', distFromCurrent: 0 });
                 }
             }
 
-            // 3) 如果终点在范围内，直接到达
+            // 空间站网络（同上，传送门节点互连）
+            for (const station of this.portedSpaceStations) {
+                const k = key(station);
+                if (!visited.has(k)) {
+                    zeroDistCandidates.push({ point: station, onNetwork: 'station', distFromCurrent: 0 });
+                }
+            }
+
+            // 找能最接近终点的零距离节点
+            let best = null;
+            for (const cand of zeroDistCandidates) {
+                const distToEnd = Math.hypot(end.x - cand.point.x, end.y - cand.point.y) * this.unitDistance;
+                if (!best || distToEnd < best.distToEnd) {
+                    best = { ...cand, distToEnd };
+                }
+            }
+
+            // 如果找到更接近终点的零距离节点，跳过去
+            if (best && best.distToEnd < currentToEnd) {
+                trajectories.push({ from: current, to: best.point, distance: 0, network: best.onNetwork });
+                pathPoints.push(best.point);
+                visited.add(key(best.point));
+                current = best.point;
+                currentToEnd = best.distToEnd;
+                changed = true;
+            }
+        }
+
+        // 步骤3: 如果现在终点在步进范围内，直接跳过去
+        if (Math.hypot(end.x - current.x, end.y - current.y) * this.unitDistance <= stepLimit) {
+            const d = Math.hypot(end.x - current.x, end.y - current.y) * this.unitDistance;
+            trajectories.push({ from: current, to: end, distance: d });
+            totalDist += d;
+            pathPoints.push(end);
+            return { distance: totalDist, path: pathPoints, trajectories, reached: true };
+        }
+
+        // 步骤4: 使用贪心算法继续跳跃，每次选择能最接近终点的点
+        while ((Math.abs(current.x - end.x) > 0.001 || Math.abs(current.y - end.y) > 0.001) && iter < MAX_ITERATIONS) {
+            iter++;
+
+            const reachable = [];
+
+            // 收集半径内可达的网格点
+            const maxDist = stepLimit / this.unitDistance;
+            const ptsInRadius = this.#findPointsInRadius(current, maxDist);
+            for (const { point, distance } of ptsInRadius) {
+                const k = key(point);
+                if (!visited.has(k)) {
+                    reachable.push({ point, distFromCurrent: distance * this.unitDistance, onNetwork: 'starter' });
+                }
+            }
+
+            // 收集可达的空间站
+            for (const station of this.portedSpaceStations) {
+                const k = key(station);
+                if (visited.has(k)) continue;
+                const d = Math.hypot(current.x - station.x, current.y - station.y);
+                if (d <= maxDist) {
+                    reachable.push({ point: station, distFromCurrent: d * this.unitDistance, onNetwork: 'station' });
+                }
+            }
+
+            // 如果终点在范围内，直接到达
             const distToEnd = Math.hypot(end.x - current.x, end.y - current.y) * this.unitDistance;
             if (distToEnd <= stepLimit) {
                 trajectories.push({ from: current, to: end, distance: distToEnd });
                 totalDist += distToEnd;
                 pathPoints.push(end);
-                reached = true;
-                break;
+                return { distance: totalDist, path: pathPoints, trajectories, reached: true };
             }
 
-            // 所有坐标都是可达的，步进限制只是分段方式
-            // 即使 reachable.length === 0，也用直线方式连接（坐标都是整数，一定能到达）
+            // 如果没有可达点，直接用直线（因为所有坐标都是可达的）
             if (reachable.length === 0) {
-                console.warn('[PathfinderGrid] Step-limited path: no intermediate points, using direct line from', current, 'to', end, 'limit:', stepLimit);
-                // 用直线方式直接到达（步进限制外的最后一段）
                 trajectories.push({ from: current, to: end, distance: distToEnd });
                 totalDist += distToEnd;
                 pathPoints.push(end);
-                // reached 始终为 true，因为所有坐标都是可达的
-                reached = true;
-                break;
+                return { distance: totalDist, path: pathPoints, trajectories, reached: true };
             }
 
-            // 4) 选择最优下一跳：在可达点中，挑选「离终点最近」的点（即贪心最优）
-            //    若距离相同，优先选「跳得更远」的（减少总跳数）
+            // 选择最优下一跳：离终点最近的点
             let best = null;
-            for (const candidate of reachable) {
-                const remainingDist = Math.hypot(end.x - candidate.point.x, end.y - candidate.point.y) * this.unitDistance;
-                if (!best ||
-                    remainingDist < best.remainingDist ||
-                    (remainingDist === best.remainingDist && candidate.distFromCurrent > best.distFromCurrent)) {
-                    best = { ...candidate, remainingDist };
+            for (const cand of reachable) {
+                const remainingDist = Math.hypot(end.x - cand.point.x, end.y - cand.point.y) * this.unitDistance;
+                if (!best || remainingDist < best.remainingDist) {
+                    best = { ...cand, remainingDist };
                 }
             }
+
+            if (!best) break;
 
             trajectories.push({ from: current, to: best.point, distance: best.distFromCurrent });
             totalDist += best.distFromCurrent;
             pathPoints.push(best.point);
+            visited.add(key(best.point));
             current = best.point;
         }
 
-        return { distance: totalDist, path: pathPoints, trajectories, reached };
+        return { distance: totalDist, path: pathPoints, trajectories, reached: true };
+    }
+
+    /**
+     * 找到距离指定坐标最近的零距离网络节点（初始星系或空间站）
+     * @param {Object} pos - 坐标 {x, y}
+     * @returns {Object|null} 最近的网络节点
+     */
+    #findNearestNetworkNode(pos) {
+        let nearest = null;
+        let minDist = Infinity;
+
+        // 检查初始星系
+        for (const pt of this.initialPoints) {
+            const d = Math.hypot(pt.x - pos.x, pt.y - pos.y);
+            if (d < minDist) {
+                minDist = d;
+                nearest = pt;
+            }
+        }
+
+        // 检查空间站
+        for (const station of this.portedSpaceStations) {
+            const d = Math.hypot(station.x - pos.x, station.y - pos.y);
+            if (d < minDist) {
+                minDist = d;
+                nearest = station;
+            }
+        }
+
+        return nearest;
     }
 }
 
