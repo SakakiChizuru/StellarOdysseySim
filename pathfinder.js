@@ -818,22 +818,28 @@ class PathfinderGrid {
 
     /**
      * 将一段飞行拆分为多段
+     * 坐标取整到整数，避免浮点数误差
      */
     #splitSegment(from, to, totalDist, stepLimit, hopType) {
         const result = [];
-        let current = { ...from };
-        let remaining = totalDist;
+        
+        // 起点终点取整
+        const fromPt = { x: Math.round(from.x), y: Math.round(from.y) };
+        const toPt = { x: Math.round(to.x), y: Math.round(to.y) };
+        
+        let current = { ...fromPt };
+        let remaining = Math.hypot(toPt.x - fromPt.x, toPt.y - fromPt.y) * this.unitDistance;
 
-        while (remaining > stepLimit) {
+        while (remaining > stepLimit + 0.001) {
             // 朝着目标方向飞行 stepLimit 距离
-            const dx = to.x - current.x;
-            const dy = to.y - current.y;
+            const dx = toPt.x - current.x;
+            const dy = toPt.y - current.y;
             const ratio = stepLimit / (remaining);
-            const nextX = current.x + dx * ratio;
-            const nextY = current.y + dy * ratio;
+            const nextX = Math.round(current.x + dx * ratio);
+            const nextY = Math.round(current.y + dy * ratio);
             
             result.push({
-                from: current,
+                from: { ...current },
                 to: { x: nextX, y: nextY },
                 distance: stepLimit,
                 hopType: hopType + '-segment'
@@ -846,8 +852,8 @@ class PathfinderGrid {
         // 最后一段
         if (remaining > 0.001) {
             result.push({
-                from: current,
-                to: to,
+                from: { ...current },
+                to: { ...toPt },
                 distance: remaining,
                 hopType: hopType
             });
