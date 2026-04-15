@@ -1408,14 +1408,22 @@
                          (runesData && checkPlayerPositionMismatch(runesData));
         }
 
-        // 更新缓存：成功获取的数据更新缓存，失败的保留旧缓存
-        if (dungeonsData !== null) {
+        // 更新缓存：成功获取的有效数据更新缓存，空结构或失败的保留旧缓存
+        // 注意：API 返回空 JSON {} 时，runesData !== null 但 runesData.runeSystems 为 undefined
+        // 此时应清空缓存，避免显示过期的旧数据
+        if (dungeonsData !== null && Array.isArray(dungeonsData.dungeons)) {
             cachedDungeonsData = dungeonsData;
+        } else if (dungeonsData !== null) {
+            // API 返回空结构，清空缓存
+            cachedDungeonsData = null;
         }
-        if (runesData !== null) {
+        if (runesData !== null && Array.isArray(runesData.runeSystems)) {
             cachedRunesData = runesData;
+        } else if (runesData !== null) {
+            // API 返回空结构，清空缓存
+            cachedRunesData = null;
         }
-        if (dungeonsData !== null || runesData !== null) {
+        if (cachedDungeonsData !== null || cachedRunesData !== null) {
             cachedApiKey = apiKey;
         }
 
