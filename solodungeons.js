@@ -415,22 +415,29 @@
      * 根据数值计算颜色（深色渐变）
      */
     /**
-     * 根据剩余时间获取颜色类
-     * <= 1小时: urgent (红色)
-     * <= 3小时: warning (橙色)
-     * <= 6小时: normal (绿色)
-     * > 6小时: safe (灰色)
+     * 根据剩余时间计算颜色（基于评分公式：19h=100分，纯绿）
+     * @param {Object} item - 副本/符文 item
+     * @returns {string} CSS color
      */
-    function getTimeColorClass(expiresAt) {
-        const ts = getExpiresAt(expiresAt);
-        if (ts === null) return 'sdt-time-safe';
+    function getTimeColor(item) {
+        const ts = getExpiresAt(item);
+        if (ts === null) return '#9ca3af';
         const now = new Date();
         const expiry = new Date(ts * 1000);
         const diffHours = (expiry - now) / (1000 * 60 * 60);
-        if (diffHours <= 1) return 'sdt-time-urgent';
-        if (diffHours <= 3) return 'sdt-time-warning';
-        if (diffHours <= 6) return 'sdt-time-normal';
-        return 'sdt-time-safe';
+        if (diffHours <= 0) return '#ef4444'; // 过期=红色
+        // timeScore = min(100, timeRemainingHours / 19 * 100)
+        const timeScore = Math.min(100, Math.max(0, diffHours / 19 * 100));
+        // 0分=红色，50分=黄色，100分=绿色
+        if (timeScore <= 20) {
+            return '#ef4444'; // 红色
+        } else if (timeScore <= 50) {
+            return '#f97316'; // 橙色
+        } else if (timeScore <= 75) {
+            return '#eab308'; // 黄色
+        } else {
+            return '#22c55e'; // 绿色
+        }
     }
 
     function getModifierColor(value, isDifficulty = false) {
@@ -1346,7 +1353,7 @@
             return `<tr data-id="${itemKey}" data-type="dungeon" data-data="${encodeURIComponent(JSON.stringify(d))}">
                 <td class="sdt-score ${scoreClass}">${scoreDisplay}</td>
                 <td class="sdt-info">
-                    <div class="sdt-info-row sdt-coords-line">${coordsStr}<span class="sdt-time-right">${t('solodungeons.col_time_left', '剩余')}: <span class="${getTimeColorClass(d)}">${timeLeft}</span></span></div>
+                    <div class="sdt-info-row sdt-coords-line">${coordsStr}<span class="sdt-time-right">${t('solodungeons.col_time_left', '剩余')}: <span style="color:${getTimeColor(d)}">${timeLeft}</span></span></div>
                     <div class="sdt-info-row sdt-stats-line">
                         <span class="sdt-stat"><span class="sdt-label">${t('solodungeons.col_attempts', '次数')}:</span> ${attemptsText}</span>
                         <span class="sdt-stat"><span class="sdt-label">${t('solodungeons.col_reward', '奖励')}:</span> <span style="color:${getModifierColor(d.reward_modifier,false)}">${rewardText}</span></span>
@@ -1395,7 +1402,7 @@
 
             return `<tr data-id="${itemKey}" data-type="rune" data-data="${encodeURIComponent(JSON.stringify(r))}">
                 <td class="sdt-info" colspan="1">
-                    <div class="sdt-info-row sdt-coords-line">${coordsStr} &nbsp;<span style="color:#a78bfa;font-size:0.88em">${runeName}</span><span class="sdt-time-right">${t('solodungeons.col_time_left', '剩余')}: <span class="${getTimeColorClass(r)}">${timeLeft}</span></span></div>
+                    <div class="sdt-info-row sdt-coords-line">${coordsStr} &nbsp;<span style="color:#a78bfa;font-size:0.88em">${runeName}</span><span class="sdt-time-right">${t('solodungeons.col_time_left', '剩余')}: <span style="color:${getTimeColor(r)}">${timeLeft}</span></span></div>
                     <div class="sdt-info-row sdt-stats-line">
                         <span class="sdt-stat"><span class="sdt-label">${t('runedrops.col_star', '恒星')}:</span> ${starName}</span>
                         <span class="sdt-stat"><span class="sdt-label">${t('runedrops.col_system', '星系')}:</span> ${systemName}</span>
