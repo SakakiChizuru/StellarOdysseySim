@@ -308,6 +308,7 @@ const en = {
     'solodungeons.player_pos': 'Player Position',
     'solodungeons.route_pos': 'Route Position',
     'solodungeons.original_pos': 'Original Position',
+    'solodungeons.return_distance': '+Return:',
     'solodungeons.unknown': 'Unknown',
     'solodungeons.expired': 'Expired',
     'solodungeons.pf_active': 'Pathfinder Active',

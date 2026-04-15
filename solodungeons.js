@@ -1017,7 +1017,7 @@
         }
 
         const limitLabel = _stepLimit ? `[${_stepLimit}ly]` : '';
-        const returnLabel = _returnToOrigin && selectedRoutes.length > 0 ? ` (+返回: ${(Math.floor(returnDist * 100) / 100).toFixed(2)})` : '';
+        const returnLabel = _returnToOrigin && selectedRoutes.length > 0 ? ` (${t('solodungeons.return_distance', '+返回:')} ${(Math.floor(returnDist * 100) / 100).toFixed(2)})` : '';
         el.textContent = `${t('solodungeons.total_distance', '总寻路距离')} ${limitLabel}: ${(Math.floor(totalDist * 100) / 100).toFixed(2)}${returnLabel}`;
     }
 
