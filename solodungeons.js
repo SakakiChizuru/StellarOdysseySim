@@ -438,6 +438,7 @@
 
     /**
      * 格式化时间差
+     * 兼容副本 closesAt（Unix timestamp）和符文 expires_at（Unix timestamp）
      */
     function formatTimeRemaining(expiresAt) {
         const now = new Date();
@@ -464,7 +465,17 @@
     }
 
     /**
+     * 格式化时间差（从 item 自动提取过期字段）
+     */
+    function formatItemTimeRemaining(item) {
+        const ts = getExpiresAt(item);
+        if (ts === null) return '—';
+        return formatTimeRemaining(ts);
+    }
+
+    /**
      * 从 item 中提取坐标
+     * 兼容副本（system.coordinate_x/y）和符文（顶层 coordinate_x/y）
      */
     function getCoordinates(item) {
         if (item.system && typeof item.system.coordinate_x === 'number' && typeof item.system.coordinate_y === 'number') {
@@ -474,6 +485,22 @@
             return { x: item.coordinate_x, y: item.coordinate_y };
         }
         return null;
+    }
+
+    /**
+     * 获取 item 的过期时间戳（兼容副本 closesAt 和符文 expires_at）
+     */
+    function getExpiresAt(item) {
+        if (typeof item.closesAt === 'number') return item.closesAt;
+        if (typeof item.expires_at === 'number') return item.expires_at;
+        return null;
+    }
+
+    /**
+     * 判断 item 是否为符文
+     */
+    function isRuneItem(item) {
+        return typeof item.rune_name === 'string' || typeof item.rune_index === 'number';
     }
 
     /**
@@ -525,17 +552,23 @@
             html += buildListView('sdt-dungeons', renderDungeonsHeader(pfAvailable), renderDungeonsRows(scoredDungeons, pfAvailable));
         }
 
-        // 掉落符文部分
+        // 掉落符文部分（不评分，按距离排序）
         if (remainingRunes.length > 0) {
-            const runeBounds = computeDistanceBounds(remainingRunes, startPos);
-            const scoredRunes = remainingRunes.map(r => ({ ...r, ...calculateScore(r, startPos, runeBounds, _stepLimit) }))
-                .sort((a, b) => b.score - a.score);
+            const startPos2 = getCurrentStartPos();
+            const sortedRunes = [...remainingRunes].sort((a, b) => {
+                const ca = getCoordinates(a), cb = getCoordinates(b);
+                if (!ca || !startPos2) return 0;
+                if (!cb) return -1;
+                const da = getPathfinderDistance(startPos2.x, startPos2.y, ca.x, ca.y).distance;
+                const db = getPathfinderDistance(startPos2.x, startPos2.y, cb.x, cb.y).distance;
+                return da - db;
+            });
             html += `<div class="sdt-section-title" style="margin-top:1.4em">${t('block.runedrops', '掉落符文')}</div>`;
             html += `<div class="solodungeons-summary">
-                <span class="summary-item">${t('runedrops.total', '总计')}: <b>${scoredRunes.length}</b></span>
+                <span class="summary-item">${t('runedrops.total', '总计')}: <b>${sortedRunes.length}</b></span>
                 <span class="summary-item">${t('solodungeons.player_pos', '起点')}: <b>${playerPosStr}</b></span>
             </div>`;
-            html += buildListView('sdt-runes', renderRunesHeader(pfAvailable), renderRunesRows(scoredRunes, pfAvailable));
+            html += buildListView('sdt-runes', renderRunesHeader(pfAvailable), renderRunesRows(sortedRunes, pfAvailable));
         }
 
         if (!html) {
@@ -635,7 +668,8 @@
         }
 
         const now = new Date();
-        const expiry = new Date(item.closesAt * 1000);
+        const ts = getExpiresAt(item);
+        const expiry = ts !== null ? new Date(ts * 1000) : new Date(item.closesAt * 1000);
         const timeRemainingHours = (expiry - now) / (1000 * 60 * 60);
 
         // 过期的不参与评分
@@ -744,7 +778,6 @@
 
         let html = '';
         let scoredDungeons = null;
-        let scoredRunes = null;
         const playerPosStr = playerPos ? `[${playerPos.x}, ${playerPos.y}]` : t('solodungeons.unknown', '未知');
 
         // 获取当前起点
@@ -764,18 +797,23 @@
             html += buildListView('sdt-dungeons', renderDungeonsHeader(pfAvailable), renderDungeonsRows(scoredDungeons, pfAvailable));
         }
 
-        // 掉落符文部分
+        // 掉落符文部分（不评分，按距离排序）
         if (remainingRunes.length > 0) {
-            const runeBounds = computeDistanceBounds(remainingRunes, startPos);
-            scoredRunes = remainingRunes.map(r => ({ ...r, ...calculateScore(r, startPos, runeBounds, _stepLimit) }))
-                .sort((a, b) => b.score - a.score);
+            const sortedRunes = [...remainingRunes].sort((a, b) => {
+                const ca = getCoordinates(a), cb = getCoordinates(b);
+                if (!ca || !startPos) return 0;
+                if (!cb) return -1;
+                const da = getPathfinderDistance(startPos.x, startPos.y, ca.x, ca.y).distance;
+                const db = getPathfinderDistance(startPos.x, startPos.y, cb.x, cb.y).distance;
+                return da - db;
+            });
 
             html += `<div class="sdt-section-title" style="margin-top:1.4em">${t('block.runedrops', '掉落符文')}</div>`;
             html += `<div class="solodungeons-summary">
-                <span class="summary-item">${t('runedrops.total', '总计')}: <b>${scoredRunes.length}</b></span>
+                <span class="summary-item">${t('runedrops.total', '总计')}: <b>${sortedRunes.length}</b></span>
                 <span class="summary-item">${t('solodungeons.player_pos', '玩家位置')}: <b>${playerPosStr}</b></span>
             </div>`;
-            html += buildListView('sdt-runes', renderRunesHeader(pfAvailable), renderRunesRows(scoredRunes, pfAvailable));
+            html += buildListView('sdt-runes', renderRunesHeader(pfAvailable), renderRunesRows(sortedRunes, pfAvailable));
         }
 
         if (!html) {
@@ -942,9 +980,17 @@
             const coords = getCoordinates(route);
             const coordsStr = coords ? `[${coords.x},${coords.y}]` : '—';
             const typeText = route._type === 'dungeon' ? t('solodungeons.type_dungeon', '副本') : t('solodungeons.type_rune', '符文');
-            const scoreDisplay = route.score > 0 ? route.score : '—';
-            const scoreClass = route.score >= 80 ? 'high' : route.score >= 50 ? 'med' : 'low';
             const itemKey = route._key || generateItemKey(route);
+
+            let scoreDisplay, scoreClass;
+            if (isRuneItem(route)) {
+                // 符文：不显示评分，显示符文名
+                scoreDisplay = `<span style="font-size:0.7em;color:#a78bfa">${t('solodungeons.type_rune','符文')}</span>`;
+                scoreClass = '';
+            } else {
+                scoreDisplay = route.score > 0 ? route.score : '—';
+                scoreClass = route.score >= 80 ? 'high' : route.score >= 50 ? 'med' : 'low';
+            }
 
             return `<div class="route-list-item" data-id="${itemKey}">
                 <span class="route-score ${scoreClass}">${scoreDisplay}</span>
@@ -1178,7 +1224,8 @@
         const coords = getCoordinates(item);
         const x = coords ? coords.x : '?';
         const y = coords ? coords.y : '?';
-        return `d_${x}_${y}_${item.closesAt}`;
+        const ts = getExpiresAt(item) ?? '?';
+        return `d_${x}_${y}_${ts}`;
     }
 
     function renderDungeonsHeader(pfAvailable) {
@@ -1231,39 +1278,43 @@
 
     function renderRunesHeader(pfAvailable) {
         return `
-            <th class="sdt-col-score">${t('solodungeons.col_score', '评分')}</th>
-            <th class="sdt-col-info">${t('solodungeons.col_info', '条目信息')}</th>
+            <th class="sdt-col-info">${t('runedrops.col_info', '符文信息')}</th>
             <th class="sdt-col-action"></th>`;
     }
 
     function renderRunesRows(runes, pfAvailable) {
         return runes.map(r => {
-            const scoreClass = r.score >= 80 ? 'high' : r.score >= 50 ? 'med' : 'low';
             const coords = getCoordinates(r);
             const coordsStr = coords ? `[${coords.x},${coords.y}]` : '—';
-            const linearDist = r.details.linearDistance != null ? `${r.details.linearDistance} ly` : '—';
-            const pfDist = pfAvailable && r.details.distance != null ? `${r.details.distance} ly` : '—';
-            const timeLeft = formatTimeRemaining(r.closesAt);
-            const qualityText = r.quality || '—';
-            const tierText = r.tier !== undefined ? r.tier : '—';
+            const timeLeft = formatItemTimeRemaining(r);
+            const runeName = r.rune_name || '—';
+            const runeIndex = r.rune_index !== undefined ? `#${r.rune_index}` : '';
+            const foundBy = r.found_by || '—';
+            const starName = r.star || '—';
+            const systemName = r.name || '—';
 
-            // 使用 generateItemKey 生成唯一标识
+            // 距离计算（仅用于展示，不参与评分）
+            let distStr = '—';
+            if (coords && playerPos) {
+                const pfResult = getPathfinderDistance(playerPos.x, playerPos.y, coords.x, coords.y);
+                distStr = `${Math.round(pfResult.distance)} ly`;
+            }
+
             const itemKey = generateItemKey(r);
             const isSelected = selectedRoutes.some(route => generateItemKey(route) === itemKey);
             const actionBtnClass = isSelected ? 'sdt-action-btn disabled' : 'sdt-action-btn';
             const arrowSvg = `<svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>`;
 
             return `<tr data-id="${itemKey}" data-type="rune" data-data="${encodeURIComponent(JSON.stringify(r))}">
-                <td class="sdt-score ${scoreClass}">${r.score > 0 ? r.score : (r.score === -1 ? '!' : '—')}</td>
-                <td class="sdt-info">
-                    <div class="sdt-info-row sdt-coords-line">${coordsStr}</div>
+                <td class="sdt-info" colspan="1">
+                    <div class="sdt-info-row sdt-coords-line">${coordsStr} &nbsp;<span style="color:#a78bfa;font-size:0.88em">${runeName}</span></div>
                     <div class="sdt-info-row sdt-stats-line">
-                        <span class="sdt-stat"><span class="sdt-label">${t('runedrops.col_quality', '品质')}:</span> ${qualityText}</span>
-                        <span class="sdt-stat"><span class="sdt-label">${t('runedrops.col_tier', '等级')}:</span> ${tierText}</span>
+                        <span class="sdt-stat"><span class="sdt-label">${t('runedrops.col_star', '恒星')}:</span> ${starName}</span>
+                        <span class="sdt-stat"><span class="sdt-label">${t('runedrops.col_system', '星系')}:</span> ${systemName}</span>
+                        <span class="sdt-stat"><span class="sdt-label">${t('runedrops.col_found_by', '发现者')}:</span> ${foundBy}</span>
                     </div>
                     <div class="sdt-info-row sdt-dist-line">
-                        <span class="sdt-stat"><span class="sdt-label">${t('solodungeons.col_linear_dist', '直线')}:</span> <span class="sdt-dist">${linearDist}</span></span>
-                        <span class="sdt-stat"><span class="sdt-label">${pfAvailable ? t('solodungeons.col_pf_distance', '寻路') : t('solodungeons.col_distance', '距离')}:</span> <span class="sdt-pfdist">${pfDist}</span></span>
+                        <span class="sdt-stat"><span class="sdt-label">${pfAvailable ? t('solodungeons.col_pf_distance', '寻路') : t('solodungeons.col_distance', '距离')}:</span> <span class="sdt-pfdist">${distStr}</span></span>
                         <span class="sdt-stat"><span class="sdt-label">${t('solodungeons.col_time_left', '剩余')}:</span> <span class="sdt-time">${timeLeft}</span></span>
                     </div>
                 </td>
@@ -1298,7 +1349,7 @@
             // 直接渲染缓存数据（只用最新的玩家位置重新计算评分）
             renderCombinedTable(
                 cachedDungeonsData?.dungeons,
-                cachedRunesData?.runes,
+                cachedRunesData?.runeSystems,
                 outputDiv,
                 cachedDungeonsData,
                 cachedRunesData
@@ -1382,7 +1433,7 @@
         }
         renderCombinedTable(
             dungeonsData?.dungeons,
-            runesData?.runes,
+            runesData?.runeSystems,
             outputDiv,
             dungeonsData,
             runesData
@@ -1607,7 +1658,7 @@
                     alert(t('solodungeons.select_route', '请选择要载入的路线'));
                     return;
                 }
-                loadRoute(selectedName, cachedDungeonsData?.dungeons, cachedRunesData?.runes);
+                loadRoute(selectedName, cachedDungeonsData?.dungeons, cachedRunesData?.runeSystems);
             });
         }
 
