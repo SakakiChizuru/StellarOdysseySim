@@ -524,6 +524,10 @@
         // 数据尚未加载时不渲染（避免覆盖 loading 状态或空内容）
         if (cachedDungeonsData === null && cachedRunesData === null) return;
 
+        // 如果有符文，增加 panel 高度
+        const hasRunes = remainingRunes.length > 0;
+        container.style.maxHeight = hasRunes ? '1000px' : '700px';
+
         const startPos = getCurrentStartPos();
         console.log('[SoloDungeons] recalculateAndRender:', {
             remainingDungeonsCount: remainingDungeons.length,
