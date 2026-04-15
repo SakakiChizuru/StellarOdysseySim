@@ -747,7 +747,7 @@
         return {
             score: Math.round(score),
             details: {
-                linearDistance: Math.floor(linearDistance),
+                linearDistance: Math.floor(linearDistance * 100) / 100,
                 distance: Math.floor(distance * 100) / 100,
                 isPathfinder,
                 stepLimited,
@@ -1017,8 +1017,8 @@
         }
 
         const limitLabel = _stepLimit ? `[${_stepLimit}ly]` : '';
-        const returnLabel = _returnToOrigin && selectedRoutes.length > 0 ? ` (+返回: ${Math.floor(returnDist).toFixed(2)})` : '';
-        el.textContent = `${t('solodungeons.total_distance', '总寻路距离')} ${limitLabel}: ${Math.floor(totalDist).toFixed(2)}${returnLabel}`;
+        const returnLabel = _returnToOrigin && selectedRoutes.length > 0 ? ` (+返回: ${(Math.floor(returnDist * 100) / 100).toFixed(2)})` : '';
+        el.textContent = `${t('solodungeons.total_distance', '总寻路距离')} ${limitLabel}: ${(Math.floor(totalDist * 100) / 100).toFixed(2)}${returnLabel}`;
     }
 
     /**
@@ -1337,8 +1337,8 @@
             const coords = getCoordinates(d);
             const coordsStr = coords ? `[${coords.x},${coords.y}]` : '—';
             const scoreDisplay = d.score > 0 ? d.score : (d.score === -1 ? '!' : '—');
-            const linearDist = d.details.linearDistance != null ? `${d.details.linearDistance.toFixed(2)} ly` : '—';
-            const pfDist = pfAvailable && d.details.distance != null ? `${d.details.distance.toFixed(2)} ly` : '—';
+            const linearDist = d.details.linearDistance != null ? `${(Math.floor(d.details.linearDistance * 100) / 100).toFixed(2)} ly` : '—';
+            const pfDist = pfAvailable && d.details.distance != null ? `${(Math.floor(d.details.distance * 100) / 100).toFixed(2)} ly` : '—';
             const timeLeft = formatTimeRemaining(d.closesAt);
             const rewardText = d.reward_modifier !== undefined ? (d.reward_modifier > 0 ? '+' : '') + d.reward_modifier + '%' : '—';
             const diffText = d.difficulty_modifier !== undefined ? (d.difficulty_modifier > 0 ? '+' : '') + d.difficulty_modifier + '%' : '—';
