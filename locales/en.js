@@ -284,6 +284,7 @@ const en = {
     'solodungeons.step_unlimited': 'Unlimited',
     'solodungeons.step_100': '100 ly',
     'solodungeons.step_120': '120 ly',
+    'solodungeons.return_to_origin': 'Plan Return to Origin',
 
     // Path Detail Panel
     'block.route_path_detail': 'Path Detail',

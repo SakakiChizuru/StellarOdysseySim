@@ -284,6 +284,7 @@ const zh = {
     'solodungeons.step_unlimited': '无限制',
     'solodungeons.step_100': '100 ly',
     'solodungeons.step_120': '120 ly',
+    'solodungeons.return_to_origin': '规划返回原位',
 
     // 详细寻路面板
     'block.route_path_detail': '详细寻路',

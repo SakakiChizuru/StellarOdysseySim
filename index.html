@@ -3198,17 +3198,21 @@
                 <div class="block-label" data-i18n="block.dungeons_runes">副本及符文</div>
                 <div class="form-row" style="display: flex; justify-content: space-between; align-items: center;">
                     <button type="button" id="fetchSoloDungeonsBtn" class="btn-primary" data-i18n="btn.fetch_dungeons_runes">获取副本及符文</button>
-                    <div style="display: flex; align-items: center; gap: 0.5em;">
-                        <span data-i18n="solodungeons.step_limit" style="font-size: 0.82em; color: #9ca3af;">每跳限制:</span>
-                        <select id="routeStepLimitSelect" style="padding: 0.25em 0.5em; font-size: 0.82em; background: #1e2333; color: #e0e0e0; border: 1px solid #2d3748; border-radius: 4px;">
-                            <option value="" data-i18n="solodungeons.step_unlimited">无限制</option>
-                            <option value="100" data-i18n="solodungeons.step_100">100 ly</option>
-                            <option value="120" data-i18n="solodungeons.step_120">120 ly</option>
-                        </select>
-                        <label style="display: flex; align-items: center; gap: 0.3em; font-size: 0.82em; color: #9ca3af; cursor: pointer;">
-                            <input type="checkbox" id="returnToOriginCheckbox" style="cursor: pointer;">
-                            <span data-i18n="solodungeons.return_to_origin">规划返回原位</span>
-                        </label>
+                    <div style="display: flex; flex-direction: column; gap: 0.3em;">
+                        <div style="display: flex; align-items: center; gap: 0.5em;">
+                            <span data-i18n="solodungeons.step_limit" style="font-size: 0.82em; color: #9ca3af;">每跳限制:</span>
+                            <select id="routeStepLimitSelect" style="padding: 0.25em 0.5em; font-size: 0.82em; background: #1e2333; color: #e0e0e0; border: 1px solid #2d3748; border-radius: 4px;">
+                                <option value="" data-i18n="solodungeons.step_unlimited">无限制</option>
+                                <option value="100" data-i18n="solodungeons.step_100">100 ly</option>
+                                <option value="120" data-i18n="solodungeons.step_120">120 ly</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; justify-content: flex-end;">
+                            <label style="display: flex; align-items: center; gap: 0.3em; font-size: 0.82em; color: #9ca3af; cursor: pointer;">
+                                <input type="checkbox" id="returnToOriginCheckbox" style="cursor: pointer;">
+                                <span data-i18n="solodungeons.return_to_origin">规划返回原位</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
                 <div id="solodungeonsOutput" style="margin-top: 1em; font-family: monospace; font-size: 0.9em; color: #e0e0e0; max-height: 700px; overflow: auto;"></div>
