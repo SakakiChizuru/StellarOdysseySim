@@ -973,15 +973,20 @@
             }
         }
 
-        // 如果勾选了返回原位，加上返回距离
+        // 如果勾选了返回原位，加上返回距离（从最后目的地返回玩家位置）
         let returnDist = 0;
-        if (_returnToOrigin && selectedRoutes.length > 0 && pos) {
+        if (_returnToOrigin && selectedRoutes.length > 0 && pos && playerPos) {
             if (_stepLimit && pfGrid && typeof pfGrid.findStepLimitedPath === 'function') {
-                const result = pfGrid.findStepLimitedPath(pos, pos, _stepLimit);
+                const result = pfGrid.findStepLimitedPath(
+                    { x: pos.x, y: pos.y },
+                    { x: playerPos.x, y: playerPos.y },
+                    _stepLimit
+                );
                 returnDist = result.distance;
             } else {
-                // 返回原点就是 0 距离（在初始星系网络中跳转）
-                returnDist = 0;
+                // 降级到寻路距离
+                const pfResult = getPathfinderDistance(pos.x, pos.y, playerPos.x, playerPos.y);
+                returnDist = pfResult.distance;
             }
         }
 
@@ -1033,9 +1038,9 @@
 
         // 添加返回原位项
         if (_returnToOrigin && selectedRoutes.length > 0 && playerPos) {
-            const returnSvg = `<svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>`;
+            const returnSvg = `<svg viewBox="0 0 24 24" width="12" height="12"><path fill="white" d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>`;
             html += `<div class="route-list-item route-return-item" data-return="true">
-                <span class="route-score" style="color:#10b981">${returnSvg}</span>
+                <span class="route-score">${returnSvg}</span>
                 <div class="route-info">
                     <div class="route-coords">${t('solodungeons.return_to_origin', '返回原位')}</div>
                     <div class="route-type">${playerPos ? `[${playerPos.x}, ${playerPos.y}]` : '—'}</div>
