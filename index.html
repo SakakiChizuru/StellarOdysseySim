@@ -140,9 +140,11 @@
             flex: 1;
             overflow-y: auto;
             overflow-x: hidden;
+            padding: 0 6px 0 6px;
+            box-sizing: border-box;
         }
         .solodungeons-listview-body table {
-            width: 100%;
+            width: calc(100% - 12px);
             table-layout: fixed;
             border-collapse: collapse;
         }
@@ -155,7 +157,7 @@
             text-overflow: ellipsis;
         }
 
-        /* 行交互 */
+        /* 行交互：tr 使用 outline 实现外框高亮 */
         .solodungeons-listview-body tr {
             cursor: pointer;
             transition: background 0.1s;
@@ -165,6 +167,7 @@
         }
         .solodungeons-listview-body tr.selected {
             outline: 2px solid #4fa3ff;
+            outline-offset: -2px;
         }
         .solodungeons-listview-body tr.selected td {
             background: transparent;
