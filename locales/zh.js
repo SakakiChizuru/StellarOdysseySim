@@ -306,6 +306,8 @@ const zh = {
     'solodungeons.total': '总计',
     'solodungeons.reachable': '可到达',
     'solodungeons.player_pos': '玩家位置',
+    'solodungeons.route_pos': '路径位置',
+    'solodungeons.original_pos': '玩家原位置',
     'solodungeons.unknown': '未知',
     'solodungeons.expired': '已过期',
     'solodungeons.pf_active': 'Pathfinder 已启用',

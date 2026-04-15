@@ -545,6 +545,9 @@
             : window.stellarOdysseyPathfinderGrid;
         const pfAvailable = !!(pfGrid && typeof pfGrid.findShortestPath === 'function');
 
+        // 原始玩家位置
+        const originalPlayerPosStr = playerPos ? `[${playerPos.x}, ${playerPos.y}]` : t('solodungeons.unknown', '未知');
+        // 当前起点（可能是已选路线的最后一项坐标）
         const playerPosStr = startPos ? `[${startPos.x}, ${startPos.y}]` : t('solodungeons.unknown', '未知');
 
         let html = '';
@@ -557,7 +560,8 @@
             html += `<div class="sdt-section-title">${t('block.solodungeons', '单人副本')}</div>`;
             html += `<div class="solodungeons-summary">
                 <span class="summary-item">${t('solodungeons.total', '总计')}: <b>${scoredDungeons.length}</b></span>
-                <span class="summary-item">${t('solodungeons.player_pos', '起点')}: <b>${playerPosStr}</b></span>
+                <span class="summary-item">${t('solodungeons.route_pos', '路径位置')}: <b>${playerPosStr}</b></span>
+                <span class="summary-item">${t('solodungeons.original_pos', '玩家原位置')}: <b>[${playerPos.x}, ${playerPos.y}]</b></span>
             </div>`;
             html += buildListView('sdt-dungeons', renderDungeonsHeader(pfAvailable), renderDungeonsRows(scoredDungeons, pfAvailable));
         }
@@ -576,7 +580,8 @@
             html += `<div class="sdt-section-title" style="margin-top:1.4em">${t('block.runedrops', '掉落符文')}</div>`;
             html += `<div class="solodungeons-summary">
                 <span class="summary-item">${t('runedrops.total', '总计')}: <b>${sortedRunes.length}</b></span>
-                <span class="summary-item">${t('solodungeons.player_pos', '起点')}: <b>${playerPosStr}</b></span>
+                <span class="summary-item">${t('solodungeons.route_pos', '路径位置')}: <b>${playerPosStr}</b></span>
+                <span class="summary-item">${t('solodungeons.original_pos', '玩家原位置')}: <b>${originalPlayerPosStr}</b></span>
             </div>`;
             html += buildListView('sdt-runes', renderRunesHeader(pfAvailable), renderRunesRows(sortedRunes, pfAvailable));
         }
