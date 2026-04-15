@@ -721,8 +721,8 @@
         return {
             score: Math.round(score),
             details: {
-                linearDistance: Math.round(linearDistance),
-                distance: Math.round(distance),
+                linearDistance: Math.floor(linearDistance),
+                distance: Math.floor(distance * 100) / 100,
                 isPathfinder,
                 stepLimited,
                 distanceScore: Math.round(distanceScore),
@@ -1211,7 +1211,7 @@
                         <span class="rpd-coord">${startCoordStr}</span>
                         <span class="rpd-label" style="margin-left:0.8em">${_t('path.to', '到达')}</span>
                         <span class="rpd-coord">${endCoordStr}</span>
-                        <span class="rpd-total-dist">${linDist.toFixed(1)} ly (${_t('solodungeons.linear_only', '仅直线')})</span>
+                        <span class="rpd-total-dist">${(Math.floor(linDist * 100) / 100).toFixed(2)} ly (${_t('solodungeons.linear_only', '仅直线')})</span>
                     </div>
                     <div class="rpd-header-row">
                         <span class="rpd-label">${_t('solodungeons.type', '类型')}</span>
@@ -1237,7 +1237,7 @@
 
             const distDisplay = traj.distance === 0
                 ? `0 ${_t('path.ly', '光年')} ${_t('solodungeons.path_teleport', '(传送)')}`
-                : `${traj.distance.toFixed(2)} ${_t('path.ly', '光年')}`;
+                : `${Math.floor(traj.distance * 100) / 100} ${_t('path.ly', '光年')}`;
 
             const segTitle = _t('path.segment', { n: i + 1 });
 
@@ -1247,13 +1247,13 @@
                     <div class="item-description">
                         <div name="from">${_t('path.from', '起点:')}<br>[${traj.from.x}, ${traj.from.y}]${fromLabel ? `<br><span style="color:#6b7280;font-size:0.82em">${fromLabel}</span>` : ''}</div>
                         <div name="to">${_t('path.to', '终点:')}<br>[${traj.to.x}, ${traj.to.y}]${toLabel ? `<br><span style="color:#6b7280;font-size:0.82em">${toLabel}</span>` : ''}</div>
-                        <div name="distance">${traj.distance.toFixed(2)}<br/>${_t('path.ly', '光年')}</div>
+                        <div name="distance">${Math.floor(traj.distance * 100) / 100}<br/>${_t('path.ly', '光年')}</div>
                     </div>
                 </div>
             </div>`;
         }).join('');
 
-        const totalDistStr = _t('path.total', { d: totalDistance.toFixed(2) });
+        const totalDistStr = _t('path.total', { d: (Math.floor(totalDistance * 100) / 100).toFixed(2) });
 
         panel.innerHTML = `
             <div class="rpd-header">
@@ -1311,8 +1311,8 @@
             const coords = getCoordinates(d);
             const coordsStr = coords ? `[${coords.x},${coords.y}]` : '—';
             const scoreDisplay = d.score > 0 ? d.score : (d.score === -1 ? '!' : '—');
-            const linearDist = d.details.linearDistance != null ? `${d.details.linearDistance} ly` : '—';
-            const pfDist = pfAvailable && d.details.distance != null ? `${d.details.distance} ly` : '—';
+            const linearDist = d.details.linearDistance != null ? `${d.details.linearDistance.toFixed(2)} ly` : '—';
+            const pfDist = pfAvailable && d.details.distance != null ? `${d.details.distance.toFixed(2)} ly` : '—';
             const timeLeft = formatTimeRemaining(d.closesAt);
             const rewardText = d.reward_modifier !== undefined ? (d.reward_modifier > 0 ? '+' : '') + d.reward_modifier + '%' : '—';
             const diffText = d.difficulty_modifier !== undefined ? (d.difficulty_modifier > 0 ? '+' : '') + d.difficulty_modifier + '%' : '—';
@@ -1367,7 +1367,7 @@
             let distStr = '—';
             if (coords && playerPos) {
                 const pfResult = getPathfinderDistance(playerPos.x, playerPos.y, coords.x, coords.y);
-                distStr = `${Math.round(pfResult.distance)} ly`;
+                distStr = `${Math.floor(pfResult.distance * 100) / 100} ly`;
             }
 
             const itemKey = generateItemKey(r);
