@@ -35,6 +35,9 @@
     // 已选路线列表
     let selectedRoutes = [];
 
+    // 规划返回原位
+    let _returnToOrigin = false;
+
     // 待选列表（用于动态重新评分）
     let remainingDungeons = [];
     let remainingRunes = [];
@@ -965,8 +968,21 @@
             }
         }
 
+        // 如果勾选了返回原位，加上返回距离
+        let returnDist = 0;
+        if (_returnToOrigin && selectedRoutes.length > 0 && pos) {
+            if (_stepLimit && pfGrid && typeof pfGrid.findStepLimitedPath === 'function') {
+                const result = pfGrid.findStepLimitedPath(pos, pos, _stepLimit);
+                returnDist = result.distance;
+            } else {
+                // 返回原点就是 0 距离（在初始星系网络中跳转）
+                returnDist = 0;
+            }
+        }
+
         const limitLabel = _stepLimit ? `[${_stepLimit}ly]` : '';
-        el.textContent = `${t('solodungeons.total_distance', '总寻路距离')} ${limitLabel}: ${Math.round(totalDist)}`;
+        const returnLabel = _returnToOrigin && selectedRoutes.length > 0 ? ` (+返回: ${Math.round(returnDist)})` : '';
+        el.textContent = `${t('solodungeons.total_distance', '总寻路距离')} ${limitLabel}: ${Math.round(totalDist)}${returnLabel}`;
     }
 
     /**
@@ -976,14 +992,15 @@
         const container = document.getElementById('solodungeonsRouteList');
         if (!container) return;
 
-        if (selectedRoutes.length === 0) {
+        if (selectedRoutes.length === 0 && !_returnToOrigin) {
             container.innerHTML = `<div class="route-list-empty">${t('solodungeons.route_empty', '暂无已选路线')}</div>`;
+            updateRouteListTotalDistance();
             return;
         }
 
         const removeSvg = `<svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>`;
 
-        container.innerHTML = selectedRoutes.map(route => {
+        let html = selectedRoutes.map(route => {
             const coords = getCoordinates(route);
             const coordsStr = coords ? `[${coords.x},${coords.y}]` : '—';
             const typeText = route._type === 'dungeon' ? t('solodungeons.type_dungeon', '副本') : t('solodungeons.type_rune', '符文');
@@ -999,7 +1016,7 @@
                 scoreClass = route.score >= 80 ? 'high' : route.score >= 50 ? 'med' : 'low';
             }
 
-            return `<div class="route-list-item" data-id="${itemKey}">
+            return `<div class="route-list-item" data-id="${itemKey}" data-route-index="${selectedRoutes.indexOf(route)}">
                 <span class="route-score ${scoreClass}">${scoreDisplay}</span>
                 <div class="route-info">
                     <div class="route-coords">${coordsStr}</div>
@@ -1008,6 +1025,24 @@
                 <span class="route-remove" data-id="${itemKey}" title="${t('solodungeons.remove_from_route', '从路线移除')}">${removeSvg}</span>
             </div>`;
         }).join('');
+
+        // 添加返回原位项
+        if (_returnToOrigin && selectedRoutes.length > 0 && playerPos) {
+            const returnSvg = `<svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>`;
+            html += `<div class="route-list-item route-return-item" data-return="true">
+                <span class="route-score" style="color:#10b981">${returnSvg}</span>
+                <div class="route-info">
+                    <div class="route-coords">${t('solodungeons.return_to_origin', '返回原位')}</div>
+                    <div class="route-type">${playerPos ? `[${playerPos.x}, ${playerPos.y}]` : '—'}</div>
+                </div>
+            </div>`;
+        } else if (selectedRoutes.length === 0) {
+            container.innerHTML = `<div class="route-list-empty">${t('solodungeons.route_empty', '暂无已选路线')}</div>`;
+            updateRouteListTotalDistance();
+            return;
+        }
+
+        container.innerHTML = html;
 
         // 绑定移除按钮点击事件
         container.querySelectorAll('.route-remove').forEach(btn => {
@@ -1025,25 +1060,41 @@
         // 更新标题右侧的总寻路距离
         updateRouteListTotalDistance();
 
-        // 绑定条目点击事件（点击整行触发详细寻路，排除点击删除按钮的情况）
-        container.querySelectorAll('.route-list-item').forEach((item, index) => {
+        // 绑定条目点击事件（点击整行触发详细寻路，排除点击删除按钮和返回项的情况）
+        container.querySelectorAll('.route-list-item:not(.route-return-item)').forEach((item) => {
             item.addEventListener('click', function(e) {
                 if (e.target.closest('.route-remove')) return; // 忽略删除按钮
+
+                const routeIndex = parseInt(this.dataset.routeIndex, 10);
+                const route = selectedRoutes[routeIndex];
+                if (!route) return;
 
                 // 高亮选中
                 container.querySelectorAll('.route-list-item.route-item-selected').forEach(el => el.classList.remove('route-item-selected'));
                 this.classList.add('route-item-selected');
 
-                // 计算寻路
-                const route = selectedRoutes[index];
-                if (!route) return;
-
                 // 起点：前一项的坐标，或玩家位置
-                const startPos = index === 0 ? playerPos : getCoordinates(selectedRoutes[index - 1]);
+                const startPos = routeIndex === 0 ? playerPos : getCoordinates(selectedRoutes[routeIndex - 1]);
                 const endPos = getCoordinates(route);
-                renderPathDetail(startPos, endPos, route, index);
+                renderPathDetail(startPos, endPos, route, routeIndex);
             });
         });
+
+        // 绑定返回原位项点击事件
+        const returnItem = container.querySelector('.route-return-item');
+        if (returnItem) {
+            returnItem.addEventListener('click', function() {
+                // 高亮选中
+                container.querySelectorAll('.route-list-item.route-item-selected').forEach(el => el.classList.remove('route-item-selected'));
+                this.classList.add('route-item-selected');
+
+                // 返回原位：从最后一个目的地点返回玩家位置
+                const lastRoute = selectedRoutes[selectedRoutes.length - 1];
+                const startPos = lastRoute ? getCoordinates(lastRoute) : playerPos;
+                const endPos = playerPos;
+                renderPathDetail(startPos, endPos, { _type: 'return', _key: '__return_to_origin__' }, -1);
+            });
+        }
     }
 
     /**
@@ -1085,6 +1136,12 @@
             return;
         }
 
+        // 是否为返回原位
+        const isReturn = route._type === 'return' || route._key === '__return_to_origin__';
+        const typeText = isReturn
+            ? _t('solodungeons.return_to_origin', '返回原位')
+            : (route._type === 'dungeon' ? _t('solodungeons.type_dungeon', '副本') : _t('solodungeons.type_rune', '符文'));
+
         // 保存激活状态（语言切换时重新渲染用），trajectories/totalDistance 待 pathfinder 计算后补充
         _activePathDetail = { startPos, endPos, index, route, trajectories: null, totalDistance: null, pathReached: null };
 
@@ -1092,10 +1149,6 @@
         const pfGrid = (window.PathfinderService && typeof window.PathfinderService.getGrid === 'function')
             ? window.PathfinderService.getGrid()
             : window.stellarOdysseyPathfinderGrid;
-
-        const typeText = route._type === 'dungeon'
-            ? _t('solodungeons.type_dungeon', '副本')
-            : _t('solodungeons.type_rune', '符文');
 
         const startCoordStr = `[${startPos.x}, ${startPos.y}]`;
         const endCoordStr   = `[${endPos.x}, ${endPos.y}]`;
@@ -1737,19 +1790,41 @@
                 // 重新计算评分（使用新的步进限制）
                 recalculateAndRender();
             });
+
+            // 返回原位 checkbox
+            const returnCheckbox = document.getElementById('returnToOriginCheckbox');
+            if (returnCheckbox) {
+                // 恢复保存的状态
+                const savedReturn = localStorage.getItem('solodungeons_return_to_origin');
+                _returnToOrigin = savedReturn === '1';
+                returnCheckbox.checked = _returnToOrigin;
+
+                returnCheckbox.addEventListener('change', function() {
+                    _returnToOrigin = this.checked;
+                    localStorage.setItem('solodungeons_return_to_origin', _returnToOrigin ? '1' : '');
+                    renderRouteList();
+                });
+            }
         }
 
         // 语言切换时重新渲染 UI
         document.addEventListener('languageChanged', function() {
             // 更新路线选择下拉列表
             refreshRouteSelect();
+            // 更新已选路线列表（包含返回原位项）
+            renderRouteList();
             // 更新详细寻路面板（如果有激活状态）
             if (!_activePathDetail) return;
             // 路线列表可能已重新渲染，从 selectedRoutes 中重新获取当前条目
-            const route = selectedRoutes[_activePathDetail.index];
-            if (route) {
-                // 复用缓存的路径数据，避免重复 pathfinding
-                renderPathDetail(_activePathDetail.startPos, _activePathDetail.endPos, route, _activePathDetail.index);
+            if (_activePathDetail.index >= 0) {
+                const route = selectedRoutes[_activePathDetail.index];
+                if (route) {
+                    // 复用缓存的路径数据，避免重复 pathfinding
+                    renderPathDetail(_activePathDetail.startPos, _activePathDetail.endPos, route, _activePathDetail.index);
+                }
+            } else {
+                // 返回原位项
+                renderPathDetail(_activePathDetail.startPos, _activePathDetail.endPos, { _type: 'return', _key: '__return_to_origin__' }, -1);
             }
         });
 
