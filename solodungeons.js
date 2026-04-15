@@ -1327,7 +1327,7 @@
             return `<tr data-id="${itemKey}" data-type="dungeon" data-data="${encodeURIComponent(JSON.stringify(d))}">
                 <td class="sdt-score ${scoreClass}">${scoreDisplay}</td>
                 <td class="sdt-info">
-                    <div class="sdt-info-row sdt-coords-line">${coordsStr}</div>
+                    <div class="sdt-info-row sdt-coords-line">${coordsStr}<span class="sdt-time-right">${t('solodungeons.col_time_left', '剩余')}: ${timeLeft}</span></div>
                     <div class="sdt-info-row sdt-stats-line">
                         <span class="sdt-stat"><span class="sdt-label">${t('solodungeons.col_attempts', '次数')}:</span> ${attemptsText}</span>
                         <span class="sdt-stat"><span class="sdt-label">${t('solodungeons.col_reward', '奖励')}:</span> <span style="color:${getModifierColor(d.reward_modifier,false)}">${rewardText}</span></span>
@@ -1336,7 +1336,6 @@
                     <div class="sdt-info-row sdt-dist-line">
                         <span class="sdt-stat"><span class="sdt-label">${t('solodungeons.col_linear_dist', '直线')}:</span> <span class="sdt-dist">${linearDist}</span></span>
                         <span class="sdt-stat"><span class="sdt-label">${pfAvailable ? t('solodungeons.col_pf_distance', '寻路') : t('solodungeons.col_distance', '距离')}:</span> <span class="sdt-pfdist">${pfDist}</span></span>
-                        <span class="sdt-stat"><span class="sdt-label">${t('solodungeons.col_time_left', '剩余')}:</span> <span class="sdt-time">${timeLeft}</span></span>
                     </div>
                 </td>
                 <td class="sdt-action">
@@ -1377,7 +1376,7 @@
 
             return `<tr data-id="${itemKey}" data-type="rune" data-data="${encodeURIComponent(JSON.stringify(r))}">
                 <td class="sdt-info" colspan="1">
-                    <div class="sdt-info-row sdt-coords-line">${coordsStr} &nbsp;<span style="color:#a78bfa;font-size:0.88em">${runeName}</span></div>
+                    <div class="sdt-info-row sdt-coords-line">${coordsStr} &nbsp;<span style="color:#a78bfa;font-size:0.88em">${runeName}</span><span class="sdt-time-right">${t('solodungeons.col_time_left', '剩余')}: ${timeLeft}</span></div>
                     <div class="sdt-info-row sdt-stats-line">
                         <span class="sdt-stat"><span class="sdt-label">${t('runedrops.col_star', '恒星')}:</span> ${starName}</span>
                         <span class="sdt-stat"><span class="sdt-label">${t('runedrops.col_system', '星系')}:</span> ${systemName}</span>
@@ -1385,7 +1384,6 @@
                     </div>
                     <div class="sdt-info-row sdt-dist-line">
                         <span class="sdt-stat"><span class="sdt-label">${pfAvailable ? t('solodungeons.col_pf_distance', '寻路') : t('solodungeons.col_distance', '距离')}:</span> <span class="sdt-pfdist">${distStr}</span></span>
-                        <span class="sdt-stat"><span class="sdt-label">${t('solodungeons.col_time_left', '剩余')}:</span> <span class="sdt-time">${timeLeft}</span></span>
                     </div>
                 </td>
                 <td class="sdt-action">
