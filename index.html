@@ -1067,10 +1067,12 @@
                 DisplayBoostPercent();
                 // 更新概率页面质量标签
                 if (typeof window.updateProbQualityLabels === 'function') window.updateProbQualityLabels();
-                // 更新副本TAB（使用缓存数据，只重新渲染 HTML，无 API 请求）
-                const sdOutput = document.getElementById('solodungeonsOutput');
-                if (sdOutput && sdOutput.innerHTML.trim() && typeof window.SoloDungeonsModule !== 'undefined') {
-                    window.SoloDungeonsModule.loadSoloDungeonsAndRunes(sdOutput, false); // false = 使用缓存
+                // 更新副本TAB（使用 recalculateAndRender，不重新初始化待选列表，避免已选符文克隆）
+                if (typeof window.SoloDungeonsModule !== 'undefined') {
+                    const sdOutput = document.getElementById('solodungeonsOutput');
+                    if (sdOutput && sdOutput.innerHTML.trim()) {
+                        window.SoloDungeonsModule.recalculateAndRender();
+                    }
                 }
             });
             document.getElementById('langEn').addEventListener('click', async () => {
@@ -1080,10 +1082,12 @@
                 DisplayBoostPercent();
                 // 更新概率页面质量标签
                 if (typeof window.updateProbQualityLabels === 'function') window.updateProbQualityLabels();
-                // 更新副本TAB（使用缓存数据，只重新渲染 HTML，无 API 请求）
-                const sdOutput = document.getElementById('solodungeonsOutput');
-                if (sdOutput && sdOutput.innerHTML.trim() && typeof window.SoloDungeonsModule !== 'undefined') {
-                    window.SoloDungeonsModule.loadSoloDungeonsAndRunes(sdOutput, false); // false = 使用缓存
+                // 更新副本TAB（使用 recalculateAndRender，不重新初始化待选列表，避免已选符文克隆）
+                if (typeof window.SoloDungeonsModule !== 'undefined') {
+                    const sdOutput = document.getElementById('solodungeonsOutput');
+                    if (sdOutput && sdOutput.innerHTML.trim()) {
+                        window.SoloDungeonsModule.recalculateAndRender();
+                    }
                 }
             });
             // ── i18n 初始化结束 ───────────────────────────────────────

@@ -521,6 +521,9 @@
         const container = document.getElementById('solodungeonsOutput');
         if (!container) return;
 
+        // 数据尚未加载时不渲染（避免覆盖 loading 状态或空内容）
+        if (cachedDungeonsData === null && cachedRunesData === null) return;
+
         const startPos = getCurrentStartPos();
         console.log('[SoloDungeons] recalculateAndRender:', {
             remainingDungeonsCount: remainingDungeons.length,
@@ -1552,6 +1555,7 @@
 
     window.SoloDungeonsModule = {
         loadSoloDungeonsAndRunes,
+        recalculateAndRender,
         clearCache,
         ensureUserData,
         forceRefreshUserData,
