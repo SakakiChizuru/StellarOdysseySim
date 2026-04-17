@@ -297,6 +297,7 @@ const en = {
     'solodungeons.path_segment_count': '{n} segments total',
     'solodungeons.type': 'Type',
     'solodungeons.click_copy': 'Click to copy destination coordinates',
+    'solodungeons.copied': 'Copied',
     'btn.fetch_solodungeons': 'Fetch Solo Dungeons',
     'btn.fetch_runedrops': 'Fetch Rune Info',
     'solodungeons.error_no_api_key': 'Please enter API Key first',

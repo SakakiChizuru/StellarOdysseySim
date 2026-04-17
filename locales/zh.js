@@ -297,6 +297,7 @@ const zh = {
     'solodungeons.path_segment_count': '共 {n} 段',
     'solodungeons.type': '类型',
     'solodungeons.click_copy': '点击复制目标坐标',
+    'solodungeons.copied': '已复制',
     'btn.fetch_solodungeons': '获取单人副本列表',
     'btn.fetch_runedrops': '获取符文信息',
     'solodungeons.error_no_api_key': '请先输入 API Key',

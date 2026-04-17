@@ -1303,12 +1303,26 @@
             item.addEventListener('click', function() {
                 const cx = this.dataset.copyX;
                 const cy = this.dataset.copyY;
-                navigator.clipboard.writeText(`${cx},${cy}`).then(() => {
-                    const msg = _t('alert.copy_success', { x: cx, y: cy, result: _t('alert.copy_ok', '成功') });
-                    alert(msg);
-                }).catch(() => {
-                    alert(`${cx}, ${cy}`);
-                });
+                const text = `___STELLAR_ODYSSEY_SIM___\n{\nx: ${cx},\ny: ${cy}\n}`;
+                const doCopy = (() => {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        return (t) => navigator.clipboard.writeText(t);
+                    }
+                    // 降级：创建临时 textarea
+                    const ta = document.createElement('textarea');
+                    ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0';
+                    document.body.appendChild(ta);
+                    return (t) => { ta.value = t; ta.select(); document.execCommand('copy'); document.body.removeChild(ta); };
+                })();
+                doCopy(text);
+                // 渐隐提示
+                const tip = document.createElement('span');
+                tip.textContent = _t('solodungeons.copied', '已复制');
+                tip.style.cssText = 'position:absolute;right:0;top:50%;transform:translateY(-50%);background:#22c55e;color:#fff;font-size:0.75em;padding:2px 8px;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:1;transition:opacity 2s;z-index:10';
+                this.style.position = 'relative';
+                this.appendChild(tip);
+                setTimeout(() => { tip.style.opacity = '0'; }, 100);
+                setTimeout(() => { tip.remove(); }, 800);
             });
         });
     }
