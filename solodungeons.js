@@ -26,7 +26,7 @@
     // 数据缓存（避免切换语言时重新请求 API）
     let cachedDungeonsData = null;
     let cachedRunesData = null;
-    let cachedApiKey = null; // 用于检测 API Key 变化
+
 
     // 详细寻路面板激活状态（语言切换时用于重新渲染）
     let _activePathDetail = null; // { startPos, endPos, index, route, trajectories, totalDistance, stepLimit }
@@ -808,14 +808,8 @@
             dungeonsLength: dungeons?.length,
             runesLength: runes?.length
         });
-        if (remainingDungeons.length === 0 && dungeons && dungeons.length > 0) {
-            remainingDungeons = [...dungeons];
-            console.log('[SoloDungeons] remainingDungeons initialized with', dungeons.length, 'items');
-        }
-        if (remainingRunes.length === 0 && runes && runes.length > 0) {
-            remainingRunes = [...runes];
-            console.log('[SoloDungeons] remainingRunes initialized with', runes.length, 'items');
-        }
+        // remainingDungeons / remainingRunes 已在 loadSoloDungeonsAndRunes 中由新 API 数据重置，
+        // 此处不再需要初始化逻辑。
 
         let html = '';
         let scoredDungeons = null;
@@ -1513,40 +1507,20 @@
                          (runesData && checkPlayerPositionMismatch(runesData));
         }
 
-        // 更新缓存：成功获取的有效数据更新缓存，空结构或失败的保留旧缓存
-        // 注意：API 返回空 JSON {} 时，runesData !== null 但 runesData.runeSystems 为 undefined
-        // 此时应清空缓存，避免显示过期的旧数据
-        if (dungeonsData !== null && Array.isArray(dungeonsData.dungeons)) {
-            cachedDungeonsData = dungeonsData;
-        } else if (dungeonsData !== null) {
-            // API 返回空结构，清空缓存
-            cachedDungeonsData = null;
+        // 更新缓存：API 有响应则保留数据（即使是空数组），无响应才保留旧缓存
+        if (dungeonsRes.ok) {
+            cachedDungeonsData = Array.isArray(dungeonsData?.dungeons) ? dungeonsData : null;
         }
-        if (runesData !== null && Array.isArray(runesData.runeSystems)) {
-            cachedRunesData = runesData;
-        } else if (runesData !== null) {
-            // API 返回空结构，清空缓存
-            cachedRunesData = null;
+        if (runesRes.ok) {
+            cachedRunesData = Array.isArray(runesData?.runeSystems) ? runesData : null;
         }
-        if (cachedDungeonsData !== null || cachedRunesData !== null) {
-            cachedApiKey = apiKey;
-        }
-
         // 渲染结果（使用最新的玩家位置计算评分）
-        // 先清除已选路线和详细寻路（新数据可能使旧路线失效）
-        if (selectedRoutes.length > 0) {
-            // 将已选项合并回待选列表（避免重复渲染时漏掉）
-            for (const route of selectedRoutes) {
-                if (route._type === 'dungeon') {
-                    remainingDungeons.push(route);
-                } else {
-                    remainingRunes.push(route);
-                }
-            }
-            selectedRoutes = [];
-            _activePathDetail = null;
-            clearPathDetailPanel();
-        }
+        // 刷新时清空已选路线和待选列表，直接用新 API 数据重置
+        selectedRoutes = [];
+        _activePathDetail = null;
+        clearPathDetailPanel();
+        remainingDungeons = Array.isArray(dungeonsData?.dungeons) ? [...dungeonsData.dungeons] : [];
+        remainingRunes    = Array.isArray(runesData?.runeSystems)   ? [...runesData.runeSystems]  : [];
         renderCombinedTable(
             dungeonsData?.dungeons,
             runesData?.runeSystems,
@@ -1562,7 +1536,6 @@
     function clearCache() {
         cachedDungeonsData = null;
         cachedRunesData = null;
-        cachedApiKey = null;
         selectedRoutes = [];
         remainingDungeons = [];
         remainingRunes = [];
