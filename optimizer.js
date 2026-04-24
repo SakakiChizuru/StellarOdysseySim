@@ -232,7 +232,10 @@ class Optimizer {
 
 		//Assuming the hit chance percent of Player Versus Mob must greater than 30%.
 		const assumingpercent = parseFloat(hcn || 0.25);
-		const hcX0_pre = parseInt((assumingpercent * this.mob.pre) / ((1 - assumingpercent) * (1 + this.player.battling_precision_boost)));
+		let hcX0_pre = parseInt((assumingpercent * this.mob.pre) / ((1 - assumingpercent) * (1 + this.player.battling_precision_boost)));
+		if (hcX0_pre > available_points) {
+			hcX0_pre = parseInt(0.6 * available_points);
+		}
 		//const startingtime = performance.now();
 
 		for (let p = hcX0_pre; p <= available_points; p++) {
