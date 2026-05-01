@@ -237,16 +237,20 @@ class PathfinderGrid {
      * 
      * @param {any} startInput - 起点坐标
      * @param {any} endInput - 终点坐标
-     * @returns {Object} 包含 starterSystemOnly 和 withSpaceStation 两种路径结果
+     * @returns {Object} 包含 directDistance、starterSystemOnly 和 withSpaceStation 三种路径结果
      */
     findShortestPath(startInput, endInput) {
         const start = this.#parsePoint(startInput);
         const end = this.#parsePoint(endInput);
 
+        // 直接飞行距离
+        const directDistance = Math.hypot(end.x - start.x, end.y - start.y) * this.unitDistance;
+
         const starterPath = this.#runShortestPath(start, end, true);
         const fullPath = this.#runShortestPath(start, end, false);
 
         return {
+            directDistance,
             starterSystemOnly: starterPath,
             withSpaceStation: fullPath,
         };

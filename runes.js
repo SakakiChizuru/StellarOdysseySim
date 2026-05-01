@@ -124,21 +124,22 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     // Calculate distance using PathfinderGrid (with fallback to direct distance)
-    // Always compare both routes (initial star system vs space station) and choose the shortest
+    // Always compare three routes: direct, via initial star system, via space station, choose shortest
     const calcPathfinderDistance = (x1, y1, x2, y2) => {
         const grid = getPathfinderGrid();
         if (grid && typeof grid.findShortestPath === 'function') {
             try {
                 const result = grid.findShortestPath({ x: x1, y: y1 }, { x: x2, y: y2 });
+                const directDist = result.directDistance ?? null;
                 const starterDist = result.starterSystemOnly?.distance ?? null;
                 const stationDist = result.withSpaceStation?.distance ?? null;
-                // Always compare both routes and pick the shorter one
-                if (starterDist !== null && stationDist !== null) {
-                    return Math.min(starterDist, stationDist);
-                } else if (starterDist !== null) {
-                    return starterDist;
-                } else if (stationDist !== null) {
-                    return stationDist;
+                // Always compare all three routes and pick the shortest
+                const distances = [];
+                if (directDist !== null && isFinite(directDist)) distances.push(directDist);
+                if (starterDist !== null && isFinite(starterDist)) distances.push(starterDist);
+                if (stationDist !== null && isFinite(stationDist)) distances.push(stationDist);
+                if (distances.length > 0) {
+                    return Math.min(...distances);
                 }
             } catch (e) {
                 console.warn('[Runes] Pathfinder failed, fallback to direct:', e);

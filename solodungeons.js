@@ -387,7 +387,7 @@
      * 优先使用 PathfinderService（含传送门），
      * 降级到直线距离并标记为估算。
      * 返回 { distance: number, isPathfinder: boolean }
-     * 始终比较"初始星系"和"空间站"两条路线，选取最短距离。
+     * 始终比较三条路线（直接飞行、初始星系、空间站），选取最短距离。
      */
     function getPathfinderDistance(x1, y1, x2, y2) {
         // 优先用 PathfinderService 单例（独立于星图 TAB）
@@ -398,19 +398,16 @@
         if (grid && typeof grid.findShortestPath === 'function') {
             try {
                 const result = grid.findShortestPath({ x: x1, y: y1 }, { x: x2, y: y2 });
+                const directDist = result.directDistance ?? null;
                 const starterDist = result.starterSystemOnly?.distance ?? null;
                 const stationDist = result.withSpaceStation?.distance ?? null;
-                // Always compare both routes and pick the shorter one
-                let dist = null;
-                if (starterDist !== null && stationDist !== null) {
-                    dist = Math.min(starterDist, stationDist);
-                } else if (starterDist !== null) {
-                    dist = starterDist;
-                } else if (stationDist !== null) {
-                    dist = stationDist;
-                }
-                if (dist !== null && isFinite(dist)) {
-                    return { distance: dist, isPathfinder: true };
+                // Always compare all three routes and pick the shortest
+                const distances = [];
+                if (directDist !== null && isFinite(directDist)) distances.push(directDist);
+                if (starterDist !== null && isFinite(starterDist)) distances.push(starterDist);
+                if (stationDist !== null && isFinite(stationDist)) distances.push(stationDist);
+                if (distances.length > 0) {
+                    return { distance: Math.min(...distances), isPathfinder: true };
                 }
             } catch (e) {
                 console.warn('[SoloDungeons] Pathfinder failed, fallback to linear:', e);
