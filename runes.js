@@ -116,6 +116,38 @@ document.addEventListener('DOMContentLoaded', function () {
         return window._t(`star.${starType}`, starType);
     };
 
+    // Get PathfinderGrid (with fallback, similar to solodungeons.js)
+    const getPathfinderGrid = () => {
+        return (window.PathfinderService && typeof window.PathfinderService.getGrid === 'function')
+            ? window.PathfinderService.getGrid()
+            : (window.stellarOdysseyPathfinderGrid || null);
+    };
+
+    // Calculate distance using PathfinderGrid (with fallback to direct distance)
+    // Always compare both routes (initial star system vs space station) and choose the shortest
+    const calcPathfinderDistance = (x1, y1, x2, y2) => {
+        const grid = getPathfinderGrid();
+        if (grid && typeof grid.findShortestPath === 'function') {
+            try {
+                const result = grid.findShortestPath({ x: x1, y: y1 }, { x: x2, y: y2 });
+                const starterDist = result.starterSystemOnly?.distance ?? null;
+                const stationDist = result.withSpaceStation?.distance ?? null;
+                // Always compare both routes and pick the shorter one
+                if (starterDist !== null && stationDist !== null) {
+                    return Math.min(starterDist, stationDist);
+                } else if (starterDist !== null) {
+                    return starterDist;
+                } else if (stationDist !== null) {
+                    return stationDist;
+                }
+            } catch (e) {
+                console.warn('[Runes] Pathfinder failed, fallback to direct:', e);
+            }
+        }
+        // Fallback to direct distance
+        return Math.hypot(x2 - x1, y2 - y1) * 10.0;
+    };
+
     // Render the route list with current language
     const renderRouteList = (route, totalDistance) => {
         if (!outputDiv || !route || route.length < 2) return;
@@ -257,6 +289,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 window.runesDataCache.user = userData;
                 updateProgress(85);
                 
+                // Initialize PathfinderService with user's space stations
+                if (window.PathfinderService && typeof window.PathfinderService.ensureInitialized === 'function') {
+                    try {
+                        await window.PathfinderService.ensureInitialized(apiKey);
+                        console.log('[Runes] PathfinderService initialized');
+                    } catch (e) {
+                        console.warn('[Runes] Failed to initialize PathfinderService:', e);
+                    }
+                }
+                
                 // Ensure we have user's current coordinates
                 const userSystem = userData?.data?.currentSystem;
                 if (!userSystem) {
@@ -318,7 +360,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     let currentPos = { coordinate_x: userX, coordinate_y: userY };
                     let path = [];
 
-                    const dist = (a, b) => Math.hypot(a.coordinate_x - b.coordinate_x, a.coordinate_y - b.coordinate_y);
+                    // Use pathfinder-aware distance function
+                    const dist = (a, b) => {
+                        // a and b might be objects with coordinate_x/coordinate_y or x/y
+                        const ax = a.coordinate_x !== undefined ? a.coordinate_x : a.x;
+                        const ay = a.coordinate_y !== undefined ? a.coordinate_y : a.y;
+                        const bx = b.coordinate_x !== undefined ? b.coordinate_x : b.x;
+                        const by = b.coordinate_y !== undefined ? b.coordinate_y : b.y;
+                        return calcPathfinderDistance(ax, ay, bx, by) / 10.0; // divide by 10 to get coordinate distance (not light-years)
+                    };
 
                     while (unvisited.length > 0) {
                         let minDist = Infinity;
