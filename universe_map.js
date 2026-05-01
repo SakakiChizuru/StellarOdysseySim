@@ -1554,15 +1554,10 @@ document.addEventListener("DOMContentLoaded", () => {
 			destinationPointI.value
 		);
 
-		// 轨迹选择
-		const tra = universeMap.universeGrid.portedSpaceStations.size > 0
-			? (paths.withSpaceStation?.trajectories ?? null)
-			: (paths.starterSystemOnly?.trajectories ?? null);
-
-		// 距离选择
-		const totalDistance = universeMap.universeGrid.portedSpaceStations.size > 0
-			? Number(paths.withSpaceStation?.distance ?? 0).toFixed(2)
-			: Number(paths.starterSystemOnly?.distance ?? 0).toFixed(2);
+		// 轨迹和距离选择：始终比较所有方案（直接、纯S、纯P、混合S→P、混合P→S）
+		// withSpaceStation.distance 已包含5种方案的最优解
+		const tra = paths.withSpaceStation?.trajectories ?? paths.starterSystemOnly?.trajectories ?? null;
+		const totalDistance = Number(paths.withSpaceStation?.distance ?? paths.starterSystemOnly?.distance ?? 0).toFixed(2);
 				totalPathfindingDistance.textContent = "";
 
 		if (tra && tra.length > 0) {

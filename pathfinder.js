@@ -4,7 +4,7 @@
  * 提供从起点到终点的最短路径计算，支持：
  * - 初始星系网格点 (250, 250) 间隔
  * - 传送门空间站（零距离传送）
- * - Dijkstra 最短路径算法
+ * - 混合网络路线（S→P 和 P→S）
  * - KDTree 最近点搜索
  */
 
@@ -228,10 +228,12 @@ class PathfinderGrid {
     /**
      * 查找最短路径
      * 
-     * 核心逻辑（3种方案取最优）：
-     * 1. 网格点网络：起点 → 最近网格点 [飞行] → 网格点跳转 [0距离] → 最近网格点 → 终点 [飞行]
-     * 2. 空间站网络：起点 → 最近空间站 [飞行] → 空间站跳转 [0距离] → 最近空间站 → 终点 [飞行]
-     * 3. 直接飞行：起点 → 终点 [飞行]
+     * 核心逻辑（5种方案取最优）：
+     * 1. 直接飞行：起点 → 终点
+     * 2. 纯S网络：起点 → S入口 → S跳转 → S出口 → 终点
+     * 3. 纯P网络：起点 → P入口 → P跳转 → P出口 → 终点
+     * 4. S→P混合：起点 → S入口 → S跳转 → S点 → 飞P → P点 → P跳转 → P出口 → 终点
+     * 5. P→S混合：起点 → P入口 → P跳转 → P点 → 飞S → S点 → S跳转 → S出口 → 终点
      * 
      * 两个0距离网络完全隔离，不能互通。
      * 
@@ -257,7 +259,121 @@ class PathfinderGrid {
     }
 
     /**
+     * 计算混合网络路线的距离（S→P 或 P→S）
+     * 
+     * 混合路线结构：
+     * 起点 → (飞行) → 网络A入口 → (跳转0) → 网络A某点 → (飞行) → 网络B某点 → (跳转0) → 网络B出口 → (飞行) → 终点
+     * 
+     * @param {Object} start - 起点
+     * @param {Object} end - 终点
+     * @param {'starter-to-station'|'station-to-starter'} mixType - 混合类型
+     * @returns {Object} { distance, path }
+     */
+    #calcMixedPath(start, end, mixType) {
+        const sNodes = this.initialPoints;
+        const pNodes = Array.from(this.portedSpaceStations);
+        
+        if (sNodes.length === 0 || pNodes.length === 0) {
+            return { distance: Infinity, path: [] };
+        }
+        
+        // 确定入口网络和出口网络
+        let entryNetwork, exitNetwork, entryIsStarter, exitIsStarter;
+        if (mixType === 'starter-to-station') {
+            entryIsStarter = true;
+            exitIsStarter = false;
+        } else {
+            entryIsStarter = false;
+            exitIsStarter = true;
+        }
+        
+        // 找起点的最近入口节点
+        const entryNodes = entryIsStarter ? sNodes : pNodes;
+        let bestEntry = null, entryDist = Infinity;
+        for (const node of entryNodes) {
+            const d = Math.hypot(node.x - start.x, node.y - start.y) * this.unitDistance;
+            if (d < entryDist) {
+                entryDist = d;
+                bestEntry = node;
+            }
+        }
+        
+        // 找终点的最近出口节点
+        const exitNodes = exitIsStarter ? sNodes : pNodes;
+        let bestExit = null, exitDist = Infinity;
+        for (const node of exitNodes) {
+            const d = Math.hypot(node.x - end.x, node.y - end.y) * this.unitDistance;
+            if (d < exitDist) {
+                exitDist = d;
+                bestExit = node;
+            }
+        }
+        
+        // 找最优的切换点组合
+        // 切换点必须在"中间网络"中（即入口网络和出口网络中的一个）
+        // 但由于两个网络都是0距离网络，切换只需要从入口网络的一个节点飞到出口网络的一个节点
+        
+        let bestSwitchEntry = null, bestSwitchExit = null, switchDist = Infinity;
+        
+        // 尝试所有入口网络节点到出口网络节点的组合
+        for (const sNode of (entryIsStarter ? sNodes : pNodes)) {
+            for (const pNode of (exitIsStarter ? sNodes : pNodes)) {
+                const d = Math.hypot(pNode.x - sNode.x, pNode.y - sNode.y) * this.unitDistance;
+                if (d < switchDist) {
+                    switchDist = d;
+                    bestSwitchEntry = sNode;
+                    bestSwitchExit = pNode;
+                }
+            }
+        }
+        
+        if (bestSwitchEntry === null || bestSwitchExit === null) {
+            return { distance: Infinity, path: [] };
+        }
+        
+        // 总距离 = 起点→入口节点 + 入口节点→切换出口节点 + 出口节点→终点
+        const totalDist = entryDist + switchDist + exitDist;
+        
+        // 构建路径
+        const path = [start];
+        
+        // 添加入口节点（如果不是起点）
+        if (!this.#pointsEqual(bestEntry, start)) {
+            path.push(bestEntry);
+        }
+        
+        // 添加切换点（如果不是入口节点）
+        if (!this.#pointsEqual(bestSwitchEntry, bestEntry)) {
+            path.push(bestSwitchEntry);
+        }
+        
+        // 添加切换出口节点（如果不是切换入口节点）
+        if (!this.#pointsEqual(bestSwitchExit, bestSwitchEntry)) {
+            path.push(bestSwitchExit);
+        }
+        
+        // 添加终点出口节点（如果不是切换出口节点）
+        if (!this.#pointsEqual(bestExit, bestSwitchExit)) {
+            path.push(bestExit);
+        }
+        
+        // 添加终点（如果不是最后节点）
+        if (!this.#pointsEqual(end, path[path.length - 1])) {
+            path.push(end);
+        }
+        
+        return { distance: totalDist, path };
+    }
+
+    /**
      * 重构后的最短路径算法
+     * 
+     * 支持5种路线方案，取最短：
+     * 1. 直接飞行
+     * 2. 纯S网络
+     * 3. 纯P网络
+     * 4. S→P混合
+     * 5. P→S混合
      * 
      * @param {Object} start - 起点坐标
      * @param {Object} end - 终点坐标
@@ -265,14 +381,20 @@ class PathfinderGrid {
      * @returns {Object} { distance, path, trajectories }
      */
     #runShortestPath(start, end, starterOnly) {
-        // 方案C：直接飞行
+        // 方案1：直接飞行
         const directDistance = Math.hypot(end.x - start.x, end.y - start.y) * this.unitDistance;
         
-        // 方案A：网格点网络
+        // 方案2：纯S网络
         const starterResult = this.#calcNetworkPath(start, end, 'starter', starterOnly);
         
-        // 方案B：空间站网络（如果不禁用）
+        // 方案3：纯P网络
         const stationResult = starterOnly ? null : this.#calcNetworkPath(start, end, 'station', false);
+        
+        // 方案4：S→P混合
+        const starterToStation = starterOnly ? null : this.#calcMixedPath(start, end, 'starter-to-station');
+        
+        // 方案5：P→S混合
+        const stationToStarter = starterOnly ? null : this.#calcMixedPath(start, end, 'station-to-starter');
         
         // 比较所有方案
         const candidates = [
@@ -281,6 +403,12 @@ class PathfinderGrid {
         ];
         if (stationResult) {
             candidates.push({ type: 'station-network', ...stationResult });
+        }
+        if (starterToStation && isFinite(starterToStation.distance)) {
+            candidates.push({ type: 'mixed-s-to-p', ...starterToStation });
+        }
+        if (stationToStarter && isFinite(stationToStarter.distance)) {
+            candidates.push({ type: 'mixed-p-to-s', ...stationToStarter });
         }
         
         // 选择最短方案
@@ -447,13 +575,16 @@ class PathfinderGrid {
                 dist = Math.hypot(to.x - from.x, to.y - from.y) * this.unitDistance;
             } else if (pathType === 'starter-network') {
                 hopType = this.#classifyHop(from, to, 'starter');
-                // 网格点之间0距离
                 dist = (hopType === 'starter-jump') ? 0 : 
                     Math.hypot(to.x - from.x, to.y - from.y) * this.unitDistance;
             } else if (pathType === 'station-network') {
                 hopType = this.#classifyHop(from, to, 'station');
-                // 空间站之间0距离
                 dist = (hopType === 'station-jump') ? 0 : 
+                    Math.hypot(to.x - from.x, to.y - from.y) * this.unitDistance;
+            } else if (pathType === 'mixed-s-to-p' || pathType === 'mixed-p-to-s') {
+                // 混合路线：需要判断每一跳是S跳转、P跳转还是跨网络飞行
+                hopType = this.#classifyMixedHop(from, to);
+                dist = (hopType === 'starter-jump' || hopType === 'station-jump') ? 0 : 
                     Math.hypot(to.x - from.x, to.y - from.y) * this.unitDistance;
             } else {
                 hopType = 'flight';
@@ -461,12 +592,28 @@ class PathfinderGrid {
             }
             
             // 跳过距离为0的轨迹（除非是明确标注的网络跳转）
-            if (dist > 0 || hopType === 'starter-jump' || hopType === 'station-jump') {
+            if (dist > 0 || hopType === 'starter-jump' || hopType === 'station-jump' || hopType === 'network-switch') {
                 trajectories.push({ from, to, distance: dist, hopType });
             }
         }
         
         return trajectories;
+    }
+
+    /**
+     * 分类混合路线中单跳的类型
+     */
+    #classifyMixedHop(from, to) {
+        const isFromStarter = this.isStarter(from);
+        const isToStarter = this.isStarter(to);
+        const isFromStation = this.isStation(from);
+        const isToStation = this.isStation(to);
+        
+        if (isFromStarter && isToStarter) return 'starter-jump';
+        if (isFromStation && isToStation) return 'station-jump';
+        // 跨网络飞行（S→P 或 P→S）
+        if ((isFromStarter && isToStation) || (isFromStation && isToStarter)) return 'network-switch';
+        return 'flight';
     }
 
     /**
