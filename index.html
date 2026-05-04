@@ -102,11 +102,12 @@
             color: #4fa3ff;
         }
 
-        /* 外层容器：固定高度 + 滚动 */
+        /* 外层容器：弹性填满 + 内部滚动 */
         .solodungeons-listview {
             display: flex;
             flex-direction: column;
-            max-height: 560px;
+            flex: 1;
+            min-height: 80px;       /* 无数据时也占一定高度 */
             border: 1px solid #2c3242;
             border-radius: 6px;
             overflow: hidden;
@@ -477,6 +478,13 @@
             color: #6b7280;
             padding: 2em;
             text-align: center;
+        }
+        /* 无数据时 tbody 占位（保持表头显示） */
+        .solodungeons-listview-body-empty {
+            color: #6b7280;
+            text-align: center;
+            padding: 2em;
+            font-size: 0.9em;
         }
 
         .tab-content {
@@ -1011,15 +1019,13 @@
         }
         .sdt-filter-popup {
             display: none;
-            position: absolute;
-            top: calc(100% + 8px);
-            right: 0;
+            position: fixed;
             width: 300px;
             background: #181e2d;
             border: 1px solid #2d3748;
             border-radius: 10px;
             padding: 1.2em 1.4em 1em;
-            z-index: 1000;
+            z-index: 10000;
             box-shadow: 0 8px 32px rgba(0,0,0,0.5);
         }
         .sdt-filter-popup.open { display: block; }
@@ -3344,12 +3350,12 @@
     <!-- End Runes Tab -->
 
     <!-- 副本及符文 Tab -->
-    <div id="solodungeons-tab" class="tab-content">
-        <div class="form-section" style="padding: 2em; display: flex; gap: 1em; flex-wrap: nowrap; overflow-x: auto; max-width: 100%;">
+    <div id="solodungeons-tab" class="tab-content" style="display: flex; flex-direction: column;">
+        <div class="form-section" style="padding: 2em; display: flex; gap: 1em; flex-wrap: nowrap; overflow-x: auto; flex: 1; min-height: 0; max-width: 100%;">
             <!-- 左侧：副本及符文列表 -->
-            <div class="optimizer-block" style="width: 480px; min-width: 480px; max-width: 480px;">
+            <div class="optimizer-block" style="width: 480px; min-width: 480px; max-width: 480px; display: flex; flex-direction: column; min-height: 0;">
                 <div class="block-label" data-i18n="block.dungeons_runes">副本及符文</div>
-                <div class="form-row" style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="form-row" style="display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
                     <button type="button" id="fetchSoloDungeonsBtn" class="btn-primary" data-i18n="btn.fetch_dungeons_runes">获取副本及符文</button>
                     <div style="display: flex; flex-direction: column; gap: 0.3em; align-items: flex-end;">
                         <div style="display: flex; align-items: center; gap: 0.5em;">
@@ -3426,7 +3432,7 @@
                         </div>
                     </div>
                 </div>
-                <div id="solodungeonsOutput" style="margin-top: 1em; font-family: monospace; font-size: 0.9em; color: #e0e0e0; max-height: 700px; overflow: auto;"></div>
+                <div id="solodungeonsOutput" style="margin-top: 1em; font-family: monospace; font-size: 0.9em; color: #e0e0e0; flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column;"></div>
             </div>
             <!-- 右侧：已选路线列表 -->
             <div class="optimizer-block" style="width: 480px; min-width: 480px; max-width: 480px;">

@@ -294,8 +294,8 @@ const zh = {
     'solodungeons.filter_difficulty': '难度修正',
     'solodungeons.filter_attempts': '尝试次数',
     'solodungeons.apply_filters': '应用过滤',
-
-    // 详细寻路面板
+    'solodungeons.no_filtered_data': '无匹配数据',
+    'solodungeons.no_data': '暂无数据',
     'block.route_path_detail': '详细寻路',
     'solodungeons.path_detail_hint': '点击已选路线中的条目查看寻路详情',
     'solodungeons.path_no_pos': '无法获取坐标，无法寻路',

@@ -818,16 +818,23 @@
      * 构建固定表头 ListView HTML
      * @param {string} tableClass - sdt-dungeons | sdt-runes
      * @param {string} headerHtml - <th>...</th> 序列
-     * @param {string} bodyHtml - <tr>...</tr> 序列
+     * @param {string} bodyHtml - <tr>...</tr> 序列（可为空字符串）
+     * @param {string|null} emptyMsg - 无数据时显示的文字（可选）
      */
-    function buildListView(tableClass, headerHtml, bodyHtml) {
+    function buildListView(tableClass, headerHtml, bodyHtml, emptyMsg) {
+        let bodyContent = bodyHtml;
+        if (!bodyContent) {
+            const colCount = (headerHtml.match(/<th/g) || []).length || 1;
+            const msg = emptyMsg || t('solodungeons.no_data', '暂无数据');
+            bodyContent = `<tr><td colspan="${colCount}" class="solodungeons-listview-body-empty">${msg}</td></tr>`;
+        }
         return `
         <div class="solodungeons-listview">
             <div class="solodungeons-listview-header">
                 <table class="${tableClass}"><thead><tr>${headerHtml}</tr></thead></table>
             </div>
             <div class="solodungeons-listview-body">
-                <table class="${tableClass}"><tbody>${bodyHtml}</tbody></table>
+                <table class="${tableClass}"><tbody>${bodyContent}</tbody></table>
             </div>
         </div>`;
     }
@@ -858,47 +865,58 @@
         // 此处不再需要初始化逻辑。
 
         let html = '';
-        let scoredDungeons = null;
         const playerPosStr = playerPos ? `[${playerPos.x}, ${playerPos.y}]` : t('solodungeons.unknown', '未知');
 
         // 获取当前起点
         const startPos = getCurrentStartPos();
 
-        // 单人副本部分
-        if (remainingDungeons.length > 0) {
-            const dungeonBounds = computeDistanceBounds(remainingDungeons, startPos);
-            scoredDungeons = remainingDungeons.map(d => ({ ...d, ...calculateScore(d, startPos, dungeonBounds, _stepLimit) }))
-                .sort((a, b) => b.score - a.score);
-
+        // 单人副本部分（始终渲染结构，有数据时显示列表，无数据时显示空占位）
+        {
+            let scoredDungeons = null;
+            const dungeonRows = '';
+            const dungeonSummary = '';
+            if (remainingDungeons.length > 0) {
+                const dungeonBounds = computeDistanceBounds(remainingDungeons, startPos);
+                scoredDungeons = remainingDungeons.map(d => ({ ...d, ...calculateScore(d, startPos, dungeonBounds, _stepLimit) }))
+                    .sort((a, b) => b.score - a.score);
+            }
             html += `<div class="sdt-section-title">${t('block.solodungeons', '单人副本')}</div>`;
             html += `<div class="solodungeons-summary">
-                <span class="summary-item">${t('solodungeons.total', '总计')}: <b>${scoredDungeons.length}</b></span>
+                <span class="summary-item">${t('solodungeons.total', '总计')}: <b>${remainingDungeons.length}</b></span>
                 <span class="summary-item">${t('solodungeons.player_pos', '玩家位置')}: <b>${playerPosStr}</b></span>
             </div>`;
-            html += buildListView('sdt-dungeons', renderDungeonsHeader(pfAvailable), renderDungeonsRows(scoredDungeons, pfAvailable));
+            html += buildListView(
+                'sdt-dungeons',
+                renderDungeonsHeader(pfAvailable),
+                scoredDungeons ? renderDungeonsRows(scoredDungeons, pfAvailable) : '',
+                scoredDungeons ? undefined : t('solodungeons.no_filtered_data', '无匹配的副本')
+            );
         }
 
-        // 掉落符文部分（不评分，按距离排序）
-        if (remainingRunes.length > 0) {
-            const sortedRunes = [...remainingRunes].sort((a, b) => {
-                const ca = getCoordinates(a), cb = getCoordinates(b);
-                if (!ca || !startPos) return 0;
-                if (!cb) return -1;
-                const da = getPathfinderDistance(startPos.x, startPos.y, ca.x, ca.y).distance;
-                const db = getPathfinderDistance(startPos.x, startPos.y, cb.x, cb.y).distance;
-                return da - db;
-            });
-
+        // 掉落符文部分（始终渲染结构，有数据时显示列表，无数据时显示空占位）
+        {
+            let sortedRunes = null;
+            if (remainingRunes.length > 0) {
+                sortedRunes = [...remainingRunes].sort((a, b) => {
+                    const ca = getCoordinates(a), cb = getCoordinates(b);
+                    if (!ca || !startPos) return 0;
+                    if (!cb) return -1;
+                    const da = getPathfinderDistance(startPos.x, startPos.y, ca.x, ca.y).distance;
+                    const db = getPathfinderDistance(startPos.x, startPos.y, cb.x, cb.y).distance;
+                    return da - db;
+                });
+            }
             html += `<div class="sdt-section-title" style="margin-top:1.4em">${t('block.runedrops', '掉落符文')}</div>`;
             html += `<div class="solodungeons-summary">
-                <span class="summary-item">${t('runedrops.total', '总计')}: <b>${sortedRunes.length}</b></span>
+                <span class="summary-item">${t('runedrops.total', '总计')}: <b>${remainingRunes.length}</b></span>
                 <span class="summary-item">${t('solodungeons.player_pos', '玩家位置')}: <b>${playerPosStr}</b></span>
             </div>`;
-            html += buildListView('sdt-runes', renderRunesHeader(pfAvailable), renderRunesRows(sortedRunes, pfAvailable));
-        }
-
-        if (!html) {
-            html = `<div class="empty-message">${t('solodungeons.no_data', '暂无数据')}</div>`;
+            html += buildListView(
+                'sdt-runes',
+                renderRunesHeader(pfAvailable),
+                sortedRunes ? renderRunesRows(sortedRunes, pfAvailable) : '',
+                sortedRunes ? undefined : t('solodungeons.no_filtered_data', '无匹配的符文')
+            );
         }
 
         container.innerHTML = html;
@@ -1948,10 +1966,26 @@
                 badge.textContent = count;
             }
 
-            // 打开/关闭 popup
+            // 打开/关闭 popup（position: fixed + 视口计算，避免出滚动区）
             filterBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
-                popup.classList.toggle('open');
+                if (popup.classList.contains('open')) {
+                    popup.classList.remove('open');
+                    return;
+                }
+                // 计算按钮的视口位置，决定 popup 弹出方向
+                const btnRect = filterBtn.getBoundingClientRect();
+                const POPUP_HEIGHT = 320; // 估算 popup 高度
+                const VIEWPORT_MARGIN = 8;
+                // 默认向下；按钮下方空间不够时改为向上
+                const preferAbove = (btnRect.bottom + POPUP_HEIGHT + VIEWPORT_MARGIN > window.innerHeight);
+                popup.style.top  = preferAbove
+                    ? (btnRect.top - POPUP_HEIGHT - VIEWPORT_MARGIN) + 'px'
+                    : (btnRect.bottom + VIEWPORT_MARGIN) + 'px';
+                popup.style.left = btnRect.right > 315
+                    ? (btnRect.right - 300) + 'px'  // 右侧空间不够，向左对齐
+                    : btnRect.left + 'px';
+                popup.classList.add('open');
             });
 
             // 点击 popup 外部关闭

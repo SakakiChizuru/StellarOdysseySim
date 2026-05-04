@@ -294,8 +294,8 @@ const en = {
     'solodungeons.filter_difficulty': 'Difficulty Modifier',
     'solodungeons.filter_attempts': 'Attempts',
     'solodungeons.apply_filters': 'Apply Filters',
-
-    // Path Detail Panel
+    'solodungeons.no_filtered_data': 'No matching data',
+    'solodungeons.no_data': 'No data available',
     'block.route_path_detail': 'Path Detail',
     'solodungeons.path_detail_hint': 'Click a route item to view pathfinding details',
     'solodungeons.path_no_pos': 'Cannot get coordinates, pathfinding unavailable',
