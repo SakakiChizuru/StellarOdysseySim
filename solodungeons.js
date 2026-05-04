@@ -2031,13 +2031,9 @@
         const soloTab = document.getElementById('solodungeons-tab');
         if (!tabBar || !soloTab) return;
         const tabH  = tabBar.offsetHeight;
-        const style = getComputedStyle(document.body);
-        const topM  = parseFloat(style.marginTop)  || 0;
-        const botM  = parseFloat(style.marginBottom) || 0;
+        const topM  = parseFloat(getComputedStyle(document.body).marginTop) || 0;
         // 可用高度 = 视口高度 - Tab条高度 - body 上边距
-        //（Tab 条是 position:fixed; bottom:0，不占文档流，但视觉上遮挡底部）
-        const avail = window.innerHeight - tabH - topM;
-        soloTab.style.height = avail + 'px';
+        soloTab.style.height = (window.innerHeight - tabH - topM) + 'px';
     }
 
     // DOM 就绪后立即执行
