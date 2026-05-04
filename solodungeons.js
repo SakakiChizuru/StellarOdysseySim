@@ -2022,4 +2022,39 @@
             return null;
         }
     }
+
+    // ------------------------------------------------------------------
+    // 动态计算 solodungeons-tab 高度，精确减去底部固定 Tab 条高度
+    // ------------------------------------------------------------------
+    function updateSoloTabHeight() {
+        const tabBar = document.querySelector('.tab-container');
+        const soloTab = document.getElementById('solodungeons-tab');
+        if (!tabBar || !soloTab) return;
+        const tabH  = tabBar.offsetHeight;
+        const style = getComputedStyle(document.body);
+        const topM  = parseFloat(style.marginTop)  || 0;
+        const botM  = parseFloat(style.marginBottom) || 0;
+        // 可用高度 = 视口高度 - Tab条高度 - body 上边距
+        //（Tab 条是 position:fixed; bottom:0，不占文档流，但视觉上遮挡底部）
+        const avail = window.innerHeight - tabH - topM;
+        soloTab.style.height = avail + 'px';
+    }
+
+    // DOM 就绪后立即执行
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', updateSoloTabHeight);
+    } else {
+        updateSoloTabHeight();
+    }
+
+    // 窗口缩放时重新计算
+    window.addEventListener('resize', updateSoloTabHeight);
+
+    // 切换到副本及符文 Tab 时重新计算（Tab 文字变化可能导致 Tab 条高度变化）
+    document.querySelector('.tab-container')?.addEventListener('click', function(e) {
+        const tab = e.target.closest('.tab');
+        if (tab && tab.dataset.tab === 'solodungeons-tab') {
+            requestAnimationFrame(updateSoloTabHeight);
+        }
+    });
 })();
