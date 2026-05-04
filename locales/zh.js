@@ -287,7 +287,7 @@ const zh = {
     'solodungeons.return_to_origin': '规划返回原位',
 
     // Filter Popup
-    'solodungeons.filters': 'Filters',
+    'solodungeons.filters': '筛选',
     'solodungeons.advanced_filters': '高级筛选',
     'solodungeons.reset_filters': '重置',
     'solodungeons.filter_reward': '奖励修正',
