@@ -1957,6 +1957,9 @@
             document.getElementById('sdtRoomsMin').value    = _dungeonFilter.roomsMin;
             document.getElementById('sdtRoomsMax').value    = _dungeonFilter.roomsMax;
 
+            // 更新 badge（显示非默认过滤项数量）
+            updateBadge();
+
             // 初始化填充条
             updateSlider('sdtRewardMin','sdtRewardMax','sdtRewardFill','sdtRewardMinLabel','sdtRewardMaxLabel','%');
             updateSlider('sdtDiffMin','sdtDiffMax','sdtDiffFill','sdtDiffMinLabel','sdtDiffMaxLabel','%');
