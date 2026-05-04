@@ -1529,8 +1529,6 @@
             cachedRunesData = Array.isArray(runesData?.runeSystems) ? runesData : null;
         }
 
-        // 载入存储的过滤条件（在 applyDungeonFilter 之前）
-        loadDungeonFilter();
         // 渲染结果（使用最新的玩家位置计算评分）
         // 刷新时清空已选路线和待选列表，直接用新 API 数据重置
         selectedRoutes = [];
@@ -1947,6 +1945,17 @@
                 const el = document.getElementById(id);
                 if (el) el.addEventListener('input', () => updateSlider('sdtRoomsMin','sdtRoomsMax','sdtRoomsFill','sdtRoomsMinLabel','sdtRoomsMaxLabel',''));
             });
+
+            // 载入存储的过滤条件并同步到 UI
+            loadDungeonFilter();
+            document.getElementById('sdtRewardMin').value   = _dungeonFilter.rewardMin;
+            document.getElementById('sdtRewardMax').value   = _dungeonFilter.rewardMax;
+            document.getElementById('sdtDiffMin').value     = _dungeonFilter.diffMin;
+            document.getElementById('sdtDiffMax').value     = _dungeonFilter.diffMax;
+            document.getElementById('sdtAttemptsMin').value = _dungeonFilter.attemptsMin;
+            document.getElementById('sdtAttemptsMax').value = _dungeonFilter.attemptsMax;
+            document.getElementById('sdtRoomsMin').value    = _dungeonFilter.roomsMin;
+            document.getElementById('sdtRoomsMax').value    = _dungeonFilter.roomsMax;
 
             // 初始化填充条
             updateSlider('sdtRewardMin','sdtRewardMax','sdtRewardFill','sdtRewardMinLabel','sdtRewardMaxLabel','%');
