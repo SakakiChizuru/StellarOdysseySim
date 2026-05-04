@@ -810,6 +810,7 @@
                 scoredDungeons = remainingDungeons.map(d => ({ ...d, ...calculateScore(d, startPos, dungeonBounds, _stepLimit) }))
                     .sort((a, b) => b.score - a.score);
             }
+            html += `<div class="sdt-dungeon-section">`;
             html += `<div class="sdt-section-title">${t('block.solodungeons', '单人副本')}</div>`;
             html += `<div class="solodungeons-summary">
                 <span class="summary-item">${t('solodungeons.total', '总计')}: <b>${remainingDungeons.length}</b></span>
@@ -821,6 +822,7 @@
                 scoredDungeons ? renderDungeonsRows(scoredDungeons, pfAvailable) : '',
                 scoredDungeons ? undefined : t('solodungeons.no_filtered_data', '无匹配的副本')
             );
+            html += `</div>`;
         }
 
         // 掉落符文部分（始终渲染结构，有数据时显示列表，无数据时显示空占位）
@@ -836,7 +838,8 @@
                     return da - db;
                 });
             }
-            html += `<div class="sdt-section-title" style="margin-top:1.4em">${t('block.runedrops', '掉落符文')}</div>`;
+            html += `<div class="sdt-rune-section">`;
+            html += `<div class="sdt-section-title">${t('block.runedrops', '掉落符文')}</div>`;
             html += `<div class="solodungeons-summary">
                 <span class="summary-item">${t('runedrops.total', '总计')}: <b>${remainingRunes.length}</b></span>
                 <span class="summary-item">${t('solodungeons.player_pos', '玩家位置')}: <b>${playerPosStr}</b></span>
@@ -847,6 +850,7 @@
                 sortedRunes ? renderRunesRows(sortedRunes, pfAvailable) : '',
                 sortedRunes ? undefined : t('solodungeons.no_filtered_data', '无匹配的符文')
             );
+            html += `</div>`;
         }
 
         container.innerHTML = html;
@@ -2029,11 +2033,15 @@
     function updateSoloTabHeight() {
         const tabBar = document.querySelector('.tab-container');
         const soloTab = document.getElementById('solodungeons-tab');
+        console.log('[updateSoloTabHeight] tabBar:', tabBar, 'soloTab:', soloTab);
         if (!tabBar || !soloTab) return;
         const tabH  = tabBar.offsetHeight;
-        const topM  = parseFloat(getComputedStyle(document.body).marginTop) || 0;
-        // 可用高度 = 视口高度 - Tab条高度 - body 上边距
-        soloTab.style.height = (window.innerHeight - tabH - topM) + 'px';
+        // soloTab 距视口顶部的距离（含 margin/padding/定位偏移）
+        const soloTabTop = soloTab.getBoundingClientRect().top;
+        const availableH = window.innerHeight - soloTabTop - tabH;
+        console.log(`[updateSoloTabHeight] window.innerHeight=${window.innerHeight}, soloTabTop=${soloTabTop}, tabH=${tabH}, availableH=${availableH}`);
+        soloTab.style.height = availableH + 'px';
+        console.log(`[updateSoloTabHeight] soloTab.style.height set to: ${soloTab.style.height}`);
     }
 
     // DOM 就绪后立即执行

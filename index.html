@@ -218,6 +218,45 @@
             min-height: 0;
             overflow-y: auto;
         }
+        /* 副本区域：占满剩余高度 */
+        .sdt-dungeon-section {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .sdt-dungeon-section .solodungeons-listview {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .sdt-dungeon-section .solodungeons-listview-body {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+        }
+        /* 符文区域：固定高度，仅显示1~2条 */
+        .sdt-rune-section {
+            flex: 0 0 auto;
+            max-height: 220px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            margin-top: 1.4em;
+        }
+        .sdt-rune-section .solodungeons-listview {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .sdt-rune-section .solodungeons-listview-body {
+            overflow-y: auto;
+        }
         .route-list-item {
             display: flex;
             align-items: center;
