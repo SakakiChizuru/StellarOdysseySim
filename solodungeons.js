@@ -704,19 +704,23 @@
             // 最近=100, 最远=0，线性归一
             return Math.max(0, Math.min(100, (maxDist - distance) / (maxDist - minDist) * 100));
         })();
-        const timeScore = Math.min(100, Math.max(0, timeRemainingHours / 19 * 100)); // open window: 6-19h -> 19h=100分
+        const timeScore = Math.min(100, Math.max(0, timeRemainingHours / 19 * 100)); // 6-19h -> 19h=100分
         const rewardMod = item.reward_modifier || 0;
-        const rewardScore = Math.min(100, Math.max(0, (rewardMod + 28) / 78 * 100)); // range: -28% ~ +50%
         const diffMod = item.difficulty_modifier || 0;
-        const difficultyScore = Math.min(100, Math.max(0, (20 - diffMod) / 40 * 100)); // range: -20% ~ +20%
+        // 合并奖励与难度：reward越高越好，difficulty越低越好
+        // reward范围 -20~+50，difficulty范围 -20~+20，合并值 reward-difficulty 范围 -40~+70
+        const mergedScore = Math.min(100, Math.max(0, (rewardMod - diffMod + 40) / 110 * 100));
+        const roomsCount = Array.isArray(item.rooms) ? item.rooms.length : 5;
+        // 房间数量评分：5间=0分，10间=100分
+        const roomsScore = Math.min(100, Math.max(0, (roomsCount - 5) / 5 * 100));
         const attempts = item.attempts || 0;
-        const attemptsScore = Math.min(100, attempts * (100 / 12)); // max attempts: 2-12 -> 12次=100分
+        const attemptsScore = Math.min(100, attempts * (100 / 12)); // 0-12次 -> 12次=100分
 
         const score = (
-            distanceScore * 0.30 +
-            timeScore * 0.25 +
-            rewardScore * 0.25 +
-            difficultyScore * 0.10 +
+            distanceScore * 0.20 +
+            timeScore * 0.10 +
+            mergedScore * 0.30 +
+            roomsScore * 0.30 +
             attemptsScore * 0.10
         );
 
@@ -731,9 +735,10 @@
                 timeRemainingHours: Math.round(timeRemainingHours * 10) / 10,
                 timeScore: Math.round(timeScore),
                 rewardMod,
-                rewardScore: Math.round(rewardScore),
                 diffMod,
-                difficultyScore: Math.round(difficultyScore),
+                mergedScore: Math.round(mergedScore),
+                roomsCount,
+                roomsScore: Math.round(roomsScore),
                 attempts,
                 attemptsScore: Math.round(attemptsScore),
                 canReach: true,
@@ -1364,6 +1369,7 @@
                         <span class="sdt-stat"><span class="sdt-label">${t('solodungeons.col_attempts', '次数')}:</span> ${attemptsText}</span>
                         <span class="sdt-stat"><span class="sdt-label">${t('solodungeons.col_reward', '奖励')}:</span> <span style="color:${getModifierColor(d.reward_modifier,false)}">${rewardText}</span></span>
                         <span class="sdt-stat"><span class="sdt-label">${t('solodungeons.col_difficulty', '难度')}:</span> <span style="color:${getModifierColor(d.difficulty_modifier,true)}">${diffText}</span></span>
+                        <span class="sdt-stat"><span class="sdt-label">${t('solodungeons.col_rooms', '房间')}:</span> ${d.rooms ? d.rooms.length : '—'}</span>
                     </div>
                     <div class="sdt-info-row sdt-dist-line">
                         <span class="sdt-stat"><span class="sdt-label">${t('solodungeons.col_linear_dist', '直线')}:</span> <span class="sdt-dist">${linearDist}</span></span>
