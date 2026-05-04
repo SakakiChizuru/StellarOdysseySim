@@ -214,7 +214,8 @@
 
         /* 已选路线列表样式 */
         .solodungeons-routelist {
-            max-height: 700px;
+            flex: 1;
+            min-height: 0;
             overflow-y: auto;
         }
         .route-list-item {
@@ -278,9 +279,10 @@
 
         /* 详细寻路面板 */
         .route-path-detail-content {
-            margin-top: 0.8em;
-            max-height: 700px;
+            flex: 1;
+            min-height: 0;
             overflow-y: auto;
+            margin-top: 0.8em;
         }
         .route-path-detail-empty {
             text-align: center;
@@ -493,6 +495,12 @@
         }
         .tab-content.active {
             display: block;
+        }
+        #solodungeons-tab.tab-content.active {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 7em);
+            overflow: hidden;
         }
         /* End tab styles */
         [type="number" i],
@@ -3347,7 +3355,7 @@
     <!-- End Runes Tab -->
 
     <!-- 副本及符文 Tab -->
-    <div id="solodungeons-tab" class="tab-content" style="display: flex; flex-direction: column;">
+    <div id="solodungeons-tab" class="tab-content">
         <div class="form-section" style="padding: 2em; display: flex; gap: 1em; flex-wrap: nowrap; overflow-x: auto; flex: 1; min-height: 0; max-width: 100%;">
             <!-- 左侧：副本及符文列表 -->
             <div class="optimizer-block" style="width: 480px; min-width: 480px; max-width: 480px; display: flex; flex-direction: column; min-height: 0;">
@@ -3432,7 +3440,7 @@
                 <div id="solodungeonsOutput" style="margin-top: 1em; font-family: monospace; font-size: 0.9em; color: #e0e0e0; flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column;"></div>
             </div>
             <!-- 右侧：已选路线列表 -->
-            <div class="optimizer-block" style="width: 480px; min-width: 480px; max-width: 480px;">
+            <div class="optimizer-block" style="width: 480px; min-width: 480px; max-width: 480px; display: flex; flex-direction: column; min-height: 0; flex: 1;">
                 <div class="block-label">
                     <span data-i18n="block.solodungeons_routelist">已选路线列表</span>
                 </div>
@@ -3454,7 +3462,7 @@
                 <div id="solodungeonsRouteList" class="solodungeons-routelist" style="margin-top: 0.8em; font-family: monospace; font-size: 0.85em; color: #e0e0e0;"></div>
             </div>
             <!-- 最右侧：详细寻路面板 -->
-            <div class="optimizer-block" id="routePathDetailPanel" style="width: 480px; min-width: 480px; max-width: 480px;">
+            <div class="optimizer-block" id="routePathDetailPanel" style="width: 480px; min-width: 480px; max-width: 480px; display: flex; flex-direction: column; min-height: 0; flex: 1;">
                 <div class="block-label" data-i18n="block.route_path_detail">详细寻路</div>
                 <div id="routePathDetailContent" class="route-path-detail-content">
                     <div class="route-path-detail-empty" data-i18n="solodungeons.path_detail_hint">点击已选路线中的条目查看寻路详情</div>
