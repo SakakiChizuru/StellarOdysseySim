@@ -38,6 +38,19 @@
     // 规划返回原位
     let _returnToOrigin = false;
 
+    // 副本 Filter 状态
+    let _dungeonFilter = {
+        rewardMin: -28,
+        rewardMax: 50,
+        diffMin: -20,
+        diffMax: 20,
+        attemptsMin: 0,
+        attemptsMax: 12,
+    };
+
+    // 未过滤的原始副本列表（用于 filter 变更时重新过滤）
+    let _allDungeons = [];
+
     // 待选列表（用于动态重新评分）
     let remainingDungeons = [];
     let remainingRunes = [];
@@ -637,6 +650,34 @@
 
         // 渲染已选路线列表
         renderRouteList();
+    }
+
+    /**
+     * 根据当前 _dungeonFilter 过滤副本列表
+     */
+    function applyDungeonFilter(dungeons) {
+        if (!dungeons) return [];
+        return dungeons.filter(d => {
+            const reward = d.reward_modifier ?? 0;
+            const diff   = d.difficulty_modifier ?? 0;
+            const att    = d.attempts ?? 0;
+            return (
+                reward  >= _dungeonFilter.rewardMin  && reward  <= _dungeonFilter.rewardMax &&
+                diff    >= _dungeonFilter.diffMin     && diff    <= _dungeonFilter.diffMax &&
+                att     >= _dungeonFilter.attemptsMin && att     <= _dungeonFilter.attemptsMax
+            );
+        });
+    }
+
+    /**
+     * 检查 filter 是否为默认值（用于显示 badge）
+     */
+    function isDungeonFilterActive() {
+        return (
+            _dungeonFilter.rewardMin  > -28 || _dungeonFilter.rewardMax  < 50 ||
+            _dungeonFilter.diffMin    > -20 || _dungeonFilter.diffMax    < 20 ||
+            _dungeonFilter.attemptsMin > 0  || _dungeonFilter.attemptsMax < 12
+        );
     }
 
     /**
@@ -1524,7 +1565,8 @@
         selectedRoutes = [];
         _activePathDetail = null;
         clearPathDetailPanel();
-        remainingDungeons = Array.isArray(dungeonsData?.dungeons) ? [...dungeonsData.dungeons] : [];
+        _allDungeons = Array.isArray(dungeonsData?.dungeons) ? [...dungeonsData.dungeons] : [];
+        remainingDungeons = applyDungeonFilter(_allDungeons);
         remainingRunes    = Array.isArray(runesData?.runeSystems)   ? [...runesData.runeSystems]  : [];
         renderCombinedTable(
             dungeonsData?.dungeons,
@@ -1542,6 +1584,7 @@
         cachedDungeonsData = null;
         cachedRunesData = null;
         selectedRoutes = [];
+        _allDungeons = [];
         remainingDungeons = [];
         remainingRunes = [];
         playerPos = null;
@@ -1832,6 +1875,133 @@
                 });
             }
         }
+
+        // ===== Filter Popup 逻辑 =====
+        (function initFilterPopup() {
+            const filterBtn  = document.getElementById('sdtFilterBtn');
+            const popup      = document.getElementById('sdtFilterPopup');
+            const badge      = document.getElementById('sdtFilterBadge');
+            const resetLink  = document.getElementById('sdtFilterReset');
+            const applyBtn   = document.getElementById('sdtFilterApply');
+            if (!filterBtn || !popup) return;
+
+            // 双滑块辅助：更新填充条和标签
+            function updateSlider(minId, maxId, fillId, minLabelId, maxLabelId, unit, forceMin, forceMax) {
+                const minEl  = document.getElementById(minId);
+                const maxEl  = document.getElementById(maxId);
+                const fillEl = document.getElementById(fillId);
+                const minLbl = document.getElementById(minLabelId);
+                const maxLbl = document.getElementById(maxLabelId);
+                if (!minEl || !maxEl) return;
+
+                let lo = parseFloat(minEl.value);
+                let hi = parseFloat(maxEl.value);
+                if (lo > hi) {
+                    // 防止交叉
+                    if (document.activeElement === minEl) { lo = hi; minEl.value = lo; }
+                    else { hi = lo; maxEl.value = hi; }
+                }
+
+                const totalMin = parseFloat(minEl.min);
+                const totalMax = parseFloat(minEl.max);
+                const range = totalMax - totalMin || 1;
+                const leftPct  = ((lo - totalMin) / range) * 100;
+                const rightPct = ((hi - totalMin) / range) * 100;
+                if (fillEl) {
+                    fillEl.style.left  = leftPct  + '%';
+                    fillEl.style.width = (rightPct - leftPct) + '%';
+                }
+                const fmt = v => (unit === '%') ? ((v > 0 ? '+' : '') + v + '%') : String(v);
+                if (minLbl) minLbl.textContent = fmt(lo);
+                if (maxLbl) maxLbl.textContent = fmt(hi);
+            }
+
+            // 注册滑块事件
+            ['sdtRewardMin','sdtRewardMax'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('input', () => updateSlider('sdtRewardMin','sdtRewardMax','sdtRewardFill','sdtRewardMinLabel','sdtRewardMaxLabel','%'));
+            });
+            ['sdtDiffMin','sdtDiffMax'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('input', () => updateSlider('sdtDiffMin','sdtDiffMax','sdtDiffFill','sdtDiffMinLabel','sdtDiffMaxLabel','%'));
+            });
+            ['sdtAttemptsMin','sdtAttemptsMax'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('input', () => updateSlider('sdtAttemptsMin','sdtAttemptsMax','sdtAttemptsFill','sdtAttemptsMinLabel','sdtAttemptsMaxLabel',''));
+            });
+
+            // 初始化填充条
+            updateSlider('sdtRewardMin','sdtRewardMax','sdtRewardFill','sdtRewardMinLabel','sdtRewardMaxLabel','%');
+            updateSlider('sdtDiffMin','sdtDiffMax','sdtDiffFill','sdtDiffMinLabel','sdtDiffMaxLabel','%');
+            updateSlider('sdtAttemptsMin','sdtAttemptsMax','sdtAttemptsFill','sdtAttemptsMinLabel','sdtAttemptsMaxLabel','');
+
+            // 更新 badge
+            function updateBadge() {
+                const active = isDungeonFilterActive();
+                badge.style.display = active ? '' : 'none';
+                filterBtn.classList.toggle('active', active);
+                // 计算激活项数
+                let count = 0;
+                if (_dungeonFilter.rewardMin > -28 || _dungeonFilter.rewardMax < 50) count++;
+                if (_dungeonFilter.diffMin > -20 || _dungeonFilter.diffMax < 20) count++;
+                if (_dungeonFilter.attemptsMin > 0 || _dungeonFilter.attemptsMax < 12) count++;
+                badge.textContent = count;
+            }
+
+            // 打开/关闭 popup
+            filterBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                popup.classList.toggle('open');
+            });
+
+            // 点击 popup 外部关闭
+            document.addEventListener('click', function(e) {
+                if (!popup.contains(e.target) && e.target !== filterBtn && !filterBtn.contains(e.target)) {
+                    popup.classList.remove('open');
+                }
+            });
+
+            // Reset
+            if (resetLink) {
+                resetLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.getElementById('sdtRewardMin').value   = -28;
+                    document.getElementById('sdtRewardMax').value   = 50;
+                    document.getElementById('sdtDiffMin').value     = -20;
+                    document.getElementById('sdtDiffMax').value     = 20;
+                    document.getElementById('sdtAttemptsMin').value = 0;
+                    document.getElementById('sdtAttemptsMax').value = 12;
+                    updateSlider('sdtRewardMin','sdtRewardMax','sdtRewardFill','sdtRewardMinLabel','sdtRewardMaxLabel','%');
+                    updateSlider('sdtDiffMin','sdtDiffMax','sdtDiffFill','sdtDiffMinLabel','sdtDiffMaxLabel','%');
+                    updateSlider('sdtAttemptsMin','sdtAttemptsMax','sdtAttemptsFill','sdtAttemptsMinLabel','sdtAttemptsMaxLabel','');
+                    _dungeonFilter = { rewardMin:-28, rewardMax:50, diffMin:-20, diffMax:20, attemptsMin:0, attemptsMax:12 };
+                    remainingDungeons = applyDungeonFilter(_allDungeons);
+                    updateBadge();
+                    recalculateAndRender();
+                    popup.classList.remove('open');
+                });
+            }
+
+            // Apply
+            if (applyBtn) {
+                applyBtn.addEventListener('click', function() {
+                    _dungeonFilter.rewardMin   = parseInt(document.getElementById('sdtRewardMin').value, 10);
+                    _dungeonFilter.rewardMax   = parseInt(document.getElementById('sdtRewardMax').value, 10);
+                    _dungeonFilter.diffMin     = parseInt(document.getElementById('sdtDiffMin').value, 10);
+                    _dungeonFilter.diffMax     = parseInt(document.getElementById('sdtDiffMax').value, 10);
+                    _dungeonFilter.attemptsMin = parseInt(document.getElementById('sdtAttemptsMin').value, 10);
+                    _dungeonFilter.attemptsMax = parseInt(document.getElementById('sdtAttemptsMax').value, 10);
+
+                    // 过滤并重新计算评分（已选路线不受影响，待选列表重新过滤）
+                    remainingDungeons = applyDungeonFilter(_allDungeons).filter(
+                        d => !selectedRoutes.some(r => generateItemKey(r) === generateItemKey(d))
+                    );
+                    updateBadge();
+                    recalculateAndRender();
+                    popup.classList.remove('open');
+                });
+            }
+        })();
 
         // 语言切换时重新渲染 UI
         document.addEventListener('languageChanged', function() {

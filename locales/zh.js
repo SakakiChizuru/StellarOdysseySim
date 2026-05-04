@@ -286,6 +286,15 @@ const zh = {
     'solodungeons.step_120': '120 ly',
     'solodungeons.return_to_origin': '规划返回原位',
 
+    // Filter Popup
+    'solodungeons.filters': 'Filters',
+    'solodungeons.advanced_filters': '高级筛选',
+    'solodungeons.reset_filters': '重置',
+    'solodungeons.filter_reward': '奖励修正',
+    'solodungeons.filter_difficulty': '难度修正',
+    'solodungeons.filter_attempts': '尝试次数',
+    'solodungeons.apply_filters': '应用过滤',
+
     // 详细寻路面板
     'block.route_path_detail': '详细寻路',
     'solodungeons.path_detail_hint': '点击已选路线中的条目查看寻路详情',

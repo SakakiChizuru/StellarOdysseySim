@@ -286,6 +286,15 @@ const en = {
     'solodungeons.step_120': '120 ly',
     'solodungeons.return_to_origin': 'Plan Return to Origin',
 
+    // Filter Popup
+    'solodungeons.filters': 'Filters',
+    'solodungeons.advanced_filters': 'Advanced Filters',
+    'solodungeons.reset_filters': 'Reset',
+    'solodungeons.filter_reward': 'Reward Modifier',
+    'solodungeons.filter_difficulty': 'Difficulty Modifier',
+    'solodungeons.filter_attempts': 'Attempts',
+    'solodungeons.apply_filters': 'Apply Filters',
+
     // Path Detail Panel
     'block.route_path_detail': 'Path Detail',
     'solodungeons.path_detail_hint': 'Click a route item to view pathfinding details',
