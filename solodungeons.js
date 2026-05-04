@@ -40,13 +40,13 @@
 
     // 副本 Filter 状态
     let _dungeonFilter = {
-        rewardMin: -28,
+        rewardMin: -20,
         rewardMax: 50,
         diffMin: -20,
         diffMax: 20,
-        attemptsMin: 0,
+        attemptsMin: 1,
         attemptsMax: 12,
-        roomsMin: 0,
+        roomsMin: 5,
         roomsMax: 10,
     };
 
@@ -593,7 +593,7 @@
             const reward = d.reward_modifier ?? 0;
             const diff   = d.difficulty_modifier ?? 0;
             const att    = d.attempts ?? 0;
-            const rooms  = Array.isArray(d.rooms) ? d.rooms.length : 0;
+            const rooms  = Array.isArray(d.rooms) ? d.rooms.length : 5;
             return (
                 reward  >= _dungeonFilter.rewardMin  && reward  <= _dungeonFilter.rewardMax &&
                 diff    >= _dungeonFilter.diffMin     && diff    <= _dungeonFilter.diffMax &&
@@ -608,10 +608,10 @@
      */
     function isDungeonFilterActive() {
         return (
-            _dungeonFilter.rewardMin  > -28 || _dungeonFilter.rewardMax  < 50 ||
+            _dungeonFilter.rewardMin  > -20 || _dungeonFilter.rewardMax  < 50 ||
             _dungeonFilter.diffMin    > -20 || _dungeonFilter.diffMax    < 20 ||
-            _dungeonFilter.attemptsMin > 0  || _dungeonFilter.attemptsMax < 12 ||
-            _dungeonFilter.roomsMin   > 0   || _dungeonFilter.roomsMax   < 10
+            _dungeonFilter.attemptsMin > 1   || _dungeonFilter.attemptsMax < 12 ||
+            _dungeonFilter.roomsMin   > 5   || _dungeonFilter.roomsMax   < 10
         );
     }
 
@@ -718,8 +718,9 @@
         const roomsCount = Array.isArray(item.rooms) ? item.rooms.length : 5;
         // 房间数量评分：5间=0分，10间=100分
         const roomsScore = Math.min(100, Math.max(0, (roomsCount - 5) / 5 * 100));
-        const attempts = item.attempts || 0;
-        const attemptsScore = Math.min(100, attempts * (100 / 12)); // 0-12次 -> 12次=100分
+        const attempts = item.attempts || 1; // 最低1次（0次已被过滤）
+        // 尝试次数评分：1次=0分，12次=100分
+        const attemptsScore = Math.min(100, Math.max(0, (attempts - 1) / 11 * 100));
 
         const score = (
             distanceScore * 0.20 +
@@ -1953,19 +1954,19 @@
             if (resetLink) {
                 resetLink.addEventListener('click', function(e) {
                     e.preventDefault();
-                    document.getElementById('sdtRewardMin').value   = -28;
+                    document.getElementById('sdtRewardMin').value   = -20;
                     document.getElementById('sdtRewardMax').value   = 50;
                     document.getElementById('sdtDiffMin').value     = -20;
                     document.getElementById('sdtDiffMax').value     = 20;
-                    document.getElementById('sdtAttemptsMin').value = 0;
+                    document.getElementById('sdtAttemptsMin').value = 1;
                     document.getElementById('sdtAttemptsMax').value = 12;
-                    document.getElementById('sdtRoomsMin').value = 0;
+                    document.getElementById('sdtRoomsMin').value = 5;
                     document.getElementById('sdtRoomsMax').value = 10;
                     updateSlider('sdtRewardMin','sdtRewardMax','sdtRewardFill','sdtRewardMinLabel','sdtRewardMaxLabel','%');
                     updateSlider('sdtDiffMin','sdtDiffMax','sdtDiffFill','sdtDiffMinLabel','sdtDiffMaxLabel','%');
                     updateSlider('sdtAttemptsMin','sdtAttemptsMax','sdtAttemptsFill','sdtAttemptsMinLabel','sdtAttemptsMaxLabel','');
                     updateSlider('sdtRoomsMin','sdtRoomsMax','sdtRoomsFill','sdtRoomsMinLabel','sdtRoomsMaxLabel','');
-                    _dungeonFilter = { rewardMin:-28, rewardMax:50, diffMin:-20, diffMax:20, attemptsMin:0, attemptsMax:12, roomsMin:0, roomsMax:10 };
+                    _dungeonFilter = { rewardMin:-20, rewardMax:50, diffMin:-20, diffMax:20, attemptsMin:1, attemptsMax:12, roomsMin:5, roomsMax:10 };
                     remainingDungeons = applyDungeonFilter(_allDungeons);
                     updateBadge();
                     recalculateAndRender();
