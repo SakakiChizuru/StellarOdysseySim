@@ -571,79 +571,9 @@
         // 数据尚未加载时不渲染（避免覆盖 loading 状态或空内容）
         if (cachedDungeonsData === null && cachedRunesData === null) return;
 
-        // 如果有符文，增加 panel 高度
-        const hasRunes = remainingRunes.length > 0;
-        container.style.maxHeight = hasRunes ? '1000px' : '700px';
-
-        const startPos = getCurrentStartPos();
-        console.log('[SoloDungeons] recalculateAndRender:', {
-            remainingDungeonsCount: remainingDungeons.length,
-            remainingRunesCount: remainingRunes.length,
-            selectedRoutesCount: selectedRoutes.length,
-            startPos
-        });
-
-        // 检测 pathfinder 是否可用
-        const pfGrid = (window.PathfinderService && typeof window.PathfinderService.getGrid === 'function')
-            ? window.PathfinderService.getGrid()
-            : window.stellarOdysseyPathfinderGrid;
-        const pfAvailable = !!(pfGrid && typeof pfGrid.findShortestPath === 'function');
-
-        // 原始玩家位置
-        const originalPlayerPosStr = playerPos ? `[${playerPos.x}, ${playerPos.y}]` : t('solodungeons.unknown', '未知');
-        // 当前起点（可能是已选路线的最后一项坐标）
-        const playerPosStr = startPos ? `[${startPos.x}, ${startPos.y}]` : t('solodungeons.unknown', '未知');
-
-        let html = '';
-
-        // 单人副本部分
-        if (remainingDungeons.length > 0) {
-            const dungeonBounds = computeDistanceBounds(remainingDungeons, startPos);
-            const scoredDungeons = remainingDungeons.map(d => ({ ...d, ...calculateScore(d, startPos, dungeonBounds, _stepLimit) }))
-                .sort((a, b) => b.score - a.score);
-            html += `<div class="sdt-section-title">${t('block.solodungeons', '单人副本')}</div>`;
-            html += `<div class="solodungeons-summary">
-                <span class="summary-item">${t('solodungeons.total', '总计')}: <b>${scoredDungeons.length}</b></span>
-                <span class="summary-item">${t('solodungeons.route_pos', '路径位置')}: <b>${playerPosStr}</b></span>
-                <span class="summary-item">${t('solodungeons.original_pos', '玩家原位置')}: <b>[${playerPos.x}, ${playerPos.y}]</b></span>
-            </div>`;
-            html += buildListView('sdt-dungeons', renderDungeonsHeader(pfAvailable), renderDungeonsRows(scoredDungeons, pfAvailable));
-        }
-
-        // 掉落符文部分（不评分，按距离排序）
-        if (remainingRunes.length > 0) {
-            const startPos2 = getCurrentStartPos();
-            const sortedRunes = [...remainingRunes].sort((a, b) => {
-                const ca = getCoordinates(a), cb = getCoordinates(b);
-                if (!ca || !startPos2) return 0;
-                if (!cb) return -1;
-                const da = getPathfinderDistance(startPos2.x, startPos2.y, ca.x, ca.y).distance;
-                const db = getPathfinderDistance(startPos2.x, startPos2.y, cb.x, cb.y).distance;
-                return da - db;
-            });
-            html += `<div class="sdt-section-title" style="margin-top:1.4em">${t('block.runedrops', '掉落符文')}</div>`;
-            html += `<div class="solodungeons-summary">
-                <span class="summary-item">${t('runedrops.total', '总计')}: <b>${sortedRunes.length}</b></span>
-                <span class="summary-item">${t('solodungeons.route_pos', '路径位置')}: <b>${playerPosStr}</b></span>
-                <span class="summary-item">${t('solodungeons.original_pos', '玩家原位置')}: <b>${originalPlayerPosStr}</b></span>
-            </div>`;
-            html += buildListView('sdt-runes', renderRunesHeader(pfAvailable), renderRunesRows(sortedRunes, pfAvailable));
-        }
-
-        if (!html) {
-            html = `<div class="empty-message">${t('solodungeons.no_data', '暂无数据')}</div>`;
-        }
-
-        container.innerHTML = html;
-
-        // 绑定行选中事件
-        container.querySelectorAll('.solodungeons-listview-body tr').forEach(row => {
-            row.addEventListener('click', function () {
-                const tbody = this.closest('.solodungeons-listview-body');
-                tbody.querySelectorAll('tr.selected').forEach(r => r.classList.remove('selected'));
-                this.classList.add('selected');
-            });
-        });
+        // 直接委托给 renderCombinedTable（新版本始终显示表头，距离归一化以 remainingDungeons 为准）
+        // dungeons 参数传 remainingDungeons 是安全的——renderCombinedTable 内部使用 remainingDungeons 进行过滤和归一化
+        renderCombinedTable(remainingDungeons, remainingRunes, container, null, null);
 
         // 更新动作按钮状态
         updateActionButtons();
