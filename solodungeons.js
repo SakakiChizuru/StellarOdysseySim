@@ -46,6 +46,8 @@
         diffMax: 20,
         attemptsMin: 0,
         attemptsMax: 12,
+        roomsMin: 0,
+        roomsMax: 10,
     };
 
     // 未过滤的原始副本列表（用于 filter 变更时重新过滤）
@@ -591,10 +593,12 @@
             const reward = d.reward_modifier ?? 0;
             const diff   = d.difficulty_modifier ?? 0;
             const att    = d.attempts ?? 0;
+            const rooms  = Array.isArray(d.rooms) ? d.rooms.length : 0;
             return (
                 reward  >= _dungeonFilter.rewardMin  && reward  <= _dungeonFilter.rewardMax &&
                 diff    >= _dungeonFilter.diffMin     && diff    <= _dungeonFilter.diffMax &&
-                att     >= _dungeonFilter.attemptsMin && att     <= _dungeonFilter.attemptsMax
+                att     >= _dungeonFilter.attemptsMin && att     <= _dungeonFilter.attemptsMax &&
+                rooms   >= _dungeonFilter.roomsMin   && rooms   <= _dungeonFilter.roomsMax
             );
         });
     }
@@ -606,7 +610,8 @@
         return (
             _dungeonFilter.rewardMin  > -28 || _dungeonFilter.rewardMax  < 50 ||
             _dungeonFilter.diffMin    > -20 || _dungeonFilter.diffMax    < 20 ||
-            _dungeonFilter.attemptsMin > 0  || _dungeonFilter.attemptsMax < 12
+            _dungeonFilter.attemptsMin > 0  || _dungeonFilter.attemptsMax < 12 ||
+            _dungeonFilter.roomsMin   > 0   || _dungeonFilter.roomsMax   < 10
         );
     }
 
@@ -1890,11 +1895,16 @@
                 const el = document.getElementById(id);
                 if (el) el.addEventListener('input', () => updateSlider('sdtAttemptsMin','sdtAttemptsMax','sdtAttemptsFill','sdtAttemptsMinLabel','sdtAttemptsMaxLabel',''));
             });
+            ['sdtRoomsMin','sdtRoomsMax'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('input', () => updateSlider('sdtRoomsMin','sdtRoomsMax','sdtRoomsFill','sdtRoomsMinLabel','sdtRoomsMaxLabel',''));
+            });
 
             // 初始化填充条
             updateSlider('sdtRewardMin','sdtRewardMax','sdtRewardFill','sdtRewardMinLabel','sdtRewardMaxLabel','%');
             updateSlider('sdtDiffMin','sdtDiffMax','sdtDiffFill','sdtDiffMinLabel','sdtDiffMaxLabel','%');
             updateSlider('sdtAttemptsMin','sdtAttemptsMax','sdtAttemptsFill','sdtAttemptsMinLabel','sdtAttemptsMaxLabel','');
+            updateSlider('sdtRoomsMin','sdtRoomsMax','sdtRoomsFill','sdtRoomsMinLabel','sdtRoomsMaxLabel','');
 
             // 更新 badge
             function updateBadge() {
@@ -1906,6 +1916,7 @@
                 if (_dungeonFilter.rewardMin > -28 || _dungeonFilter.rewardMax < 50) count++;
                 if (_dungeonFilter.diffMin > -20 || _dungeonFilter.diffMax < 20) count++;
                 if (_dungeonFilter.attemptsMin > 0 || _dungeonFilter.attemptsMax < 12) count++;
+                if (_dungeonFilter.roomsMin > 0 || _dungeonFilter.roomsMax < 10) count++;
                 badge.textContent = count;
             }
 
@@ -1948,10 +1959,13 @@
                     document.getElementById('sdtDiffMax').value     = 20;
                     document.getElementById('sdtAttemptsMin').value = 0;
                     document.getElementById('sdtAttemptsMax').value = 12;
+                    document.getElementById('sdtRoomsMin').value = 0;
+                    document.getElementById('sdtRoomsMax').value = 10;
                     updateSlider('sdtRewardMin','sdtRewardMax','sdtRewardFill','sdtRewardMinLabel','sdtRewardMaxLabel','%');
                     updateSlider('sdtDiffMin','sdtDiffMax','sdtDiffFill','sdtDiffMinLabel','sdtDiffMaxLabel','%');
                     updateSlider('sdtAttemptsMin','sdtAttemptsMax','sdtAttemptsFill','sdtAttemptsMinLabel','sdtAttemptsMaxLabel','');
-                    _dungeonFilter = { rewardMin:-28, rewardMax:50, diffMin:-20, diffMax:20, attemptsMin:0, attemptsMax:12 };
+                    updateSlider('sdtRoomsMin','sdtRoomsMax','sdtRoomsFill','sdtRoomsMinLabel','sdtRoomsMaxLabel','');
+                    _dungeonFilter = { rewardMin:-28, rewardMax:50, diffMin:-20, diffMax:20, attemptsMin:0, attemptsMax:12, roomsMin:0, roomsMax:10 };
                     remainingDungeons = applyDungeonFilter(_allDungeons);
                     updateBadge();
                     recalculateAndRender();
@@ -1968,6 +1982,8 @@
                     _dungeonFilter.diffMax     = parseInt(document.getElementById('sdtDiffMax').value, 10);
                     _dungeonFilter.attemptsMin = parseInt(document.getElementById('sdtAttemptsMin').value, 10);
                     _dungeonFilter.attemptsMax = parseInt(document.getElementById('sdtAttemptsMax').value, 10);
+                    _dungeonFilter.roomsMin    = parseInt(document.getElementById('sdtRoomsMin').value, 10);
+                    _dungeonFilter.roomsMax    = parseInt(document.getElementById('sdtRoomsMax').value, 10);
 
                     // 过滤并重新计算评分（已选路线不受影响，待选列表重新过滤）
                     remainingDungeons = applyDungeonFilter(_allDungeons).filter(
