@@ -1506,8 +1506,10 @@
         }
 
         // 更新缓存：API 有响应则保留数据（即使是空数组），无响应才保留旧缓存
-        if (dungeonsRes.ok) {
-            cachedDungeonsData = Array.isArray(dungeonsData?.dungeons) ? dungeonsData : null;
+        // 过滤掉已跑过的副本（alreadyRan === true）
+        if (dungeonsRes.ok && dungeonsData?.dungeons) {
+            const filtered = dungeonsData.dungeons.filter(d => !d.alreadyRan);
+            cachedDungeonsData = { dungeons: filtered };
         }
         if (runesRes.ok) {
             cachedRunesData = Array.isArray(runesData?.runeSystems) ? runesData : null;
@@ -1517,12 +1519,13 @@
         selectedRoutes = [];
         _activePathDetail = null;
         clearPathDetailPanel();
-        _allDungeons = Array.isArray(dungeonsData?.dungeons) ? [...dungeonsData.dungeons] : [];
+        const dungeonsForRender = cachedDungeonsData?.dungeons || [];
+        _allDungeons = [...dungeonsForRender];
         remainingDungeons = applyDungeonFilter(_allDungeons);
-        remainingRunes    = Array.isArray(runesData?.runeSystems)   ? [...runesData.runeSystems]  : [];
+        remainingRunes    = Array.isArray(cachedRunesData?.runeSystems)   ? [...cachedRunesData.runeSystems]  : [];
         renderCombinedTable(
-            dungeonsData?.dungeons,
-            runesData?.runeSystems,
+            dungeonsForRender,
+            cachedRunesData?.runeSystems,
             outputDiv,
             dungeonsData,
             runesData
