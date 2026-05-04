@@ -1046,6 +1046,7 @@
             const coordsStr = coords ? `[${coords.x},${coords.y}]` : '—';
             const typeText = route._type === 'dungeon' ? t('solodungeons.type_dungeon', '副本') : t('solodungeons.type_rune', '符文');
             const itemKey = route._key || generateItemKey(route);
+            const roomsCount = !isRuneItem(route) ? (Array.isArray(route.rooms) ? route.rooms.length : 5) : null;
 
             let scoreDisplay, scoreClass;
             if (isRuneItem(route)) {
@@ -1061,7 +1062,7 @@
                 <span class="route-score ${scoreClass}">${scoreDisplay}</span>
                 <div class="route-info">
                     <div class="route-coords">${coordsStr}</div>
-                    <div class="route-type">${typeText}</div>
+                    <div class="route-type">${typeText}${roomsCount ? ` | ${roomsCount}间` : ''}</div>
                 </div>
                 <span class="route-remove" data-id="${itemKey}" title="${t('solodungeons.remove_from_route', '从路线移除')}">${removeSvg}</span>
             </div>`;
