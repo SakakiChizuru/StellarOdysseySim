@@ -39,6 +39,8 @@
     let _returnToOrigin = false;
 
     // 副本 Filter 状态
+    const FILTER_STORAGE_KEY = 'solodungeons_filter';
+    
     let _dungeonFilter = {
         rewardMin: -20,
         rewardMax: 50,
@@ -1526,6 +1528,9 @@
         if (runesRes.ok) {
             cachedRunesData = Array.isArray(runesData?.runeSystems) ? runesData : null;
         }
+
+        // 载入存储的过滤条件（在 applyDungeonFilter 之前）
+        loadDungeonFilter();
         // 渲染结果（使用最新的玩家位置计算评分）
         // 刷新时清空已选路线和待选列表，直接用新 API 数据重置
         selectedRoutes = [];
@@ -1556,6 +1561,48 @@
         remainingRunes = [];
         playerPos = null;
         _activePathDetail = null;
+    }
+
+    /**
+     * 保存过滤条件到 localStorage
+     */
+    function saveDungeonFilter() {
+        try {
+            localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(_dungeonFilter));
+            console.log('[SoloDungeons] Filter saved:', _dungeonFilter);
+        } catch (e) {
+            console.error('[SoloDungeons] Failed to save filter:', e);
+        }
+    }
+
+    /**
+     * 从 localStorage 加载过滤条件
+     */
+    function loadDungeonFilter() {
+        try {
+            const data = localStorage.getItem(FILTER_STORAGE_KEY);
+            if (data) {
+                const saved = JSON.parse(data);
+                // 验证所有必需字段都存在
+                if (
+                    typeof saved.rewardMin === 'number' &&
+                    typeof saved.rewardMax === 'number' &&
+                    typeof saved.diffMin === 'number' &&
+                    typeof saved.diffMax === 'number' &&
+                    typeof saved.attemptsMin === 'number' &&
+                    typeof saved.attemptsMax === 'number' &&
+                    typeof saved.roomsMin === 'number' &&
+                    typeof saved.roomsMax === 'number'
+                ) {
+                    _dungeonFilter = saved;
+                    console.log('[SoloDungeons] Filter loaded:', _dungeonFilter);
+                    return true;
+                }
+            }
+        } catch (e) {
+            console.error('[SoloDungeons] Failed to load filter:', e);
+        }
+        return false;
     }
 
     // ==================== 路线保存/载入 ====================
@@ -1914,10 +1961,10 @@
                 filterBtn.classList.toggle('active', active);
                 // 计算激活项数
                 let count = 0;
-                if (_dungeonFilter.rewardMin > -28 || _dungeonFilter.rewardMax < 50) count++;
+                if (_dungeonFilter.rewardMin > -20 || _dungeonFilter.rewardMax < 50) count++;
                 if (_dungeonFilter.diffMin > -20 || _dungeonFilter.diffMax < 20) count++;
-                if (_dungeonFilter.attemptsMin > 0 || _dungeonFilter.attemptsMax < 12) count++;
-                if (_dungeonFilter.roomsMin > 0 || _dungeonFilter.roomsMax < 10) count++;
+                if (_dungeonFilter.attemptsMin > 1 || _dungeonFilter.attemptsMax < 12) count++;
+                if (_dungeonFilter.roomsMin > 5 || _dungeonFilter.roomsMax < 10) count++;
                 badge.textContent = count;
             }
 
@@ -1970,6 +2017,7 @@
                     remainingDungeons = applyDungeonFilter(_allDungeons);
                     updateBadge();
                     recalculateAndRender();
+                    saveDungeonFilter();
                     popup.classList.remove('open');
                 });
             }
@@ -1992,6 +2040,7 @@
                     );
                     updateBadge();
                     recalculateAndRender();
+                    saveDungeonFilter();
                     popup.classList.remove('open');
                 });
             }
