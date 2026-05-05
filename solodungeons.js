@@ -1062,9 +1062,9 @@
                 <span class="route-score ${scoreClass}">${scoreDisplay}</span>
                 <div class="route-info">
                     <div class="route-coords">${coordsStr}</div>
-                    <div class="route-type">${typeText}${roomsCount ? ` | ${currentLang === 'en' ? `Rooms:${roomsCount}` : `房间数:${roomsCount}`}` : ''}</div>
+                    <div class="route-type">${typeText}${roomsCount ? ` | ${roomsCount}` : ''}</div>
                 </div>
-                <span class="route-remove" data-id="${itemKey}" title="${tSync('solodungeons.remove_from_route', '从路线移除')}">${removeSvg}</span>
+                <span class="route-remove" data-id="${itemKey}" title="${window._t ? window._t('solodungeons.remove_from_route') : '从路线移除'}">${removeSvg}</span>
             </div>`;
         }).join('');
 
