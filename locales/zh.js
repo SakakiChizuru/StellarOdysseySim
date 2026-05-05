@@ -294,6 +294,7 @@ const zh = {
     'solodungeons.filter_difficulty': '难度修正',
     'solodungeons.filter_attempts': '尝试次数',
     'solodungeons.filter_rooms': '房间数量',
+    'solodungeons.rooms_count': '房间数:{count}',
     'solodungeons.apply_filters': '应用过滤',
     'solodungeons.no_filtered_data': '无匹配数据',
     'solodungeons.no_data': '暂无数据',

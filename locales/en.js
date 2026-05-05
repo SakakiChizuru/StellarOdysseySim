@@ -294,6 +294,7 @@ const en = {
     'solodungeons.filter_difficulty': 'Difficulty Modifier',
     'solodungeons.filter_attempts': 'Attempts',
     'solodungeons.filter_rooms': 'Rooms',
+    'solodungeons.rooms_count': 'Rooms:{count}',
     'solodungeons.apply_filters': 'Apply Filters',
     'solodungeons.no_filtered_data': 'No matching data',
     'solodungeons.no_data': 'No data available',
