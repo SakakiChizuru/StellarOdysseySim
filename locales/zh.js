@@ -336,6 +336,7 @@ const zh = {
     'solodungeons.col_reward': '奖励',
     'solodungeons.col_difficulty': '难度',
     'solodungeons.col_attempts': '次数',
+    'solodungeons.col_rooms': '房间',
     'runedrops.error_no_api_key': '请先输入 API Key',
     'runedrops.fetching': '正在获取符文信息...',
     'runedrops.error_fetch': '获取失败: ',

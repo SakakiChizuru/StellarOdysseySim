@@ -336,6 +336,7 @@ const en = {
     'solodungeons.col_reward': 'Reward',
     'solodungeons.col_difficulty': 'Diff',
     'solodungeons.col_attempts': 'Attempts',
+    'solodungeons.col_rooms': 'Rooms',
     'runedrops.error_no_api_key': 'Please enter API Key first',
     'runedrops.fetching': 'Fetching rune info...',
     'runedrops.error_fetch': 'Fetch failed: ',
