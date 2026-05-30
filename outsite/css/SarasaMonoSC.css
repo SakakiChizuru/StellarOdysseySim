@@ -2,7 +2,14 @@
 @font-face {
     font-family: 'Sarasa Mono SC';
     font-style: normal;
+    font-weight: 300;
+    font-display: swap;
+    src: url(SarasaMonoSC-Light-subset.woff2) format('woff2');
+}
+@font-face {
+    font-family: 'Sarasa Mono SC';
+    font-style: normal;
     font-weight: 400;
     font-display: swap;
-    src: url(SarasaMonoSC-Regular.woff2) format('woff2');
+    src: url(SarasaMonoSC-Light-subset.woff2) format('woff2');
 }
